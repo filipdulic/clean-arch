@@ -112,3 +112,17 @@ impl SignupProcess<Completed> {
         self.try_email().unwrap()
     }
 }
+
+impl std::fmt::Debug for dyn SignupState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if let Some(initialized) = self.as_any().downcast_ref::<Initialized>() {
+            write!(f, "Initialized: {:?}", initialized)
+        } else if let Some(email_added) = self.as_any().downcast_ref::<EmailAdded>() {
+            write!(f, "EmailAdded: {:?}", email_added)
+        } else if let Some(completed) = self.as_any().downcast_ref::<Completed>() {
+            write!(f, "Completed: {:?}", completed)
+        } else {
+            write!(f, "Unknown")
+        }
+    }
+}

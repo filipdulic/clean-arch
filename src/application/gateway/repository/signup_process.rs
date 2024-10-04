@@ -62,3 +62,12 @@ pub trait Repo: Send + Sync {
     fn get(&self, id: impl Into<Id>) -> Result<Record, GetError>;
     fn delete(&self, id: impl Into<Id>) -> Result<(), DeleteError>;
 }
+
+impl std::fmt::Debug for Record {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SignupProcess")
+            .field("id", &self.id)
+            .field("state", &self.state)
+            .finish()
+    }
+}

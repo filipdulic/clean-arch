@@ -29,6 +29,7 @@ pub enum DeleteError {
     Connection,
 }
 
+#[derive(Debug)]
 pub struct Record {
     user: User,
 }
