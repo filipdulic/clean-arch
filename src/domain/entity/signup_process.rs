@@ -86,30 +86,22 @@ impl SignupProcess<EmailAdded> {
 }
 
 impl SignupProcess<Completed> {
-    fn try_username(&self) -> Option<UserName> {
+    pub fn username(&self) -> UserName {
         for item in &self.chain {
             if let Some(Initialized { username }) = item.as_any().downcast_ref::<Initialized>() {
-                return Some(username.clone());
+                return username.clone();
             }
         }
-        None
-    }
-
-    pub fn username(&self) -> UserName {
-        self.try_username().unwrap()
-    }
-
-    fn try_email(&self) -> Option<Email> {
-        for item in &self.chain {
-            if let Some(EmailAdded { email }) = item.as_any().downcast_ref::<EmailAdded>() {
-                return Some(email.clone());
-            }
-        }
-        None
+        unreachable!();
     }
 
     pub fn email(&self) -> Email {
-        self.try_email().unwrap()
+        for item in &self.chain {
+            if let Some(EmailAdded { email }) = item.as_any().downcast_ref::<EmailAdded>() {
+                return email.clone();
+            }
+        }
+        unreachable!();
     }
 }
 
@@ -122,7 +114,7 @@ impl std::fmt::Debug for dyn SignupState {
         } else if let Some(completed) = self.as_any().downcast_ref::<Completed>() {
             write!(f, "Completed: {:?}", completed)
         } else {
-            write!(f, "Unknown")
+            unreachable!();
         }
     }
 }
