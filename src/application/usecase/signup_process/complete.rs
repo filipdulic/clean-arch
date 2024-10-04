@@ -1,6 +1,6 @@
 use crate::{
     application::gateway::repository::{
-        signup_process::{Repo, SaveError},
+        signup_process::{GetError, Repo, SaveError},
         user,
     },
     domain::entity::{
@@ -35,12 +35,23 @@ impl<'r1, 'r2, R1, R2> Complete<'r1, 'r2, R1, R2> {
 pub enum Error {
     #[error("{}", SaveError::Connection)]
     Repo,
+    #[error("SignupProcess {0} not found")]
+    NotFound(Id),
 }
 
 impl From<SaveError> for Error {
     fn from(e: SaveError) -> Self {
         match e {
             SaveError::Connection => Self::Repo,
+        }
+    }
+}
+
+impl From<(GetError, Id)> for Error {
+    fn from((err, id): (GetError, Id)) -> Self {
+        match err {
+            GetError::NotFound => Self::NotFound(id),
+            GetError::Connection => Self::Repo,
         }
     }
 }
