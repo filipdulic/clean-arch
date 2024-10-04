@@ -47,37 +47,13 @@ impl fmt::Display for Id {
 }
 
 pub mod initialize {
-    use super::ParseIdError;
     use crate::application::usecase::signup_process::initialize as uc;
     use std::result;
-    use thiserror::Error;
 
     pub type Request = uc::Request;
     pub type Response = uc::Response;
+    pub type Error = uc::Error;
     pub type Result = result::Result<Response, Error>;
-
-    #[derive(Debug, Error)]
-    pub enum Error {
-        #[error("{}", ParseIdError)]
-        Id,
-        #[error("{}", uc::Error::Repo)]
-        Repo,
-    }
-
-    impl From<ParseIdError> for Error {
-        fn from(_: ParseIdError) -> Self {
-            Self::Id
-        }
-    }
-
-    impl From<uc::Error> for Error {
-        fn from(from: uc::Error) -> Self {
-            match from {
-                uc::Error::NewId => Self::Id,
-                uc::Error::Repo => Self::Repo,
-            }
-        }
-    }
 }
 
 pub mod add_email {
