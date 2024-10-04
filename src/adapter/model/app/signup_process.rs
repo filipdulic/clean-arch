@@ -46,6 +46,7 @@ impl fmt::Display for Id {
     }
 }
 
+// todo add validation
 pub mod initialize {
     use crate::application::usecase::signup_process::initialize as uc;
     use std::result;
@@ -56,6 +57,7 @@ pub mod initialize {
     pub type Result = result::Result<Response, Error>;
 }
 
+//todo add validation and id error maping
 pub mod add_email {
     use crate::application::usecase::signup_process::add_email as uc;
     use std::result;
@@ -66,6 +68,7 @@ pub mod add_email {
     pub type Error = uc::Error;
 }
 
+//todo add id error maping
 pub mod complete {
     use crate::application::usecase::signup_process::complete as uc;
     use std::result;

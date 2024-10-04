@@ -60,7 +60,7 @@ pub mod update {
     pub enum Error {
         #[error("{}", ParseIdError)]
         Id,
-        #[error("Area of life {0:?} not found")]
+        #[error("User {0:?} not found")]
         NotFound(Id),
         #[error("{}", uc::Error::Repo)]
         Repo,
@@ -143,5 +143,20 @@ pub mod delete {
         NotFound,
         #[error("{}", uc::Error::Repo)]
         Repo,
+    }
+
+    impl From<uc::Error> for Error {
+        fn from(e: uc::Error) -> Self {
+            match e {
+                uc::Error::Repo => Error::Repo,
+                uc::Error::NotFound => Error::NotFound,
+            }
+        }
+    }
+
+    impl From<ParseIdError> for Error {
+        fn from(_: ParseIdError) -> Self {
+            Self::Id
+        }
     }
 }
