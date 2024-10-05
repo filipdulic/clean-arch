@@ -4,13 +4,16 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-clap = "4.5.19"
 log = "0.4.22"
 mockall = "0.13.0"
 thiserror = "1.0.64"
 
 [dependencies.serde]
 version = "1.0.210"
+features = ["derive"]
+
+[dependencies.clap]
+version = "4.5.19"
 features = ["derive"]
 
 [dependencies.uuid]
