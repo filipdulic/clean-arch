@@ -18,7 +18,7 @@ impl Repo for JsonFile {
         let record: Record = record.into();
         log::debug!("Save area of life {:?} to JSON file", record);
         let model: models::User = record.into();
-        self.signup_processes
+        self.users
             .save_with_id(&model, &model.user_id)
             .map_err(|_| {
                 log::warn!("Unable to save User!");
