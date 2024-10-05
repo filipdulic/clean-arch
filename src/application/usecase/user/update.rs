@@ -69,7 +69,7 @@ where
         let email = Email::new(req.email);
         let user = User::new(req.id, username, email);
         let _ = self.repo.get(req.id).map_err(|err| (err, req.id))?;
-        self.repo.save(user)?;
+        self.repo.save(user.into())?;
         Ok(())
     }
 }

@@ -64,7 +64,7 @@ where
         let record = self.repo.get(req.id).map_err(|err| (err, req.id))?;
         let sp: SignupProcess<Initialized> = record.try_into().map_err(|_| Error::Repo)?;
         let sp = sp.add_email(email);
-        self.repo.save(sp)?;
+        self.repo.save(sp.into())?;
         Ok(Response { id: req.id })
     }
 }

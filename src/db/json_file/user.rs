@@ -14,8 +14,7 @@ impl NewId<Id> for JsonFile {
 }
 
 impl Repo for JsonFile {
-    fn save(&self, record: impl Into<Record>) -> Result<(), SaveError> {
-        let record: Record = record.into();
+    fn save(&self, record: Record) -> Result<(), SaveError> {
         log::debug!("Save area of life {:?} to JSON file", record);
         let model: models::User = record.into();
         self.users
@@ -26,8 +25,7 @@ impl Repo for JsonFile {
             })?;
         Ok(())
     }
-    fn get(&self, id: impl Into<Id>) -> Result<Record, GetError> {
-        let id: Id = id.into();
+    fn get(&self, id: Id) -> Result<Record, GetError> {
         log::debug!("Get user{:?} from JSON file", id);
         let model = self
             .users
@@ -59,10 +57,10 @@ impl Repo for JsonFile {
             .collect();
         Ok(records)
     }
-    fn delete(&self, id: impl Into<Id>) -> Result<(), DeleteError> {
-        let id = id.into().to_string();
+    fn delete(&self, id: Id) -> Result<(), DeleteError> {
         log::debug!("Delete user {:?} from JSON file", &id);
-        self.users.delete(&id).map_err(|err| {
+        let string_id = id.to_string();
+        self.users.delete(&string_id).map_err(|err| {
             log::warn!("Unable to delete user: {}", err);
             if err.kind() == io::ErrorKind::NotFound {
                 DeleteError::NotFound
