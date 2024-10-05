@@ -48,8 +48,8 @@ impl From<Record> for User {
 
 // TODO: make it async
 pub trait Repo: Send + Sync {
-    fn save(&self, record: impl Into<Record>) -> Result<(), SaveError>;
-    fn get(&self, id: impl Into<Id>) -> Result<Record, GetError>;
+    fn save(&self, record: Record) -> Result<(), SaveError>;
+    fn get(&self, id: Id) -> Result<Record, GetError>;
     fn get_all(&self) -> Result<Vec<Record>, GetAllError>;
-    fn delete(&self, id: impl Into<Id>) -> Result<(), DeleteError>;
+    fn delete(&self, id: Id) -> Result<(), DeleteError>;
 }

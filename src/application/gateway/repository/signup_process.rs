@@ -25,11 +25,20 @@ pub enum DeleteError {
     Connection,
 }
 
+#[derive(Clone)]
 pub struct Record {
     pub id: Id,
     pub chain: Vec<Rc<dyn SignupState>>,
     pub state: Rc<dyn SignupState>,
 }
+
+impl PartialEq for Record {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
+    }
+}
+
+impl Eq for Record {}
 
 impl<S: SignupState> From<SignupProcess<S>> for Record {
     fn from(process: SignupProcess<S>) -> Self {
@@ -58,9 +67,9 @@ impl<S: SignupState + Clone> TryFrom<Record> for SignupProcess<S> {
 
 // TODO: make it async
 pub trait Repo: Send + Sync {
-    fn save(&self, record: impl Into<Record>) -> Result<(), SaveError>;
-    fn get(&self, id: impl Into<Id>) -> Result<Record, GetError>;
-    fn delete(&self, id: impl Into<Id>) -> Result<(), DeleteError>;
+    fn save(&self, record: Record) -> Result<(), SaveError>;
+    fn get(&self, id: Id) -> Result<Record, GetError>;
+    fn delete(&self, id: Id) -> Result<(), DeleteError>;
 }
 
 impl std::fmt::Debug for Record {

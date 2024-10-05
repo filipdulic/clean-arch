@@ -58,7 +58,7 @@ where
         let id = self.id_gen.new_id().map_err(|_| Error::NewId)?;
         let username = UserName::new(req.username);
         let signup_process = SignupProcess::new(id, username);
-        self.repo.save(signup_process)?;
+        self.repo.save(signup_process.into())?;
         Ok(Response { id })
     }
 }

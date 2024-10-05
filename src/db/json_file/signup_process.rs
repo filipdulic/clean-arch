@@ -14,8 +14,7 @@ impl NewId<Id> for JsonFile {
 }
 
 impl Repo for JsonFile {
-    fn save(&self, record: impl Into<Record>) -> Result<(), SaveError> {
-        let record = record.into();
+    fn save(&self, record: Record) -> Result<(), SaveError> {
         log::debug!("Save area of life {:?} to JSON file", record);
         let model: models::SignupProcess = record.into();
         self.signup_processes
@@ -26,8 +25,7 @@ impl Repo for JsonFile {
             })?;
         Ok(())
     }
-    fn get(&self, id: impl Into<Id>) -> Result<Record, GetError> {
-        let id: Id = id.into();
+    fn get(&self, id: Id) -> Result<Record, GetError> {
         log::debug!("Get signup process{:?} from JSON file", id);
         let model = self
             .signup_processes
@@ -43,8 +41,8 @@ impl Repo for JsonFile {
         let record = models::SignupProcess::try_into(model).unwrap();
         Ok(record)
     }
-    fn delete(&self, id: impl Into<Id>) -> Result<(), DeleteError> {
-        log::debug!("Delete area of life {:?} from JSON file", id.into());
+    fn delete(&self, id: Id) -> Result<(), DeleteError> {
+        log::debug!("Delete area of life {:?} from JSON file", id);
         todo!()
     }
 }

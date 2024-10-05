@@ -67,9 +67,11 @@ where
         let record = self.repo.get(req.id).map_err(|_| Error::Repo)?;
         let sp: SignupProcess<EmailAdded> = record.try_into().map_err(|_| Error::Repo)?;
         let sp = sp.complete();
-        self.repo.save(sp.clone())?;
+        self.repo.save(sp.clone().into())?;
         let user: User = sp.into();
-        self.user_repo.save(user.clone()).map_err(|_| Error::Repo)?;
+        self.user_repo
+            .save(user.clone().into())
+            .map_err(|_| Error::Repo)?;
         Ok(Response {
             record: user.into(),
         })
