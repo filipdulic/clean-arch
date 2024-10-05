@@ -3,7 +3,7 @@
 
 ## TODO
 - [x] Write Tests
-- [ ] Wrote in depth documentation, as well as a wiki on where 
+- [x] Wrote in depth documentation, as well as a wiki on where 
     to find which part of the code, and how to develop in it.
 - [ ] Implement more DBs (SQLite, Redis, posgreSQL, ..)
 - [ ] Implenet more Interfaces (WebServer, WebSocket, Desktop App,
