@@ -2,7 +2,7 @@
 * Heavily influenced by [clean-architecture-with-rust](https://github.com/flosse/clean-architecture-with-rust) project. Most files are copies/modifications of that projet.
 
 ## TODO
-- [ ] Write Tests
+- [x] Write Tests
 - [ ] Wrote in depth documentation, as well as a wiki on where 
     to find which part of the code, and how to develop in it.
 - [ ] Implement more DBs (SQLite, Redis, posgreSQL, ..)
