@@ -1,3 +1,22 @@
+//! API
+//!
+//! The api.rs file in the adapter layer serves as a facade or entry point for the
+//! application's functionality. It aggregates various controllers and provides a
+//! unified interface for interacting with the application's use cases. This aligns
+//! with the API Gateway pattern, which simplifies the interaction with the system
+//! by providing a single point of access.
+//!
+//! Key Responsibilities:
+//! * Initialization: The Api struct initializes and holds references to the database
+//!     and presenter components.
+//! * Controller Aggregation: It provides methods to access different controllers
+//!     (e.g., user_controller, signup_process_controller).
+//! * Unified Interface: The Api struct exposes methods that correspond to various use
+//!     cases, making it easier for external components (e.g., CLI, web server) to
+//!     interact with the application.
+
+// use uuid::Uuid;
+
 // use crate::{
 //     adapter::{
 //         controller,
@@ -49,22 +68,14 @@
 //     fn signup_process_controller(&self) -> controller::signup_process::Controller<D, P> {
 //         controller::signup_process::Controller::new(&self.db, &self.presenter)
 //     }
-//     pub fn create_user(
-//         &self,
-//         title: impl Into<String>,
-//         areas_of_life: &HashSet<String>,
-//     ) -> <P as Present<user::create::Result>>::ViewModel {
-//         self.user_controller()
-//             .create_user(title, areas_of_life)
-//     }
 //     pub fn update_user(
 //         &self,
 //         id: &str,
-//         title: impl Into<String>,
-//         areas_of_life: &HashSet<String>,
+//         username: impl Into<String>,
+//         email: impl Into<String>,
 //     ) -> <P as Present<user::update::Result>>::ViewModel {
 //         self.user_controller()
-//             .update_user(id, title, areas_of_life)
+//             .update_user(, username, email)
 //     }
 //     pub fn delete_user(&self, id: &str) -> <P as Present<user::delete::Result>>::ViewModel {
 //         self.user_controller().delete_user(id)
