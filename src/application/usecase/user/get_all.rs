@@ -45,7 +45,7 @@ where
 {
     pub fn exec(&self, _: Request) -> Result<Response, Error> {
         log::debug!("Get all users");
-        let users = self.repo.get_all()?.into_iter().collect();
+        let users = self.repo.get_all()?.into_iter().map(User::from).collect();
         Ok(Response { users })
     }
 }

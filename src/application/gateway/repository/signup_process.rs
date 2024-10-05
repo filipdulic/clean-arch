@@ -26,9 +26,9 @@ pub enum DeleteError {
 }
 
 pub struct Record {
-    id: Id,
-    chain: Vec<Rc<dyn SignupState>>,
-    state: Rc<dyn SignupState>,
+    pub id: Id,
+    pub chain: Vec<Rc<dyn SignupState>>,
+    pub state: Rc<dyn SignupState>,
 }
 
 impl<S: SignupState> From<SignupProcess<S>> for Record {

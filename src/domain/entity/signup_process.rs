@@ -39,11 +39,11 @@ impl<S: SignupState> SignupProcess<S> {
 
 #[derive(Debug, Clone)]
 pub struct Initialized {
-    username: UserName,
+    pub username: UserName,
 }
 #[derive(Debug, Clone)]
 pub struct EmailAdded {
-    email: Email,
+    pub email: Email,
 }
 #[derive(Debug, Clone)]
 pub struct Completed;

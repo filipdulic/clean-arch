@@ -31,7 +31,7 @@ pub enum DeleteError {
 
 #[derive(Debug)]
 pub struct Record {
-    user: User,
+    pub user: User,
 }
 
 impl From<User> for Record {
@@ -50,6 +50,6 @@ impl From<Record> for User {
 pub trait Repo: Send + Sync {
     fn save(&self, record: impl Into<Record>) -> Result<(), SaveError>;
     fn get(&self, id: impl Into<Id>) -> Result<Record, GetError>;
-    fn get_all(&self) -> Result<Vec<User>, GetAllError>;
+    fn get_all(&self) -> Result<Vec<Record>, GetAllError>;
     fn delete(&self, id: impl Into<Id>) -> Result<(), DeleteError>;
 }
