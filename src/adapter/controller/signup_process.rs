@@ -35,30 +35,36 @@ where
     }
     pub fn add_email_to_signup_process(
         &self,
-        id: impl Into<signup_process::Id>,
+        id: &str,
         email: impl Into<String>,
     ) -> <P as Present<app::add_email::Result>>::ViewModel {
-        let id = id.into();
-        let email = email.into();
-        log::debug!(
-            "Adding email '{}' to SignupProcess with id: '{}'",
-            email,
-            id
-        );
-        let req = app::add_email::Request { id, email };
-        let interactor = uc::add_email::AddEmail::new(self.db);
-        let res = interactor.exec(req);
+        let res = id
+            .parse::<app::Id>()
+            .map_err(|_| app::add_email::Error::Id)
+            .and_then(|id| {
+                let req = app::add_email::Request {
+                    id: id.into(),
+                    email: email.into(),
+                };
+                log::debug!("Completing SignupProcess with id: '{}'", id);
+                let interactor = uc::add_email::AddEmail::new(self.db);
+                interactor.exec(req).map_err(Into::into)
+            });
         self.presenter.present(res)
     }
     pub fn complete_signup_process(
         &self,
-        id: impl Into<signup_process::Id>,
+        id: &str,
     ) -> <P as Present<app::complete::Result>>::ViewModel {
-        let id = id.into();
-        log::debug!("Completing SignupProcess with id: '{}'", id);
-        let req = app::complete::Request { id };
-        let interactor = uc::complete::Complete::new(self.db, self.db);
-        let res = interactor.exec(req);
+        let res = id
+            .parse::<app::Id>()
+            .map_err(|_| app::complete::Error::Id)
+            .and_then(|id| {
+                let req = app::complete::Request { id: id.into() };
+                log::debug!("Completing SignupProcess with id: '{}'", id);
+                let interactor = uc::complete::Complete::new(self.db, self.db);
+                interactor.exec(req).map_err(Into::into)
+            });
         self.presenter.present(res)
     }
 }
