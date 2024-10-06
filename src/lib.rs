@@ -4,4 +4,3 @@ pub mod cli;
 pub mod db;
 pub mod domain;
 pub mod infrastructure;
-pub mod json_boundary;
