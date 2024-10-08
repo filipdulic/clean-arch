@@ -105,9 +105,9 @@ impl From<SignupProcessRecord> for SignupProcess {
 impl From<UserRecord> for User {
     fn from(value: UserRecord) -> User {
         User {
-            user_id: value.user.id.to_string(),
-            username: value.user.username.to_string(),
-            email: value.user.email.to_string(),
+            user_id: value.user.id().to_string(),
+            username: value.user.username().to_string(),
+            email: value.user.email().to_string(),
         }
     }
 }

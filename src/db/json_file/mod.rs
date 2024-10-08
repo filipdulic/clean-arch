@@ -52,7 +52,6 @@ mod tests {
         use crate::domain::entity::{
             signup_process::{
                 Completed, EmailAdded, Id as SignupProcessId, Initialized, SignupProcess,
-                SignupState,
             },
             user::{Email, UserName},
         };
@@ -93,7 +92,7 @@ mod tests {
                 .expect("Failed to convert from Record.")
                 .add_email(Email::new("test@email.com".to_string()));
             assert!(signup_process
-                .state
+                .state()
                 .as_any()
                 .downcast_ref::<EmailAdded>()
                 .is_some());
@@ -118,7 +117,7 @@ mod tests {
                 .complete();
             // assert state has changed to Completed.
             assert!(signup_process
-                .state
+                .state()
                 .as_any()
                 .downcast_ref::<Completed>()
                 .is_some());

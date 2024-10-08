@@ -65,7 +65,7 @@ where
     pub fn exec(&self, req: Request) -> Result<Response, Error> {
         log::debug!("SignupProcess Completed: {:?}", req);
         let record = self.repo.get(req.id).map_err(|_| Error::Repo)?;
-        let sp: SignupProcess<EmailAdded> = record.try_into().map_err(|_| Error::Repo)?;
+        let sp: SignupProcess<EmailAdded> = record.into();
         let sp = sp.complete();
         self.repo.save(sp.clone().into())?;
         let user: User = sp.into();

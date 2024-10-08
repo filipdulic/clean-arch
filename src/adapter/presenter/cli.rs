@@ -63,7 +63,7 @@ impl Present<user::get_all::Result> for Presenter {
             Ok(resp) => resp
                 .users
                 .into_iter()
-                .map(|t| format!("- {} ({})", t.username, t.id))
+                .map(|t| format!("- {} ({})", t.username(), t.id()))
                 .collect::<Vec<_>>()
                 .join("\n"),
             Err(err) => format!("Unable to read all users: {err}"),

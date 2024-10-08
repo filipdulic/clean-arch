@@ -8,9 +8,9 @@ pub type Email = value_object::Email<User>;
 
 #[derive(Debug, Clone)]
 pub struct User {
-    pub id: Id,
-    pub username: UserName,
-    pub email: Email,
+    id: Id,
+    username: UserName,
+    email: Email,
 }
 
 impl User {
@@ -41,7 +41,7 @@ impl User {
 impl From<SignupProcess<Completed>> for User {
     fn from(signup_process: SignupProcess<Completed>) -> Self {
         Self {
-            id: Id::new(signup_process.id),
+            id: Id::new(signup_process.id()),
             username: signup_process.username(),
             email: signup_process.email(),
         }

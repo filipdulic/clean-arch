@@ -42,26 +42,21 @@ impl Eq for Record {}
 
 impl<S: SignupState> From<SignupProcess<S>> for Record {
     fn from(process: SignupProcess<S>) -> Self {
-        Self {
-            id: process.id,
-            chain: process.chain,
-            state: process.state,
+        Record {
+            id: process.id(),
+            chain: process.chain().clone(),
+            state: process.state(),
         }
     }
 }
 
-impl<S: SignupState + Clone> TryFrom<Record> for SignupProcess<S> {
-    type Error = ();
-
-    fn try_from(record: Record) -> Result<Self, Self::Error> {
-        if let Some(state) = record.state.as_any().downcast_ref::<S>() {
-            return Ok(Self {
-                id: record.id,
-                chain: record.chain,
-                state: Rc::new(state.clone()),
-            });
+impl<S: SignupState + Clone> From<Record> for SignupProcess<S> {
+    fn from(value: Record) -> Self {
+        if let Some(state) = value.state.as_any().downcast_ref::<S>() {
+            SignupProcess::from_params(value.id, value.chain, Rc::new(state.clone()))
+        } else {
+            unreachable!()
         }
-        Err(())
     }
 }
 

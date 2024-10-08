@@ -12,15 +12,24 @@ pub type Id = value_object::Id<SignupProcessValue>;
 
 pub trait SignupState: Any {
     fn as_any(&self) -> &dyn Any;
+    fn from_dyn(state: Rc<dyn SignupState>) -> Self
+    where
+        Self: Sized;
 }
 #[derive(Clone)]
 pub struct SignupProcess<S: SignupState> {
-    pub id: Id,
-    pub chain: Vec<Rc<dyn SignupState>>,
-    pub state: Rc<S>,
+    id: Id,
+    chain: Vec<Rc<dyn SignupState>>,
+    state: Rc<S>,
 }
 
 impl<S: SignupState> SignupProcess<S> {
+    pub const fn id(&self) -> Id {
+        self.id
+    }
+    pub const fn chain(&self) -> &Vec<Rc<dyn SignupState>> {
+        &self.chain
+    }
     fn transition<N: SignupState + 'static>(self, next: N) -> SignupProcess<N> {
         let mut chain = self.chain;
         let next = Rc::new(next);
@@ -32,8 +41,19 @@ impl<S: SignupState> SignupProcess<S> {
             state: next,
         }
     }
-    pub fn state(&self) -> &S {
-        self.state.as_ref()
+    pub fn state(&self) -> Rc<dyn SignupState + 'static> {
+        self.state.clone()
+    }
+    pub fn from_params(
+        id: Id,
+        chain: Vec<Rc<dyn SignupState>>,
+        state: Rc<dyn SignupState>,
+    ) -> Self {
+        Self {
+            id,
+            chain,
+            state: Rc::new(SignupState::from_dyn(state)),
+        }
     }
 }
 
@@ -52,15 +72,36 @@ impl SignupState for Initialized {
     fn as_any(&self) -> &dyn Any {
         self
     }
+    fn from_dyn(state: Rc<dyn SignupState>) -> Self {
+        if let Some(initialized) = state.as_any().downcast_ref::<Initialized>() {
+            initialized.clone()
+        } else {
+            unreachable!("Failed to downcast to Initialized");
+        }
+    }
 }
 impl SignupState for EmailAdded {
     fn as_any(&self) -> &dyn Any {
         self
     }
+    fn from_dyn(state: Rc<dyn SignupState>) -> Self {
+        if let Some(email_added) = state.as_any().downcast_ref::<EmailAdded>() {
+            email_added.clone()
+        } else {
+            unreachable!()
+        }
+    }
 }
 impl SignupState for Completed {
     fn as_any(&self) -> &dyn Any {
         self
+    }
+    fn from_dyn(state: Rc<dyn SignupState>) -> Self {
+        if let Some(completed) = state.as_any().downcast_ref::<Completed>() {
+            completed.clone()
+        } else {
+            unreachable!()
+        }
     }
 }
 
