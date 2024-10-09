@@ -11,10 +11,20 @@ pub struct SignupProcessValue;
 pub type Id = value_object::Id<SignupProcessValue>;
 
 pub trait SignupState: Any {
+    // ## Required for downcasting
     fn as_any(&self) -> &dyn Any;
+    // ## Provided for convenience
     fn from_dyn(state: Rc<dyn SignupState>) -> Self
     where
-        Self: Sized;
+        Self: Sized + Clone,
+    {
+        if let Some(downcast_state) = state.as_any().downcast_ref::<Self>() {
+            downcast_state.clone()
+        } else {
+            // Rc<dyn Something> can always be downcast to Something
+            unreachable!()
+        }
+    }
 }
 #[derive(Debug, Clone)]
 pub struct SignupProcess<S: SignupState> {
@@ -44,11 +54,10 @@ impl<S: SignupState> SignupProcess<S> {
     pub fn state(&self) -> Rc<dyn SignupState + 'static> {
         self.state.clone()
     }
-    pub fn from_params(
-        id: Id,
-        chain: Vec<Rc<dyn SignupState>>,
-        state: Rc<dyn SignupState>,
-    ) -> Self {
+    pub fn from_params(id: Id, chain: Vec<Rc<dyn SignupState>>, state: Rc<dyn SignupState>) -> Self
+    where
+        S: Clone,
+    {
         Self {
             id,
             chain,
@@ -68,45 +77,19 @@ pub struct EmailAdded {
 #[derive(Debug, Clone)]
 pub struct Completed;
 
-impl SignupState for Initialized {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-    fn from_dyn(state: Rc<dyn SignupState>) -> Self {
-        if let Some(initialized) = state.as_any().downcast_ref::<Initialized>() {
-            initialized.clone()
-        } else {
-            // Rc<dyn Something> can always be downcast to Something
-            unreachable!();
+macro_rules! impl_signup_state {
+    ($($state:ident),+) => {
+        $(
+        impl SignupState for $state {
+            fn as_any(&self) -> &dyn Any {
+                self
+            }
         }
-    }
+        )+
+    };
 }
-impl SignupState for EmailAdded {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-    fn from_dyn(state: Rc<dyn SignupState>) -> Self {
-        if let Some(email_added) = state.as_any().downcast_ref::<EmailAdded>() {
-            email_added.clone()
-        } else {
-            // Rc<dyn Something> can always be downcast to Something
-            unreachable!()
-        }
-    }
-}
-impl SignupState for Completed {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-    fn from_dyn(state: Rc<dyn SignupState>) -> Self {
-        if let Some(completed) = state.as_any().downcast_ref::<Completed>() {
-            completed.clone()
-        } else {
-            // Rc<dyn Something> can always be downcast to Something
-            unreachable!()
-        }
-    }
-}
+
+impl_signup_state!(Initialized, EmailAdded, Completed);
 
 impl SignupProcess<Initialized> {
     pub fn new(id: Id, username: UserName) -> Self {
