@@ -50,12 +50,18 @@ impl<S: SignupState> From<SignupProcess<S>> for Record {
     }
 }
 
-impl<S: SignupState + Clone> From<Record> for SignupProcess<S> {
-    fn from(value: Record) -> Self {
+impl<S: SignupState + Clone> TryFrom<Record> for SignupProcess<S> {
+    // can an fail if S state is not present in record.chain
+    type Error = GetError;
+    fn try_from(value: Record) -> Result<Self, GetError> {
         if let Some(state) = value.state.as_any().downcast_ref::<S>() {
-            SignupProcess::from_params(value.id, value.chain, Rc::new(state.clone()))
+            Ok(SignupProcess::from_params(
+                value.id,
+                value.chain,
+                Rc::new(state.clone()),
+            ))
         } else {
-            unreachable!()
+            Err(GetError::NotFound)
         }
     }
 }

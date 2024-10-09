@@ -16,7 +16,7 @@ pub trait SignupState: Any {
     where
         Self: Sized;
 }
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct SignupProcess<S: SignupState> {
     id: Id,
     chain: Vec<Rc<dyn SignupState>>,
@@ -76,7 +76,8 @@ impl SignupState for Initialized {
         if let Some(initialized) = state.as_any().downcast_ref::<Initialized>() {
             initialized.clone()
         } else {
-            unreachable!("Failed to downcast to Initialized");
+            // Rc<dyn Something> can always be downcast to Something
+            unreachable!();
         }
     }
 }
@@ -88,6 +89,7 @@ impl SignupState for EmailAdded {
         if let Some(email_added) = state.as_any().downcast_ref::<EmailAdded>() {
             email_added.clone()
         } else {
+            // Rc<dyn Something> can always be downcast to Something
             unreachable!()
         }
     }
@@ -100,6 +102,7 @@ impl SignupState for Completed {
         if let Some(completed) = state.as_any().downcast_ref::<Completed>() {
             completed.clone()
         } else {
+            // Rc<dyn Something> can always be downcast to Something
             unreachable!()
         }
     }
@@ -127,6 +130,7 @@ impl SignupProcess<EmailAdded> {
 }
 
 impl SignupProcess<Completed> {
+    // completed contians at least one Initialized state in it's chain thus the unreachable.
     pub fn username(&self) -> UserName {
         for item in &self.chain {
             if let Some(Initialized { username }) = item.as_any().downcast_ref::<Initialized>() {
@@ -135,7 +139,7 @@ impl SignupProcess<Completed> {
         }
         unreachable!();
     }
-
+    // completed contians at least one EmailAdded state in it's chain thus the unreachable.
     pub fn email(&self) -> Email {
         for item in &self.chain {
             if let Some(EmailAdded { email }) = item.as_any().downcast_ref::<EmailAdded>() {

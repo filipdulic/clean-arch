@@ -62,7 +62,8 @@ where
         log::debug!("SignupProcess Email Added: {:?}", req);
         let email = Email::new(req.email);
         let record = self.repo.get(req.id).map_err(|err| (err, req.id))?;
-        let sp: SignupProcess<Initialized> = record.into();
+        // NOTE: error hadnling trick with adding id to error.
+        let sp: SignupProcess<Initialized> = record.try_into().map_err(|err| (err, req.id))?;
         let sp = sp.add_email(email);
         self.repo.save(sp.into())?;
         Ok(Response { id: req.id })
