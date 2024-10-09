@@ -12,7 +12,7 @@ use crate::{
         signup_process::Record as SignupProcessRecord, user::Record as UserRecord,
     },
     domain::entity::{
-        signup_process::{Completed, EmailAdded, Initialized, SignupState},
+        signup_process::{AsAny, Completed, EmailAdded, Initialized, SignupState},
         user,
     },
 };
@@ -50,6 +50,7 @@ impl From<Rc<dyn SignupState>> for SignupProcessState {
         } else if let Some(Completed) = value.as_any().downcast_ref::<Completed>() {
             SignupProcessState::Completed
         } else {
+            // there are no more states defined.
             unreachable!();
         }
     }

@@ -51,7 +51,7 @@ mod tests {
         use super::*;
         use crate::domain::entity::{
             signup_process::{
-                Completed, EmailAdded, Id as SignupProcessId, Initialized, SignupProcess,
+                AsAny, Completed, EmailAdded, Id as SignupProcessId, Initialized, SignupProcess,
             },
             user::{Email, UserName},
         };

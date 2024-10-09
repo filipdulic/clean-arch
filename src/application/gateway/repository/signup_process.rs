@@ -29,7 +29,7 @@ pub enum DeleteError {
 pub struct Record {
     pub id: Id,
     pub chain: Vec<Rc<dyn SignupState>>,
-    pub state: Rc<dyn SignupState>,
+    pub state: Rc<dyn SignupState + 'static>,
 }
 
 impl PartialEq for Record {
@@ -40,7 +40,7 @@ impl PartialEq for Record {
 
 impl Eq for Record {}
 
-impl<S: SignupState> From<SignupProcess<S>> for Record {
+impl<S: SignupState + Clone + 'static> From<SignupProcess<S>> for Record {
     fn from(process: SignupProcess<S>) -> Self {
         Record {
             id: process.id(),
@@ -50,7 +50,7 @@ impl<S: SignupState> From<SignupProcess<S>> for Record {
     }
 }
 
-impl<S: SignupState + Clone> TryFrom<Record> for SignupProcess<S> {
+impl<S: SignupState + Clone + 'static> TryFrom<Record> for SignupProcess<S> {
     // can an fail if S state is not present in record.chain
     type Error = GetError;
     fn try_from(value: Record) -> Result<Self, GetError> {
@@ -69,9 +69,14 @@ pub trait Repo: Send + Sync {
 
 impl std::fmt::Debug for Record {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("SignupProcess")
-            .field("id", &self.id)
-            .field("state", &self.state)
-            .finish()
+        if let Some(initialized) = self.state.as_any().downcast_ref::<Initialized>() {
+            write!(f, "Initialized: {:?}", initialized)
+        } else if let Some(email_added) = self.state.as_any().downcast_ref::<EmailAdded>() {
+            write!(f, "EmailAdded: {:?}", email_added)
+        } else if let Some(completed) = self.state.as_any().downcast_ref::<Completed>() {
+            write!(f, "Completed: {:?}", completed)
+        } else {
+            unreachable!();
+        }
     }
 }

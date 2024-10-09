@@ -10,23 +10,7 @@ pub struct SignupProcessValue;
 
 pub type Id = value_object::Id<SignupProcessValue>;
 
-pub trait SignupState: Any {
-    // ## Required for downcasting
-    // implemented via impl_signup_state macro
-    fn as_any(&self) -> &dyn Any;
-}
-
-macro_rules! impl_signup_state {
-    ($($state:ident),+) => {
-        $(
-        impl SignupState for $state {
-            fn as_any(&self) -> &dyn Any {
-                self
-            }
-        }
-        )+
-    };
-}
+pub trait SignupState {}
 
 #[derive(Debug, Clone)]
 pub struct Initialized {
@@ -39,26 +23,27 @@ pub struct EmailAdded {
 #[derive(Debug, Clone)]
 pub struct Completed;
 
-impl_signup_state!(Initialized, EmailAdded, Completed);
+impl SignupState for Initialized {}
+impl SignupState for EmailAdded {}
+impl SignupState for Completed {}
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct SignupProcess<S: SignupState> {
     id: Id,
     chain: Vec<Rc<dyn SignupState>>,
-    state: Rc<S>,
+    state: S,
 }
 
-impl<S: SignupState> SignupProcess<S> {
+impl<S: SignupState + Clone + 'static> SignupProcess<S> {
     pub const fn id(&self) -> Id {
         self.id
     }
     pub const fn chain(&self) -> &Vec<Rc<dyn SignupState>> {
         &self.chain
     }
-    fn transition<N: SignupState + 'static>(self, next: N) -> SignupProcess<N> {
+    fn transition<N: SignupState + 'static + Clone>(self, next: N) -> SignupProcess<N> {
         let mut chain = self.chain;
-        let next = Rc::new(next);
-        chain.push(next.clone());
+        chain.push(Rc::new(next.clone()));
 
         SignupProcess {
             id: self.id,
@@ -66,13 +51,21 @@ impl<S: SignupState> SignupProcess<S> {
             state: next,
         }
     }
-    pub fn state(&self) -> Rc<dyn SignupState + 'static> {
-        self.state.clone()
+    pub fn state(&self) -> Rc<dyn SignupState> {
+        Rc::new(self.state.clone())
     }
 }
 
+pub trait AsAny: Any {
+    fn as_any(&self) -> &dyn Any;
+}
+impl AsAny for Rc<dyn SignupState> {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
 // helper for reconstructing SignupProcess from dyn parameters.
-impl<S: SignupState + Clone> TryFrom<(Id, Vec<Rc<dyn SignupState>>, Rc<dyn SignupState>)>
+impl<S: SignupState + Clone + 'static> TryFrom<(Id, Vec<Rc<dyn SignupState>>, Rc<dyn SignupState>)>
     for SignupProcess<S>
 {
     type Error = ();
@@ -83,7 +76,7 @@ impl<S: SignupState + Clone> TryFrom<(Id, Vec<Rc<dyn SignupState>>, Rc<dyn Signu
             Ok(Self {
                 id: value.0,
                 chain: value.1,
-                state: Rc::new(state.clone()),
+                state: state.clone(),
             })
         } else {
             Err(())
@@ -93,10 +86,10 @@ impl<S: SignupState + Clone> TryFrom<(Id, Vec<Rc<dyn SignupState>>, Rc<dyn Signu
 
 impl SignupProcess<Initialized> {
     pub fn new(id: Id, username: UserName) -> Self {
-        let state = Rc::new(Initialized { username });
+        let state = Initialized { username };
         Self {
             id,
-            chain: vec![state.clone()],
+            chain: vec![Rc::new(state.clone())],
             state,
         }
     }
@@ -133,13 +126,13 @@ impl SignupProcess<Completed> {
     }
 }
 
-impl std::fmt::Debug for dyn SignupState {
+impl<S: SignupState + AsAny> std::fmt::Debug for SignupProcess<S> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if let Some(initialized) = self.as_any().downcast_ref::<Initialized>() {
+        if let Some(initialized) = self.state.as_any().downcast_ref::<Initialized>() {
             write!(f, "Initialized: {:?}", initialized)
-        } else if let Some(email_added) = self.as_any().downcast_ref::<EmailAdded>() {
+        } else if let Some(email_added) = self.state.as_any().downcast_ref::<EmailAdded>() {
             write!(f, "EmailAdded: {:?}", email_added)
-        } else if let Some(completed) = self.as_any().downcast_ref::<Completed>() {
+        } else if let Some(completed) = self.state.as_any().downcast_ref::<Completed>() {
             write!(f, "Completed: {:?}", completed)
         } else {
             unreachable!();
