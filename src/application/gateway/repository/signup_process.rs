@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{any::Any, rc::Rc};
 
 use crate::domain::entity::signup_process::*;
 use thiserror::Error;
@@ -69,11 +69,11 @@ pub trait Repo: Send + Sync {
 
 impl std::fmt::Debug for Record {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if let Some(initialized) = self.state.as_any().downcast_ref::<Initialized>() {
+        if let Some(initialized) = (&self.state as &dyn Any).downcast_ref::<Initialized>() {
             write!(f, "Initialized: {:?}", initialized)
-        } else if let Some(email_added) = self.state.as_any().downcast_ref::<EmailAdded>() {
+        } else if let Some(email_added) = (&self.state as &dyn Any).downcast_ref::<EmailAdded>() {
             write!(f, "EmailAdded: {:?}", email_added)
-        } else if let Some(completed) = self.state.as_any().downcast_ref::<Completed>() {
+        } else if let Some(completed) = (&self.state as &dyn Any).downcast_ref::<Completed>() {
             write!(f, "Completed: {:?}", completed)
         } else {
             unreachable!();

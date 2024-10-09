@@ -56,34 +56,6 @@ impl<S: SignupState + Clone + 'static> SignupProcess<S> {
     }
 }
 
-pub trait AsAny: Any {
-    fn as_any(&self) -> &dyn Any;
-}
-impl AsAny for Rc<dyn SignupState> {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-}
-// helper for reconstructing SignupProcess from dyn parameters.
-impl<S: SignupState + Clone + 'static> TryFrom<(Id, Vec<Rc<dyn SignupState>>, Rc<dyn SignupState>)>
-    for SignupProcess<S>
-{
-    type Error = ();
-    fn try_from(
-        value: (Id, Vec<Rc<dyn SignupState>>, Rc<dyn SignupState>),
-    ) -> Result<Self, Self::Error> {
-        if let Some(state) = value.2.as_any().downcast_ref::<S>() {
-            Ok(Self {
-                id: value.0,
-                chain: value.1,
-                state: state.clone(),
-            })
-        } else {
-            Err(())
-        }
-    }
-}
-
 impl SignupProcess<Initialized> {
     pub fn new(id: Id, username: UserName) -> Self {
         let state = Initialized { username };
@@ -109,7 +81,8 @@ impl SignupProcess<Completed> {
     // completed contians at least one Initialized state in it's chain thus the unreachable.
     pub fn username(&self) -> UserName {
         for item in &self.chain {
-            if let Some(Initialized { username }) = item.as_any().downcast_ref::<Initialized>() {
+            if let Some(Initialized { username }) = (item as &dyn Any).downcast_ref::<Initialized>()
+            {
                 return username.clone();
             }
         }
@@ -118,7 +91,7 @@ impl SignupProcess<Completed> {
     // completed contians at least one EmailAdded state in it's chain thus the unreachable.
     pub fn email(&self) -> Email {
         for item in &self.chain {
-            if let Some(EmailAdded { email }) = item.as_any().downcast_ref::<EmailAdded>() {
+            if let Some(EmailAdded { email }) = (item as &dyn Any).downcast_ref::<EmailAdded>() {
                 return email.clone();
             }
         }
@@ -126,13 +99,33 @@ impl SignupProcess<Completed> {
     }
 }
 
-impl<S: SignupState + AsAny> std::fmt::Debug for SignupProcess<S> {
+// helper for reconstructing SignupProcess from dyn parameters.
+impl<S: SignupState + Clone + 'static> TryFrom<(Id, Vec<Rc<dyn SignupState>>, Rc<dyn SignupState>)>
+    for SignupProcess<S>
+{
+    type Error = ();
+    fn try_from(
+        value: (Id, Vec<Rc<dyn SignupState>>, Rc<dyn SignupState>),
+    ) -> Result<Self, Self::Error> {
+        if let Some(state) = (&value.2 as &dyn Any).downcast_ref::<S>() {
+            Ok(Self {
+                id: value.0,
+                chain: value.1,
+                state: state.clone(),
+            })
+        } else {
+            Err(())
+        }
+    }
+}
+
+impl<S: SignupState + 'static> std::fmt::Debug for SignupProcess<S> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if let Some(initialized) = self.state.as_any().downcast_ref::<Initialized>() {
+        if let Some(initialized) = (&self.state as &dyn Any).downcast_ref::<Initialized>() {
             write!(f, "Initialized: {:?}", initialized)
-        } else if let Some(email_added) = self.state.as_any().downcast_ref::<EmailAdded>() {
+        } else if let Some(email_added) = (&self.state as &dyn Any).downcast_ref::<EmailAdded>() {
             write!(f, "EmailAdded: {:?}", email_added)
-        } else if let Some(completed) = self.state.as_any().downcast_ref::<Completed>() {
+        } else if let Some(completed) = (&self.state as &dyn Any).downcast_ref::<Completed>() {
             write!(f, "Completed: {:?}", completed)
         } else {
             unreachable!();

@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{any::Any, rc::Rc};
 
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -12,7 +12,7 @@ use crate::{
         signup_process::Record as SignupProcessRecord, user::Record as UserRecord,
     },
     domain::entity::{
-        signup_process::{AsAny, Completed, EmailAdded, Initialized, SignupState},
+        signup_process::{Completed, EmailAdded, Initialized, SignupState},
         user,
     },
 };
@@ -39,15 +39,16 @@ pub struct SignupProcess {
 
 impl From<Rc<dyn SignupState>> for SignupProcessState {
     fn from(value: Rc<dyn SignupState>) -> Self {
-        if let Some(Initialized { username }) = value.as_any().downcast_ref::<Initialized>() {
+        if let Some(Initialized { username }) = (&value as &dyn Any).downcast_ref::<Initialized>() {
             SignupProcessState::Initialized {
                 username: username.clone().to_string(),
             }
-        } else if let Some(EmailAdded { email }) = value.as_any().downcast_ref::<EmailAdded>() {
+        } else if let Some(EmailAdded { email }) = (&value as &dyn Any).downcast_ref::<EmailAdded>()
+        {
             SignupProcessState::EmailAdded {
                 email: email.clone().to_string(),
             }
-        } else if let Some(Completed) = value.as_any().downcast_ref::<Completed>() {
+        } else if let Some(Completed) = (&value as &dyn Any).downcast_ref::<Completed>() {
             SignupProcessState::Completed
         } else {
             // there are no more states defined.

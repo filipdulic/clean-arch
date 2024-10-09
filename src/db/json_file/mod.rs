@@ -48,10 +48,12 @@ mod tests {
     }
 
     mod signup_process {
+        use std::any::Any;
+
         use super::*;
         use crate::domain::entity::{
             signup_process::{
-                AsAny, Completed, EmailAdded, Id as SignupProcessId, Initialized, SignupProcess,
+                Completed, EmailAdded, Id as SignupProcessId, Initialized, SignupProcess,
             },
             user::{Email, UserName},
         };
@@ -81,9 +83,7 @@ mod tests {
             let db_record = (&db as &dyn SignupProcessRepo)
                 .get(signup_process_id)
                 .unwrap();
-            assert!(db_record
-                .state
-                .as_any()
+            assert!((&db_record.state as &dyn Any)
                 .downcast_ref::<Initialized>()
                 .is_some());
             assert_eq!(db_record, record);
@@ -91,13 +91,13 @@ mod tests {
             let signup_process = SignupProcess::<Initialized>::try_from(db_record)
                 .expect("Failed to convert from Record.")
                 .add_email(Email::new("test@email.com".to_string()));
-            assert!(signup_process
-                .state()
-                .as_any()
+            assert!((&signup_process.state() as &dyn Any)
                 .downcast_ref::<EmailAdded>()
                 .is_some());
             let record = SignupProcessRecord::from(signup_process.clone());
-            assert!(record.state.as_any().downcast_ref::<EmailAdded>().is_some());
+            assert!((&record.state as &dyn Any)
+                .downcast_ref::<EmailAdded>()
+                .is_some());
             (&db as &dyn SignupProcessRepo)
                 .save(record.clone())
                 .unwrap();
@@ -105,9 +105,7 @@ mod tests {
                 .get(signup_process_id)
                 .unwrap();
             // assert loaded state is the changed EmailAdded state.
-            assert!(db_record
-                .state
-                .as_any()
+            assert!((&db_record.state as &dyn Any)
                 .downcast_ref::<EmailAdded>()
                 .is_some());
             assert_eq!(db_record, record);
@@ -116,13 +114,13 @@ mod tests {
                 .expect("Failed to convert from Record.")
                 .complete();
             // assert state has changed to Completed.
-            assert!(signup_process
-                .state()
-                .as_any()
+            assert!((&signup_process.state() as &dyn Any)
                 .downcast_ref::<Completed>()
                 .is_some());
             let record = SignupProcessRecord::from(signup_process.clone());
-            assert!(record.state.as_any().downcast_ref::<Completed>().is_some());
+            assert!((&record.state as &dyn Any)
+                .downcast_ref::<Completed>()
+                .is_some());
 
             (&db as &dyn SignupProcessRepo)
                 .save(record.clone())
@@ -132,9 +130,7 @@ mod tests {
                 .get(signup_process_id)
                 .unwrap();
             // assert the loaded state is the new Completed state.
-            assert!(db_record
-                .state
-                .as_any()
+            assert!((&db_record.state as &dyn Any)
                 .downcast_ref::<Completed>()
                 .is_some());
             assert_eq!(db_record, record);
