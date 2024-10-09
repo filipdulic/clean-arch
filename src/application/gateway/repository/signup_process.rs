@@ -54,15 +54,9 @@ impl<S: SignupState + Clone> TryFrom<Record> for SignupProcess<S> {
     // can an fail if S state is not present in record.chain
     type Error = GetError;
     fn try_from(value: Record) -> Result<Self, GetError> {
-        if let Some(state) = value.state.as_any().downcast_ref::<S>() {
-            Ok(SignupProcess::from_params(
-                value.id,
-                value.chain,
-                Rc::new(state.clone()),
-            ))
-        } else {
-            Err(GetError::NotFound)
-        }
+        (value.id, value.chain, value.state)
+            .try_into()
+            .map_err(|_| GetError::NotFound)
     }
 }
 

@@ -12,20 +12,35 @@ pub type Id = value_object::Id<SignupProcessValue>;
 
 pub trait SignupState: Any {
     // ## Required for downcasting
+    // implemented via impl_signup_state macro
     fn as_any(&self) -> &dyn Any;
-    // ## Provided for convenience
-    fn from_dyn(state: Rc<dyn SignupState>) -> Self
-    where
-        Self: Sized + Clone,
-    {
-        if let Some(downcast_state) = state.as_any().downcast_ref::<Self>() {
-            downcast_state.clone()
-        } else {
-            // Rc<dyn Something> can always be downcast to Something
-            unreachable!()
-        }
-    }
 }
+
+macro_rules! impl_signup_state {
+    ($($state:ident),+) => {
+        $(
+        impl SignupState for $state {
+            fn as_any(&self) -> &dyn Any {
+                self
+            }
+        }
+        )+
+    };
+}
+
+#[derive(Debug, Clone)]
+pub struct Initialized {
+    pub username: UserName,
+}
+#[derive(Debug, Clone)]
+pub struct EmailAdded {
+    pub email: Email,
+}
+#[derive(Debug, Clone)]
+pub struct Completed;
+
+impl_signup_state!(Initialized, EmailAdded, Completed);
+
 #[derive(Debug, Clone)]
 pub struct SignupProcess<S: SignupState> {
     id: Id,
@@ -54,42 +69,27 @@ impl<S: SignupState> SignupProcess<S> {
     pub fn state(&self) -> Rc<dyn SignupState + 'static> {
         self.state.clone()
     }
-    pub fn from_params(id: Id, chain: Vec<Rc<dyn SignupState>>, state: Rc<dyn SignupState>) -> Self
-    where
-        S: Clone,
-    {
-        Self {
-            id,
-            chain,
-            state: Rc::new(SignupState::from_dyn(state)),
+}
+
+// helper for reconstructing SignupProcess from dyn parameters.
+impl<S: SignupState + Clone> TryFrom<(Id, Vec<Rc<dyn SignupState>>, Rc<dyn SignupState>)>
+    for SignupProcess<S>
+{
+    type Error = ();
+    fn try_from(
+        value: (Id, Vec<Rc<dyn SignupState>>, Rc<dyn SignupState>),
+    ) -> Result<Self, Self::Error> {
+        if let Some(state) = value.2.as_any().downcast_ref::<S>() {
+            Ok(Self {
+                id: value.0,
+                chain: value.1,
+                state: Rc::new(state.clone()),
+            })
+        } else {
+            Err(())
         }
     }
 }
-
-#[derive(Debug, Clone)]
-pub struct Initialized {
-    pub username: UserName,
-}
-#[derive(Debug, Clone)]
-pub struct EmailAdded {
-    pub email: Email,
-}
-#[derive(Debug, Clone)]
-pub struct Completed;
-
-macro_rules! impl_signup_state {
-    ($($state:ident),+) => {
-        $(
-        impl SignupState for $state {
-            fn as_any(&self) -> &dyn Any {
-                self
-            }
-        }
-        )+
-    };
-}
-
-impl_signup_state!(Initialized, EmailAdded, Completed);
 
 impl SignupProcess<Initialized> {
     pub fn new(id: Id, username: UserName) -> Self {
