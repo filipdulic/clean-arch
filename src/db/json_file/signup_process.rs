@@ -38,7 +38,7 @@ impl Repo for JsonFile {
                     GetError::Connection
                 }
             })?;
-        let record = models::SignupProcess::try_into(model).unwrap();
+        let record = model.into();
         Ok(record)
     }
     fn delete(&self, id: Id) -> Result<(), DeleteError> {

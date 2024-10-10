@@ -1,21 +1,20 @@
-use std::{any::Any, rc::Rc};
-
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::{
-    adapter::model::app::{
-        signup_process::ParseIdError as SignupProcessParseIdError,
-        user::ParseIdError as UserParseIdError,
-    },
+    adapter::model::app::user::ParseIdError as UserParseIdError,
     application::gateway::repository::{
         signup_process::Record as SignupProcessRecord, user::Record as UserRecord,
     },
-    domain::entity::{
-        signup_process::{Completed, EmailAdded, Initialized, SignupState},
-        user,
-    },
+    domain::entity::{signup_process::SignupStateEnum as EntitySignupStateEnum, user},
 };
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum SignupStateEnum {
+    Initialized { username: String },
+    EmailAdded { username: String, email: String },
+    Completed { username: String, email: String },
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct User {
@@ -25,81 +24,60 @@ pub struct User {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub enum SignupProcessState {
-    Initialized { username: String },
-    EmailAdded { email: String },
-    Completed,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
 pub struct SignupProcess {
     pub signup_process_id: String,
-    pub chain: Vec<SignupProcessState>,
+    pub chain: Vec<SignupStateEnum>,
 }
 
-impl From<Rc<dyn SignupState>> for SignupProcessState {
-    fn from(value: Rc<dyn SignupState>) -> Self {
-        if let Some(Initialized { username }) = (&value as &dyn Any).downcast_ref::<Initialized>() {
-            SignupProcessState::Initialized {
-                username: username.clone().to_string(),
-            }
-        } else if let Some(EmailAdded { email }) = (&value as &dyn Any).downcast_ref::<EmailAdded>()
-        {
-            SignupProcessState::EmailAdded {
-                email: email.clone().to_string(),
-            }
-        } else if let Some(Completed) = (&value as &dyn Any).downcast_ref::<Completed>() {
-            SignupProcessState::Completed
-        } else {
-            // there are no more states defined.
-            unreachable!();
-        }
-    }
-}
-
-impl From<SignupProcessState> for Rc<dyn SignupState> {
-    fn from(value: SignupProcessState) -> Rc<dyn SignupState> {
+impl From<EntitySignupStateEnum> for SignupStateEnum {
+    fn from(value: EntitySignupStateEnum) -> SignupStateEnum {
         match value {
-            SignupProcessState::Initialized { username } => Rc::new(Initialized {
-                username: user::UserName::new(username),
-            }),
-            SignupProcessState::EmailAdded { email } => Rc::new(EmailAdded {
-                email: user::Email::new(email),
-            }),
-            SignupProcessState::Completed => Rc::new(Completed),
+            EntitySignupStateEnum::Initialized { username } => SignupStateEnum::Initialized {
+                username: username.to_string(),
+            },
+            EntitySignupStateEnum::EmailAdded { username, email } => SignupStateEnum::EmailAdded {
+                username: username.to_string(),
+                email: email.to_string(),
+            },
+            EntitySignupStateEnum::Completed { username, email } => SignupStateEnum::Completed {
+                username: username.to_string(),
+                email: email.to_string(),
+            },
         }
     }
 }
-
-impl TryInto<SignupProcessRecord> for SignupProcess {
-    type Error = SignupProcessParseIdError;
-    fn try_into(self) -> Result<SignupProcessRecord, Self::Error> {
-        let id = self
-            .signup_process_id
-            .parse::<Uuid>()
-            .map_err(|_| SignupProcessParseIdError)?;
-        let mut chain: Vec<Rc<dyn SignupState>> = Vec::new();
-        for state in self.chain {
-            chain.push(state.into());
-        }
-        let state = chain.last().unwrap().clone();
-        Ok(SignupProcessRecord {
-            id: id.into(),
-            chain,
-            state,
-        })
-    }
-}
-
 impl From<SignupProcessRecord> for SignupProcess {
     fn from(value: SignupProcessRecord) -> SignupProcess {
-        let mut chain: Vec<SignupProcessState> = Vec::new();
-        for state in value.chain {
-            chain.push(state.into());
-        }
         SignupProcess {
             signup_process_id: value.id.to_string(),
-            chain,
+            chain: value.chain.iter().map(|v| v.clone().into()).collect(),
+        }
+    }
+}
+
+impl From<&SignupStateEnum> for EntitySignupStateEnum {
+    fn from(value: &SignupStateEnum) -> EntitySignupStateEnum {
+        match value {
+            SignupStateEnum::Initialized { username } => EntitySignupStateEnum::Initialized {
+                username: user::UserName::new(username.clone()),
+            },
+            SignupStateEnum::EmailAdded { username, email } => EntitySignupStateEnum::EmailAdded {
+                username: user::UserName::new(username.clone()),
+                email: user::Email::new(email.clone()),
+            },
+            SignupStateEnum::Completed { username, email } => EntitySignupStateEnum::Completed {
+                username: user::UserName::new(username.clone()),
+                email: user::Email::new(email.clone()),
+            },
+        }
+    }
+}
+
+impl From<SignupProcess> for SignupProcessRecord {
+    fn from(value: SignupProcess) -> SignupProcessRecord {
+        SignupProcessRecord {
+            id: value.signup_process_id.parse::<Uuid>().unwrap().into(),
+            chain: value.chain.iter().map(|v| v.into()).collect(),
         }
     }
 }

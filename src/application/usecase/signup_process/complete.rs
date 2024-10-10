@@ -4,7 +4,7 @@ use crate::{
         user,
     },
     domain::entity::{
-        signup_process::{EmailAdded, Id, SignupProcess},
+        signup_process::{EmailAdded, Id, SignupProcess, SignupStateEnum},
         user::User,
     },
 };
@@ -65,15 +65,21 @@ where
     pub fn exec(&self, req: Request) -> Result<Response, Error> {
         log::debug!("SignupProcess Completed: {:?}", req);
         let record = self.repo.get(req.id).map_err(|_| Error::Repo)?;
-        let sp: SignupProcess<EmailAdded> = record.try_into().map_err(|err| (err, req.id))?;
-        let sp = sp.complete();
-        self.repo.save(sp.clone().into())?;
-        let user: User = sp.into();
-        self.user_repo
-            .save(user.clone().into())
-            .map_err(|_| Error::Repo)?;
-        Ok(Response {
-            record: user.into(),
-        })
+        if let SignupStateEnum::EmailAdded { .. } = record.chain.last().unwrap() {
+            let process: SignupProcess<EmailAdded> = record.into();
+            let process = process.complete();
+            self.repo
+                .save(process.clone().into())
+                .map_err(|_| Error::NotFound(req.id))?;
+            let user: User = process.into();
+            self.user_repo
+                .save(user.clone().into())
+                .map_err(|_| Error::Repo)?;
+            Ok(Response {
+                record: user.into(),
+            })
+        } else {
+            Err(Error::Repo)
+        }
     }
 }

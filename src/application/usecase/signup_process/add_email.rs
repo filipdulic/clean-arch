@@ -1,7 +1,7 @@
 use crate::{
     application::gateway::repository::signup_process::{GetError, Repo, SaveError},
     domain::entity::{
-        signup_process::{Id, Initialized, SignupProcess},
+        signup_process::{Id, Initialized, SignupProcess, SignupStateEnum},
         user::Email,
     },
 };
@@ -62,10 +62,15 @@ where
         log::debug!("SignupProcess Email Added: {:?}", req);
         let email = Email::new(req.email);
         let record = self.repo.get(req.id).map_err(|err| (err, req.id))?;
-        // NOTE: error hadnling trick with adding id to error.
-        let sp: SignupProcess<Initialized> = record.try_into().map_err(|err| (err, req.id))?;
-        let sp = sp.add_email(email);
-        self.repo.save(sp.into())?;
-        Ok(Response { id: req.id })
+        if let SignupStateEnum::Initialized { username } = record.chain.last().unwrap() {
+            let process = SignupProcess::<Initialized>::new(req.id, username.clone());
+            let process = process.add_email(email);
+            self.repo
+                .save(process.into())
+                .map_err(|_| Error::NotFound(req.id))?;
+            Ok(Response { id: req.id })
+        } else {
+            Err(Error::Repo)
+        }
     }
 }

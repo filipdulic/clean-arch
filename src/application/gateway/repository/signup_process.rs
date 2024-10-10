@@ -1,5 +1,3 @@
-use std::{any::Any, rc::Rc};
-
 use crate::domain::entity::signup_process::*;
 use thiserror::Error;
 
@@ -25,11 +23,10 @@ pub enum DeleteError {
     Connection,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Record {
     pub id: Id,
-    pub chain: Vec<Rc<dyn SignupState>>,
-    pub state: Rc<dyn SignupState + 'static>,
+    pub chain: Vec<SignupStateEnum>,
 }
 
 impl PartialEq for Record {
@@ -40,23 +37,18 @@ impl PartialEq for Record {
 
 impl Eq for Record {}
 
-impl<S: SignupState + Clone + 'static> From<SignupProcess<S>> for Record {
+impl<S: SignupStateTrait> From<SignupProcess<S>> for Record {
     fn from(process: SignupProcess<S>) -> Self {
         Record {
             id: process.id(),
             chain: process.chain().clone(),
-            state: process.state(),
         }
     }
 }
 
-impl<S: SignupState + Clone + 'static> TryFrom<Record> for SignupProcess<S> {
-    // can an fail if S state is not present in record.chain
-    type Error = GetError;
-    fn try_from(value: Record) -> Result<Self, GetError> {
-        (value.id, value.chain, value.state)
-            .try_into()
-            .map_err(|_| GetError::NotFound)
+impl<S: SignupStateTrait> From<Record> for SignupProcess<S> {
+    fn from(value: Record) -> Self {
+        (value.id, value.chain).into()
     }
 }
 
@@ -65,18 +57,4 @@ pub trait Repo: Send + Sync {
     fn save(&self, record: Record) -> Result<(), SaveError>;
     fn get(&self, id: Id) -> Result<Record, GetError>;
     fn delete(&self, id: Id) -> Result<(), DeleteError>;
-}
-
-impl std::fmt::Debug for Record {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if let Some(initialized) = (&self.state as &dyn Any).downcast_ref::<Initialized>() {
-            write!(f, "Initialized: {:?}", initialized)
-        } else if let Some(email_added) = (&self.state as &dyn Any).downcast_ref::<EmailAdded>() {
-            write!(f, "EmailAdded: {:?}", email_added)
-        } else if let Some(completed) = (&self.state as &dyn Any).downcast_ref::<Completed>() {
-            write!(f, "Completed: {:?}", completed)
-        } else {
-            unreachable!();
-        }
-    }
 }
