@@ -61,12 +61,15 @@ where
     pub fn exec(&self, req: Request) -> Result<Response, Error> {
         log::debug!("SignupProcess Email Added: {:?}", req);
         let email = Email::new(req.email);
-        let record = self.repo.get(req.id).map_err(|err| (err, req.id))?;
-        if let SignupStateEnum::Initialized { username } = record.chain.last().unwrap() {
+        let record = self
+            .repo
+            .get_latest_state(req.id)
+            .map_err(|err| (err, req.id))?;
+        if let SignupStateEnum::Initialized { username } = record.state {
             let process = SignupProcess::<Initialized>::new(req.id, username.clone());
             let process = process.add_email(email);
             self.repo
-                .save(process.into())
+                .save_latest_state(process.into())
                 .map_err(|_| Error::NotFound(req.id))?;
             Ok(Response { id: req.id })
         } else {
