@@ -54,7 +54,8 @@ impl<S: SignupStateTrait> From<Record> for SignupProcess<S> {
 
 // TODO: make it async
 pub trait Repo: Send + Sync {
-    fn save(&self, record: Record) -> Result<(), SaveError>;
-    fn get(&self, id: Id) -> Result<Record, GetError>;
+    fn save_latest_state(&self, record: Record) -> Result<(), SaveError>;
+    fn get_latest_state(&self, id: Id) -> Result<Record, GetError>;
+    fn get_state_chain(&self, id: Id) -> Result<Vec<Record>, GetError>;
     fn delete(&self, id: Id) -> Result<(), DeleteError>;
 }

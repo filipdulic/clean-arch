@@ -64,12 +64,15 @@ where
     /// Create a new user with the given name.
     pub fn exec(&self, req: Request) -> Result<Response, Error> {
         log::debug!("SignupProcess Completed: {:?}", req);
-        let record = self.repo.get(req.id).map_err(|_| Error::Repo)?;
+        let record = self
+            .repo
+            .get_latest_state(req.id)
+            .map_err(|_| Error::Repo)?;
         if let SignupStateEnum::EmailAdded { .. } = record.chain.last().unwrap() {
             let process: SignupProcess<EmailAdded> = record.into();
             let process = process.complete();
             self.repo
-                .save(process.clone().into())
+                .save_latest_state(process.clone().into())
                 .map_err(|_| Error::NotFound(req.id))?;
             let user: User = process.into();
             self.user_repo
