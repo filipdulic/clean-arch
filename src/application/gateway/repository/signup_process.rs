@@ -46,9 +46,12 @@ impl<S: SignupStateTrait> From<SignupProcess<S>> for Record {
     }
 }
 
-impl<S: SignupStateTrait> From<Record> for SignupProcess<S> {
-    fn from(value: Record) -> Self {
-        (value.id, value.state).into()
+impl<S: SignupStateTrait + Clone + 'static> TryFrom<Record> for SignupProcess<S> {
+    type Error = GetError;
+    fn try_from(value: Record) -> Result<Self, Self::Error> {
+        (value.id, value.state)
+            .try_into()
+            .map_err(|_| GetError::NotFound)
     }
 }
 

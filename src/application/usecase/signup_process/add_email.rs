@@ -1,7 +1,7 @@
 use crate::{
     application::gateway::repository::signup_process::{GetError, Repo, SaveError},
     domain::entity::{
-        signup_process::{Id, Initialized, SignupProcess, SignupStateEnum},
+        signup_process::{Id, Initialized, SignupProcess},
         user::Email,
     },
 };
@@ -65,15 +65,11 @@ where
             .repo
             .get_latest_state(req.id)
             .map_err(|err| (err, req.id))?;
-        if let SignupStateEnum::Initialized { username } = record.state {
-            let process = SignupProcess::<Initialized>::new(req.id, username.clone());
-            let process = process.add_email(email);
-            self.repo
-                .save_latest_state(process.into())
-                .map_err(|_| Error::NotFound(req.id))?;
-            Ok(Response { id: req.id })
-        } else {
-            Err(Error::Repo)
-        }
+        let process: SignupProcess<Initialized> = record.try_into().map_err(|err| (err, req.id))?;
+        let process = process.add_email(email);
+        self.repo
+            .save_latest_state(process.into())
+            .map_err(|_| Error::NotFound(req.id))?;
+        Ok(Response { id: req.id })
     }
 }
