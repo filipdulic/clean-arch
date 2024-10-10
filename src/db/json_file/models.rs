@@ -26,7 +26,7 @@ pub struct User {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SignupProcess {
     pub signup_process_id: String,
-    pub chain: Vec<SignupStateEnum>,
+    pub state: SignupStateEnum,
 }
 
 impl From<EntitySignupStateEnum> for SignupStateEnum {
@@ -50,13 +50,13 @@ impl From<SignupProcessRecord> for SignupProcess {
     fn from(value: SignupProcessRecord) -> SignupProcess {
         SignupProcess {
             signup_process_id: value.id.to_string(),
-            chain: value.chain.iter().map(|v| v.clone().into()).collect(),
+            state: value.state.into(),
         }
     }
 }
 
-impl From<&SignupStateEnum> for EntitySignupStateEnum {
-    fn from(value: &SignupStateEnum) -> EntitySignupStateEnum {
+impl From<SignupStateEnum> for EntitySignupStateEnum {
+    fn from(value: SignupStateEnum) -> EntitySignupStateEnum {
         match value {
             SignupStateEnum::Initialized { username } => EntitySignupStateEnum::Initialized {
                 username: user::UserName::new(username.clone()),
@@ -77,7 +77,7 @@ impl From<SignupProcess> for SignupProcessRecord {
     fn from(value: SignupProcess) -> SignupProcessRecord {
         SignupProcessRecord {
             id: value.signup_process_id.parse::<Uuid>().unwrap().into(),
-            chain: value.chain.iter().map(|v| v.into()).collect(),
+            state: value.state.into(),
         }
     }
 }

@@ -26,7 +26,7 @@ pub enum DeleteError {
 #[derive(Debug, Clone)]
 pub struct Record {
     pub id: Id,
-    pub chain: Vec<SignupStateEnum>,
+    pub state: SignupStateEnum,
 }
 
 impl PartialEq for Record {
@@ -41,14 +41,14 @@ impl<S: SignupStateTrait> From<SignupProcess<S>> for Record {
     fn from(process: SignupProcess<S>) -> Self {
         Record {
             id: process.id(),
-            chain: process.chain().clone(),
+            state: process.state().clone(),
         }
     }
 }
 
 impl<S: SignupStateTrait> From<Record> for SignupProcess<S> {
     fn from(value: Record) -> Self {
-        (value.id, value.chain).into()
+        (value.id, value.state).into()
     }
 }
 

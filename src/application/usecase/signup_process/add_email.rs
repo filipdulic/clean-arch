@@ -65,7 +65,7 @@ where
             .repo
             .get_latest_state(req.id)
             .map_err(|err| (err, req.id))?;
-        if let SignupStateEnum::Initialized { username } = record.chain.last().unwrap() {
+        if let SignupStateEnum::Initialized { username } = record.state {
             let process = SignupProcess::<Initialized>::new(req.id, username.clone());
             let process = process.add_email(email);
             self.repo

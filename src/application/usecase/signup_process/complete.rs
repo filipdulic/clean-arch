@@ -68,7 +68,7 @@ where
             .repo
             .get_latest_state(req.id)
             .map_err(|_| Error::Repo)?;
-        if let SignupStateEnum::EmailAdded { .. } = record.chain.last().unwrap() {
+        if let SignupStateEnum::EmailAdded { .. } = record.state {
             let process: SignupProcess<EmailAdded> = record.into();
             let process = process.complete();
             self.repo

@@ -38,7 +38,7 @@ impl SignupStateTrait for Completed {}
 #[derive(Debug, Clone)]
 pub struct SignupProcess<S: SignupStateTrait> {
     id: Id,
-    chain: Vec<SignupStateEnum>,
+    state: SignupStateEnum,
     _phantom: std::marker::PhantomData<S>,
 }
 
@@ -46,12 +46,9 @@ impl<S: SignupStateTrait> SignupProcess<S> {
     pub const fn id(&self) -> Id {
         self.id
     }
-    pub const fn chain(&self) -> &Vec<SignupStateEnum> {
-        &self.chain
-    }
     pub fn state(&self) -> &SignupStateEnum {
         // chain is never empty
-        self.chain.last().unwrap()
+        &self.state
     }
 }
 
@@ -60,12 +57,12 @@ impl SignupProcess<Initialized> {
         let state = SignupStateEnum::Initialized { username };
         Self {
             id,
-            chain: vec![state],
+            state,
             _phantom: std::marker::PhantomData,
         }
     }
     pub fn username(&self) -> UserName {
-        if let SignupStateEnum::Initialized { username } = &self.chain[0] {
+        if let SignupStateEnum::Initialized { username } = &self.state {
             username.clone()
         } else {
             unreachable!()
@@ -77,11 +74,9 @@ impl SignupProcess<Initialized> {
             username: self.username(),
             email,
         };
-        let mut chain = self.chain;
-        chain.push(state);
         SignupProcess {
             id: self.id,
-            chain,
+            state,
             _phantom: std::marker::PhantomData,
         }
     }
@@ -89,14 +84,14 @@ impl SignupProcess<Initialized> {
 
 impl SignupProcess<EmailAdded> {
     pub fn username(&self) -> UserName {
-        if let SignupStateEnum::EmailAdded { username, .. } = &self.chain[1] {
+        if let SignupStateEnum::EmailAdded { username, .. } = &self.state {
             username.clone()
         } else {
             unreachable!()
         }
     }
     pub fn email(&self) -> Email {
-        if let SignupStateEnum::EmailAdded { email, .. } = &self.chain[1] {
+        if let SignupStateEnum::EmailAdded { email, .. } = &self.state {
             email.clone()
         } else {
             unreachable!()
@@ -107,11 +102,9 @@ impl SignupProcess<EmailAdded> {
             username: self.username(),
             email: self.email(),
         };
-        let mut chain = self.chain;
-        chain.push(state);
         SignupProcess {
             id: self.id,
-            chain,
+            state,
             _phantom: std::marker::PhantomData,
         }
     }
@@ -119,14 +112,14 @@ impl SignupProcess<EmailAdded> {
 
 impl SignupProcess<Completed> {
     pub fn username(&self) -> UserName {
-        if let SignupStateEnum::Completed { username, .. } = &self.chain[2] {
+        if let SignupStateEnum::Completed { username, .. } = &self.state {
             username.clone()
         } else {
             unreachable!()
         }
     }
     pub fn email(&self) -> Email {
-        if let SignupStateEnum::Completed { email, .. } = &self.chain[2] {
+        if let SignupStateEnum::Completed { email, .. } = &self.state {
             email.clone()
         } else {
             unreachable!()
@@ -135,12 +128,12 @@ impl SignupProcess<Completed> {
 }
 
 // helper for reconstructing SignupProcess from dyn parameters.
-impl<S: SignupStateTrait> From<(Id, Vec<SignupStateEnum>)> for SignupProcess<S> {
-    fn from(value: (Id, Vec<SignupStateEnum>)) -> Self {
-        let (id, chain) = value;
+impl<S: SignupStateTrait> From<(Id, SignupStateEnum)> for SignupProcess<S> {
+    fn from(value: (Id, SignupStateEnum)) -> Self {
+        let (id, state) = value;
         Self {
             id,
-            chain,
+            state,
             _phantom: std::marker::PhantomData,
         }
     }
