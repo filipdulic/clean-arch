@@ -138,3 +138,38 @@ impl<S: SignupStateTrait> From<(Id, SignupStateEnum)> for SignupProcess<S> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // Test that a new SignupProcess<Initialized> is created with the correct id and username
+    // fn test_signup_process_initialization() {}
+
+    // Test that the id method returns the correct id for a SignupProcess<Initialized>
+    // fn test_signup_process_id() {}
+
+    // Test that the state method returns the correct state for a SignupProcess<Initialized>
+    // fn test_signup_process_state() {}
+
+    // Test that adding an email transitions the state from Initialized to EmailAdded
+    // fn test_signup_process_add_email() {}
+
+    // Test that the username method returns the correct username for a SignupProcess<Completed>
+    // fn test_signup_process_username() {}
+
+    // Test that the email method returns the correct email for a SignupProcess<Completed>
+    // fn test_signup_process_email() {}
+
+    // Test that the SignupProcess<EmailAdded> transitions to Completed correctly
+    // fn test_signup_process_transition_to_completed() {}
+
+    // Test that the SignupProcess<Completed> maintains its state correctly
+    // fn test_signup_process_completed_state() {}
+
+    // Test that the SignupProcess<Initialized> cannot transition directly to Completed
+    // fn test_signup_process_invalid_transition() {}
+
+    // Test that the SignupProcess<EmailAdded> cannot transition back to Initialized
+    // fn test_signup_process_invalid_reverse_transition() {}
+}
