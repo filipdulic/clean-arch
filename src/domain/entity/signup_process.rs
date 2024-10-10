@@ -1,5 +1,3 @@
-use std::{any::Any, rc::Rc};
-
 use crate::domain::{
     entity::user::{Email, UserName},
     value_object,
@@ -10,7 +8,13 @@ pub struct SignupProcessValue;
 
 pub type Id = value_object::Id<SignupProcessValue>;
 
-pub trait SignupState {}
+#[derive(Debug, Clone)]
+pub enum SignupStateEnum {
+    Initialized { username: UserName },
+    EmailAdded { username: UserName, email: Email },
+    Completed { username: UserName, email: Email },
+}
+pub trait SignupStateTrait {}
 
 #[derive(Debug, Clone)]
 pub struct Initialized {
@@ -18,117 +22,126 @@ pub struct Initialized {
 }
 #[derive(Debug, Clone)]
 pub struct EmailAdded {
+    pub username: UserName,
     pub email: Email,
 }
 #[derive(Debug, Clone)]
-pub struct Completed;
-
-impl SignupState for Initialized {}
-impl SignupState for EmailAdded {}
-impl SignupState for Completed {}
-
-#[derive(Clone)]
-pub struct SignupProcess<S: SignupState> {
-    id: Id,
-    chain: Vec<Rc<dyn SignupState>>,
-    state: S,
+pub struct Completed {
+    pub username: UserName,
+    pub email: Email,
 }
 
-impl<S: SignupState + Clone + 'static> SignupProcess<S> {
+impl SignupStateTrait for Initialized {}
+impl SignupStateTrait for EmailAdded {}
+impl SignupStateTrait for Completed {}
+
+#[derive(Debug, Clone)]
+pub struct SignupProcess<S: SignupStateTrait> {
+    id: Id,
+    chain: Vec<SignupStateEnum>,
+    _phantom: std::marker::PhantomData<S>,
+}
+
+impl<S: SignupStateTrait> SignupProcess<S> {
     pub const fn id(&self) -> Id {
         self.id
     }
-    pub const fn chain(&self) -> &Vec<Rc<dyn SignupState>> {
+    pub const fn chain(&self) -> &Vec<SignupStateEnum> {
         &self.chain
     }
-    fn transition<N: SignupState + 'static + Clone>(self, next: N) -> SignupProcess<N> {
-        let mut chain = self.chain;
-        chain.push(Rc::new(next.clone()));
-
-        SignupProcess {
-            id: self.id,
-            chain,
-            state: next,
-        }
-    }
-    pub fn state(&self) -> Rc<dyn SignupState> {
-        Rc::new(self.state.clone())
+    pub fn state(&self) -> &SignupStateEnum {
+        // chain is never empty
+        self.chain.last().unwrap()
     }
 }
 
 impl SignupProcess<Initialized> {
     pub fn new(id: Id, username: UserName) -> Self {
-        let state = Initialized { username };
+        let state = SignupStateEnum::Initialized { username };
         Self {
             id,
-            chain: vec![Rc::new(state.clone())],
-            state,
+            chain: vec![state],
+            _phantom: std::marker::PhantomData,
+        }
+    }
+    pub fn username(&self) -> UserName {
+        if let SignupStateEnum::Initialized { username } = &self.chain[0] {
+            username.clone()
+        } else {
+            unreachable!()
         }
     }
 
     pub fn add_email(self, email: Email) -> SignupProcess<EmailAdded> {
-        self.transition(EmailAdded { email })
+        let state = SignupStateEnum::EmailAdded {
+            username: self.username(),
+            email,
+        };
+        let mut chain = self.chain;
+        chain.push(state);
+        SignupProcess {
+            id: self.id,
+            chain,
+            _phantom: std::marker::PhantomData,
+        }
     }
 }
 
 impl SignupProcess<EmailAdded> {
+    pub fn username(&self) -> UserName {
+        if let SignupStateEnum::EmailAdded { username, .. } = &self.chain[1] {
+            username.clone()
+        } else {
+            unreachable!()
+        }
+    }
+    pub fn email(&self) -> Email {
+        if let SignupStateEnum::EmailAdded { email, .. } = &self.chain[1] {
+            email.clone()
+        } else {
+            unreachable!()
+        }
+    }
     pub fn complete(self) -> SignupProcess<Completed> {
-        self.transition(Completed)
+        let state = SignupStateEnum::Completed {
+            username: self.username(),
+            email: self.email(),
+        };
+        let mut chain = self.chain;
+        chain.push(state);
+        SignupProcess {
+            id: self.id,
+            chain,
+            _phantom: std::marker::PhantomData,
+        }
     }
 }
 
 impl SignupProcess<Completed> {
-    // completed contians at least one Initialized state in it's chain thus the unreachable.
     pub fn username(&self) -> UserName {
-        for item in &self.chain {
-            if let Some(Initialized { username }) = (item as &dyn Any).downcast_ref::<Initialized>()
-            {
-                return username.clone();
-            }
+        if let SignupStateEnum::Completed { username, .. } = &self.chain[2] {
+            username.clone()
+        } else {
+            unreachable!()
         }
-        unreachable!();
     }
-    // completed contians at least one EmailAdded state in it's chain thus the unreachable.
     pub fn email(&self) -> Email {
-        for item in &self.chain {
-            if let Some(EmailAdded { email }) = (item as &dyn Any).downcast_ref::<EmailAdded>() {
-                return email.clone();
-            }
+        if let SignupStateEnum::Completed { email, .. } = &self.chain[2] {
+            email.clone()
+        } else {
+            unreachable!()
         }
-        unreachable!();
     }
 }
 
 // helper for reconstructing SignupProcess from dyn parameters.
-impl<S: SignupState + Clone + 'static> TryFrom<(Id, Vec<Rc<dyn SignupState>>, Rc<dyn SignupState>)>
-    for SignupProcess<S>
-{
-    type Error = ();
-    fn try_from(
-        value: (Id, Vec<Rc<dyn SignupState>>, Rc<dyn SignupState>),
-    ) -> Result<Self, Self::Error> {
-        if let Some(state) = (&value.2 as &dyn Any).downcast_ref::<S>() {
-            Ok(Self {
-                id: value.0,
-                chain: value.1,
-                state: state.clone(),
-            })
-        } else {
-            Err(())
-        }
-    }
-}
-
-impl<S: SignupState + 'static> std::fmt::Debug for SignupProcess<S> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if let Some(initialized) = (&self.state as &dyn Any).downcast_ref::<Initialized>() {
-            write!(f, "Initialized: {:?}", initialized)
-        } else if let Some(email_added) = (&self.state as &dyn Any).downcast_ref::<EmailAdded>() {
-            write!(f, "EmailAdded: {:?}", email_added)
-        } else if let Some(completed) = (&self.state as &dyn Any).downcast_ref::<Completed>() {
-            write!(f, "Completed: {:?}", completed)
-        } else {
-            unreachable!();
+impl<S: SignupStateTrait> From<(Id, Vec<SignupStateEnum>)> for SignupProcess<S> {
+    fn from(value: (Id, Vec<SignupStateEnum>)) -> Self {
+        let (id, chain) = value;
+        Self {
+            id,
+            chain,
+            _phantom: std::marker::PhantomData,
         }
     }
 }
