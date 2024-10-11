@@ -15,7 +15,7 @@ pub enum SignupStateEnum {
     Completed { username: UserName, email: Email },
 }
 
-pub trait SignupStateTrait: TryFrom<SignupStateEnum> {}
+pub trait SignupStateTrait: TryFrom<SignupStateEnum> + Into<SignupStateEnum> + Clone {}
 
 #[derive(Debug, Clone)]
 pub struct Initialized {
@@ -30,6 +30,59 @@ pub struct EmailAdded {
 pub struct Completed {
     pub username: UserName,
     pub email: Email,
+}
+
+impl SignupStateTrait for Initialized {}
+impl SignupStateTrait for EmailAdded {}
+impl SignupStateTrait for Completed {}
+
+#[derive(Debug, Clone)]
+pub struct SignupProcess<S: SignupStateTrait> {
+    id: Id,
+    state: S,
+}
+
+impl<S: SignupStateTrait> SignupProcess<S> {
+    pub const fn id(&self) -> Id {
+        self.id
+    }
+    pub fn state(&self) -> &S {
+        // chain is never empty
+        &self.state
+    }
+}
+
+impl SignupProcess<Initialized> {
+    pub fn new(id: Id, username: UserName) -> Self {
+        let state = Initialized { username };
+        Self { id, state }
+    }
+    pub fn add_email(self, email: Email) -> SignupProcess<EmailAdded> {
+        let state = EmailAdded {
+            username: self.state.username,
+            email,
+        };
+        SignupProcess { id: self.id, state }
+    }
+}
+
+impl SignupProcess<EmailAdded> {
+    pub fn complete(self) -> SignupProcess<Completed> {
+        let state = Completed {
+            username: self.state.username,
+            email: self.state.email,
+        };
+        SignupProcess { id: self.id, state }
+    }
+}
+
+impl SignupProcess<Completed> {
+    pub fn username(&self) -> UserName {
+        self.state.username.clone()
+    }
+    pub fn email(&self) -> Email {
+        self.state.email.clone()
+    }
 }
 
 impl TryFrom<SignupStateEnum> for Initialized {
@@ -59,115 +112,42 @@ impl TryFrom<SignupStateEnum> for Completed {
         }
     }
 }
-impl SignupStateTrait for Initialized {}
-impl SignupStateTrait for EmailAdded {}
-impl SignupStateTrait for Completed {}
 
-#[derive(Debug, Clone)]
-pub struct SignupProcess<S: SignupStateTrait> {
-    id: Id,
-    state: SignupStateEnum,
-    _phantom: std::marker::PhantomData<S>,
-}
-
-impl<S: SignupStateTrait> SignupProcess<S> {
-    pub const fn id(&self) -> Id {
-        self.id
-    }
-    pub fn state(&self) -> &SignupStateEnum {
-        // chain is never empty
-        &self.state
-    }
-}
-
-impl SignupProcess<Initialized> {
-    pub fn new(id: Id, username: UserName) -> Self {
-        let state = SignupStateEnum::Initialized { username };
-        Self {
-            id,
-            state,
-            _phantom: std::marker::PhantomData,
-        }
-    }
-    pub fn username(&self) -> UserName {
-        if let SignupStateEnum::Initialized { username } = &self.state {
-            username.clone()
-        } else {
-            unreachable!()
-        }
-    }
-
-    pub fn add_email(self, email: Email) -> SignupProcess<EmailAdded> {
-        let state = SignupStateEnum::EmailAdded {
-            username: self.username(),
-            email,
-        };
-        SignupProcess {
-            id: self.id,
-            state,
-            _phantom: std::marker::PhantomData,
-        }
-    }
-}
-
-impl SignupProcess<EmailAdded> {
-    pub fn username(&self) -> UserName {
-        if let SignupStateEnum::EmailAdded { username, .. } = &self.state {
-            username.clone()
-        } else {
-            unreachable!()
-        }
-    }
-    pub fn email(&self) -> Email {
-        if let SignupStateEnum::EmailAdded { email, .. } = &self.state {
-            email.clone()
-        } else {
-            unreachable!()
-        }
-    }
-    pub fn complete(self) -> SignupProcess<Completed> {
-        let state = SignupStateEnum::Completed {
-            username: self.username(),
-            email: self.email(),
-        };
-        SignupProcess {
-            id: self.id,
-            state,
-            _phantom: std::marker::PhantomData,
-        }
-    }
-}
-
-impl SignupProcess<Completed> {
-    pub fn username(&self) -> UserName {
-        if let SignupStateEnum::Completed { username, .. } = &self.state {
-            username.clone()
-        } else {
-            unreachable!()
-        }
-    }
-    pub fn email(&self) -> Email {
-        if let SignupStateEnum::Completed { email, .. } = &self.state {
-            email.clone()
-        } else {
-            unreachable!()
-        }
-    }
-}
-
-//helper for reconstructing SignupProcess from dyn parameters.
-// FIXIT: This is a workaround for the lack of GATs in Rust.
 impl<S: SignupStateTrait> TryFrom<(Id, SignupStateEnum)> for SignupProcess<S> {
     type Error = ();
     fn try_from(value: (Id, SignupStateEnum)) -> Result<Self, ()> {
         let (id, state) = value;
         match S::try_from(state.clone()) {
-            Ok(_) => Ok(Self {
-                id,
-                state,
-                _phantom: std::marker::PhantomData,
-            }),
+            Ok(state) => Ok(Self { id, state }),
             Err(_) => Err(()),
+        }
+    }
+}
+
+#[allow(clippy::from_over_into)]
+impl Into<SignupStateEnum> for Initialized {
+    fn into(self) -> SignupStateEnum {
+        SignupStateEnum::Initialized {
+            username: self.username,
+        }
+    }
+}
+
+#[allow(clippy::from_over_into)]
+impl Into<SignupStateEnum> for EmailAdded {
+    fn into(self) -> SignupStateEnum {
+        SignupStateEnum::EmailAdded {
+            username: self.username,
+            email: self.email,
+        }
+    }
+}
+#[allow(clippy::from_over_into)]
+impl Into<SignupStateEnum> for Completed {
+    fn into(self) -> SignupStateEnum {
+        SignupStateEnum::Completed {
+            username: self.username,
+            email: self.email,
         }
     }
 }
@@ -197,8 +177,11 @@ mod tests {
         // Test that a new SignupProcess<Initialized> is created with the correct id and username
         fn test_signup_process_initialization(id: Id, username: UserName) {
             let signup_process = SignupProcess::new(id, username.clone());
-            assert_eq!(signup_process.id(), id);
-            assert_eq!(signup_process.username().to_string(), username.to_string());
+            assert_eq!(signup_process.id, id);
+            assert_eq!(
+                signup_process.state.username.to_string(),
+                username.to_string()
+            );
         }
         #[rstest]
         // Test that the state method returns the correct state for a SignupProcess<Initialized>
@@ -210,7 +193,7 @@ mod tests {
                 SignupProcess::<Initialized>::try_from((id, initialized_state)).unwrap();
             if let SignupStateEnum::Initialized {
                 username: state_username,
-            } = signup_process.state()
+            } = signup_process.state.into()
             {
                 assert_eq!(state_username.to_string(), username.to_string());
             } else {
@@ -229,7 +212,7 @@ mod tests {
             if let SignupStateEnum::EmailAdded {
                 username: state_username,
                 email: state_email,
-            } = signup_process.state()
+            } = signup_process.state.into()
             {
                 assert_eq!(state_username.to_string(), username.to_string());
                 assert_eq!(state_email.to_string(), email.to_string());
@@ -283,7 +266,7 @@ mod tests {
             if let SignupStateEnum::Completed {
                 username: _,
                 email: _,
-            } = signup_process.state()
+            } = signup_process.state.into()
             {
             } else {
                 unreachable!("Invalid state");
@@ -305,10 +288,13 @@ mod tests {
             if let SignupStateEnum::Completed {
                 username: _,
                 email: _,
-            } = signup_process.state()
+            } = signup_process.state.clone().into()
             {
-                assert_eq!(signup_process.username().to_string(), username.to_string());
-                assert_eq!(signup_process.email().to_string(), email.to_string());
+                assert_eq!(
+                    signup_process.state.username.to_string(),
+                    username.to_string()
+                );
+                assert_eq!(signup_process.state.email.to_string(), email.to_string());
             } else {
                 unreachable!("Invalid state");
             }

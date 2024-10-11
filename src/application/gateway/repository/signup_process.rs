@@ -41,7 +41,7 @@ impl<S: SignupStateTrait> From<SignupProcess<S>> for Record {
     fn from(process: SignupProcess<S>) -> Self {
         Record {
             id: process.id(),
-            state: process.state().clone(),
+            state: process.state().clone().into(),
         }
     }
 }

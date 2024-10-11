@@ -19,11 +19,11 @@ use crate::adapter::{api::Api, db::Db, presenter::cli::Presenter};
 
 #[derive(Subcommand)]
 pub enum Command {
-    #[clap(about = "Initialize signup process")]
+    #[clap(about = "Initialize signup process", alias = "sp-init")]
     InitializeSignupProcess { username: String },
-    #[clap(about = "Add Email to signup process")]
+    #[clap(about = "Add Email to signup process", alias = "sp-email")]
     AddEmailToSignupProcess { id: String, email: String },
-    #[clap(about = "Complete signup process")]
+    #[clap(about = "Complete signup process", alias = "sp-complete")]
     CompleteSignupProcess { id: String },
     #[clap(about = "List all users")]
     ListUsers,
