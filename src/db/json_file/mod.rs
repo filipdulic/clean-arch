@@ -81,7 +81,8 @@ mod tests {
                 .unwrap();
             assert_eq!(db_record, record);
             // EmailAdded step
-            let signup_process = SignupProcess::<Initialized>::from(db_record)
+            let signup_process = SignupProcess::<Initialized>::try_from(db_record)
+                .unwrap()
                 .add_email(Email::new("test@email.com".to_string()));
             let record = SignupProcessRecord::from(signup_process.clone());
             (&db as &dyn SignupProcessRepo)
@@ -93,7 +94,9 @@ mod tests {
             // assert loaded state is the changed EmailAdded state.
             assert_eq!(db_record, record);
             // Completed step
-            let signup_process = SignupProcess::<EmailAdded>::from(db_record).complete();
+            let signup_process = SignupProcess::<EmailAdded>::try_from(db_record)
+                .unwrap()
+                .complete();
             // assert state has changed to Completed.
             let record = SignupProcessRecord::from(signup_process.clone());
 
