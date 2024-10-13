@@ -50,53 +50,71 @@ mod tests {
     mod signup_process {
         use super::*;
         use crate::domain::entity::{
-            signup_process::{EmailAdded, Id as SignupProcessId, Initialized, SignupProcess},
-            user::{Email, UserName},
+            signup_process::{EmailVerified, Id as SignupProcessId, Initialized, SignupProcess},
+            user::{Email, Password, UserName},
         };
+        use rstest::*;
         use tempfile::TempDir;
 
-        #[test]
-        fn save_load_signup_process() {
-            use crate::application::{
-                gateway::repository::signup_process::{
-                    Record as SignupProcessRecord, Repo as SignupProcessRepo,
-                },
-                identifier::NewId,
+        #[fixture]
+        pub fn username() -> UserName {
+            UserName::new("test_username".to_string())
+        }
+        #[fixture]
+        pub fn password() -> Password {
+            Password::new("test_pass".to_string())
+        }
+        #[fixture]
+        pub fn id() -> SignupProcessId {
+            SignupProcessId::new(Uuid::new_v4())
+        }
+        #[fixture]
+        pub fn email() -> Email {
+            Email::new("test_email".to_string())
+        }
+        #[rstest]
+        #[rstest]
+        fn save_load_signup_process(
+            email: Email,
+            id: SignupProcessId,
+            username: UserName,
+            password: Password,
+        ) {
+            use crate::application::gateway::repository::signup_process::{
+                Record as SignupProcessRecord, Repo as SignupProcessRepo,
             };
             // -- setup --
             init();
             let test_dir = TempDir::new().unwrap();
             log::debug!("Test directory: {}", test_dir.path().display());
             let db = JsonFile::try_new(&test_dir).unwrap();
-            let signup_process_id = (&db as &dyn NewId<SignupProcessId>).new_id().unwrap();
-            let username = UserName::new("test username".to_string());
-            let signup_process = SignupProcess::new(signup_process_id, username);
+            let signup_process = SignupProcess::new(id, email);
             let record = SignupProcessRecord::from(signup_process.clone());
             (&db as &dyn SignupProcessRepo)
                 .save_latest_state(record.clone())
                 .unwrap();
 
             let db_record = (&db as &dyn SignupProcessRepo)
-                .get_latest_state(signup_process_id)
+                .get_latest_state(id)
                 .unwrap();
             assert_eq!(db_record, record);
-            // EmailAdded step
+
             let signup_process = SignupProcess::<Initialized>::try_from(db_record)
                 .unwrap()
-                .add_email(Email::new("test@email.com".to_string()));
+                .verify_email();
             let record = SignupProcessRecord::from(signup_process.clone());
             (&db as &dyn SignupProcessRepo)
                 .save_latest_state(record.clone())
                 .unwrap();
             let db_record = (&db as &dyn SignupProcessRepo)
-                .get_latest_state(signup_process_id)
+                .get_latest_state(id)
                 .unwrap();
-            // assert loaded state is the changed EmailAdded state.
+            // assert loaded state is the changed EmailVerified state.
             assert_eq!(db_record, record);
             // Completed step
-            let signup_process = SignupProcess::<EmailAdded>::try_from(db_record)
+            let signup_process = SignupProcess::<EmailVerified>::try_from(db_record)
                 .unwrap()
-                .complete();
+                .complete(username, password);
             // assert state has changed to Completed.
             let record = SignupProcessRecord::from(signup_process.clone());
 
@@ -105,7 +123,7 @@ mod tests {
                 .unwrap();
 
             let db_record = (&db as &dyn SignupProcessRepo)
-                .get_latest_state(signup_process_id)
+                .get_latest_state(id)
                 .unwrap();
             // assert the loaded state is the new Completed state.
             assert_eq!(db_record, record);

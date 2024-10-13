@@ -35,8 +35,9 @@ where
     pub fn update_user(
         &self,
         id: &str,
-        username: impl Into<String>,
         email: impl Into<String>,
+        username: impl Into<String>,
+        password: impl Into<String>,
     ) -> <P as Present<app::update::Result>>::ViewModel {
         let res = id
             .parse::<app::Id>()
@@ -44,8 +45,9 @@ where
             .and_then(|id| {
                 let req = app::update::Request {
                     id: id.into(),
-                    username: username.into(),
                     email: email.into(),
+                    username: username.into(),
+                    password: password.into(),
                 };
                 log::debug!("Updating User with id: '{}'", id);
                 let interactor = uc::update::Update::new(self.db);

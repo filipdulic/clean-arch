@@ -4,8 +4,8 @@ use crate::{
         user,
     },
     domain::entity::{
-        signup_process::{EmailAdded, Id, SignupProcess, SignupStateEnum},
-        user::User,
+        signup_process::{EmailVerified, Id, SignupProcess, SignupStateEnum},
+        user::{Password, User, UserName},
     },
 };
 
@@ -14,6 +14,8 @@ use thiserror::Error;
 #[derive(Debug)]
 pub struct Request {
     pub id: Id,
+    pub username: String,
+    pub password: String,
 }
 
 #[derive(Debug)]
@@ -68,10 +70,12 @@ where
             .repo
             .get_latest_state(req.id)
             .map_err(|_| Error::Repo)?;
-        if let SignupStateEnum::EmailAdded { .. } = record.state {
-            let process: SignupProcess<EmailAdded> =
+        if let SignupStateEnum::EmailVerified { .. } = record.state {
+            let process: SignupProcess<EmailVerified> =
                 record.try_into().map_err(|err| (err, req.id))?;
-            let process = process.complete();
+            let username = UserName::new(req.username);
+            let password = Password::new(req.password);
+            let process = process.complete(username, password);
             self.repo
                 .save_latest_state(process.clone().into())
                 .map_err(|_| Error::NotFound(req.id))?;
