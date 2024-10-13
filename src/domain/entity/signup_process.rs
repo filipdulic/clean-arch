@@ -45,7 +45,7 @@ pub struct VerificationTimedOut {
     pub email: Email,
 }
 #[derive(Debug, Clone)]
-struct CompletionTimedOut {
+pub struct CompletionTimedOut {
     pub email: Email,
 }
 #[derive(Debug, Clone)]
@@ -82,7 +82,7 @@ impl<S: SignupStateTrait> SignupProcess<S> {
 
 impl SignupProcess<Initialized> {
     pub fn new(id: Id, email: Email) -> Self {
-        let state = Initialized { email: email };
+        let state = Initialized { email };
         Self { id, state }
     }
     pub fn verify_email(self) -> SignupProcess<EmailVerified> {
@@ -158,7 +158,7 @@ impl TryFrom<SignupStateEnum> for Initialized {
     type Error = ();
     fn try_from(value: SignupStateEnum) -> Result<Self, Self::Error> {
         match value {
-            SignupStateEnum::Initialized { email } => Ok(Self { email: email }),
+            SignupStateEnum::Initialized { email } => Ok(Self { email }),
             _ => Err(()),
         }
     }
@@ -167,7 +167,7 @@ impl TryFrom<SignupStateEnum> for EmailVerified {
     type Error = ();
     fn try_from(value: SignupStateEnum) -> Result<Self, Self::Error> {
         match value {
-            SignupStateEnum::EmailVerified { email } => Ok(Self { email: email }),
+            SignupStateEnum::EmailVerified { email } => Ok(Self { email }),
             _ => Err(()),
         }
     }
@@ -176,7 +176,7 @@ impl TryFrom<SignupStateEnum> for VerificationTimedOut {
     type Error = ();
     fn try_from(value: SignupStateEnum) -> Result<Self, Self::Error> {
         match value {
-            SignupStateEnum::VerificationTimedOut { email } => Ok(Self { email: email }),
+            SignupStateEnum::VerificationTimedOut { email } => Ok(Self { email }),
             _ => Err(()),
         }
     }
@@ -185,7 +185,7 @@ impl TryFrom<SignupStateEnum> for CompletionTimedOut {
     type Error = ();
     fn try_from(value: SignupStateEnum) -> Result<Self, Self::Error> {
         match value {
-            SignupStateEnum::CompletionTimedOut { email } => Ok(Self { email: email }),
+            SignupStateEnum::CompletionTimedOut { email } => Ok(Self { email }),
             _ => Err(()),
         }
     }
@@ -200,7 +200,7 @@ impl TryFrom<SignupStateEnum> for Completed {
                 email,
                 password,
             } => Ok(Self {
-                email: email,
+                email,
                 username,
                 password,
             }),

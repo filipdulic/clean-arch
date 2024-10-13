@@ -37,11 +37,14 @@ impl User {
     pub const fn id(&self) -> Id {
         self.id
     }
+    pub const fn email(&self) -> &Email {
+        &self.email
+    }
     pub const fn username(&self) -> &UserName {
         &self.username
     }
-    pub const fn email(&self) -> &Email {
-        &self.email
+    pub const fn password(&self) -> &Password {
+        &self.password
     }
 }
 
