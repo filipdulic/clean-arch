@@ -53,6 +53,9 @@ where
     G: NewId<Id>,
 {
     /// Create a new user with the given name.
+    /// TODO: add transaction, outbox pattern to send email.
+    /// when the user is created, send an email to the user.
+    /// with generated token.
     pub fn exec(&self, req: Request) -> Result<Response, Error> {
         log::debug!("SignupProcess Initialized: {:?}", req);
         let id = self.id_gen.new_id().map_err(|_| Error::NewId)?;
