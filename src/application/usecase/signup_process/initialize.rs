@@ -5,7 +5,7 @@ use crate::{
     },
     domain::entity::{
         signup_process::{Id, SignupProcess},
-        user::UserName,
+        user::Email,
     },
 };
 
@@ -13,7 +13,7 @@ use thiserror::Error;
 
 #[derive(Debug)]
 pub struct Request {
-    pub username: String,
+    pub email: String,
 }
 
 #[derive(Debug)]
@@ -56,8 +56,8 @@ where
     pub fn exec(&self, req: Request) -> Result<Response, Error> {
         log::debug!("SignupProcess Initialized: {:?}", req);
         let id = self.id_gen.new_id().map_err(|_| Error::NewId)?;
-        let username = UserName::new(req.username);
-        let signup_process = SignupProcess::new(id, username);
+        let email = Email::new(req.email);
+        let signup_process = SignupProcess::new(id, email);
         self.repo.save_latest_state(signup_process.into())?;
         Ok(Response { id })
     }

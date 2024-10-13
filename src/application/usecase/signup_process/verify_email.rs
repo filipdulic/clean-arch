@@ -1,9 +1,6 @@
 use crate::{
     application::gateway::repository::signup_process::{GetError, Repo, SaveError},
-    domain::entity::{
-        signup_process::{Id, Initialized, SignupProcess},
-        user::Email,
-    },
+    domain::entity::signup_process::{Id, Initialized, SignupProcess},
 };
 
 use thiserror::Error;
@@ -11,18 +8,17 @@ use thiserror::Error;
 #[derive(Debug)]
 pub struct Request {
     pub id: Id,
-    pub email: String,
 }
 
 #[derive(Debug)]
 pub struct Response {
     pub id: Id,
 }
-pub struct AddEmail<'r, R> {
+pub struct VerifyEmail<'r, R> {
     repo: &'r R,
 }
 
-impl<'r, R> AddEmail<'r, R> {
+impl<'r, R> VerifyEmail<'r, R> {
     pub fn new(repo: &'r R) -> Self {
         Self { repo }
     }
@@ -53,20 +49,19 @@ impl From<(GetError, Id)> for Error {
     }
 }
 
-impl<'r, R> AddEmail<'r, R>
+impl<'r, R> VerifyEmail<'r, R>
 where
     R: Repo,
 {
     /// Create a new user with the given name.
     pub fn exec(&self, req: Request) -> Result<Response, Error> {
-        log::debug!("SignupProcess Email Added: {:?}", req);
-        let email = Email::new(req.email);
+        log::debug!("SignupProcess Email Verified: {:?}", req);
         let record = self
             .repo
             .get_latest_state(req.id)
             .map_err(|err| (err, req.id))?;
         let process: SignupProcess<Initialized> = record.try_into().map_err(|err| (err, req.id))?;
-        let process = process.add_email(email);
+        let process = process.verify_email();
         self.repo
             .save_latest_state(process.into())
             .map_err(|_| Error::NotFound(req.id))?;

@@ -3,7 +3,10 @@ use crate::{
         gateway::repository::user::{GetError, Repo, SaveError},
         usecase::user::validate::{self, validate_user_properties, UserInvalidity},
     },
-    domain::entity::user::{Email, Id, User, UserName},
+    domain::{
+        entity::user::{Email, Id, User, UserName},
+        value_object::Password,
+    },
 };
 
 use thiserror::Error;
@@ -11,8 +14,9 @@ use thiserror::Error;
 #[derive(Debug)]
 pub struct Request {
     pub id: Id,
-    pub username: String,
     pub email: String,
+    pub username: String,
+    pub password: String,
 }
 
 pub type Response = ();
@@ -64,10 +68,12 @@ where
         validate_user_properties(&validate::Request {
             username: &req.username,
             email: &req.email,
+            password: &req.password,
         })?;
         let username = UserName::new(req.username);
         let email = Email::new(req.email);
-        let user = User::new(req.id, username, email);
+        let password = Password::new(req.password);
+        let user = User::new(req.id, email, username, password);
         let _ = self.repo.get(req.id).map_err(|err| (err, req.id))?;
         self.repo.save(user.into())?;
         Ok(())
