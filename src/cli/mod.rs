@@ -21,10 +21,14 @@ use crate::adapter::{api::Api, db::Db, presenter::cli::Presenter};
 pub enum Command {
     #[clap(about = "Initialize signup process", alias = "sp-init")]
     InitializeSignupProcess { username: String },
-    #[clap(about = "Add Email to signup process", alias = "sp-email")]
-    AddEmailToSignupProcess { id: String, email: String },
+    #[clap(about = "Verify Email of signup process", alias = "sp-verify")]
+    VerifyEmailOfSignupProcess { id: String },
     #[clap(about = "Complete signup process", alias = "sp-complete")]
-    CompleteSignupProcess { id: String },
+    CompleteSignupProcess {
+        id: String,
+        username: String,
+        password: String,
+    },
     #[clap(about = "List all users")]
     ListUsers,
     #[clap(about = "Read user")]
@@ -32,8 +36,9 @@ pub enum Command {
     #[clap(about = "Update user")]
     UpdateUser {
         id: String,
-        username: String,
         email: String,
+        username: String,
+        password: String,
     },
     #[clap(about = "Delete user")]
     DeleteUser { id: String },
@@ -50,12 +55,16 @@ where
             let res = app_api.initialize_signup_process(username);
             println!("{res}");
         }
-        Command::AddEmailToSignupProcess { id, email } => {
-            let res = app_api.add_email_to_signup_process(&id, email);
+        Command::VerifyEmailOfSignupProcess { id } => {
+            let res = app_api.verify_email_to_signup_process(&id);
             println!("{res}");
         }
-        Command::CompleteSignupProcess { id } => {
-            let res = app_api.complete_signup_process(&id);
+        Command::CompleteSignupProcess {
+            id,
+            username,
+            password,
+        } => {
+            let res = app_api.complete_signup_process(&id, username, password);
             println!("{res}");
         }
         Command::ListUsers => {
@@ -72,10 +81,11 @@ where
         }
         Command::UpdateUser {
             id,
-            username,
             email,
+            username,
+            password,
         } => {
-            let res = app_api.update_user(&id, username, email);
+            let res = app_api.update_user(&id, email, username, password);
             println!("{res}");
         }
     }
