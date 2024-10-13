@@ -100,7 +100,7 @@ impl SignupProcess<Initialized> {
 }
 
 impl SignupProcess<VerificationTimedOut> {
-    pub fn extend_timed_token(self) -> SignupProcess<Initialized> {
+    pub fn extend_verification_time(self) -> SignupProcess<Initialized> {
         let state = Initialized {
             email: self.state.email,
         };
@@ -130,7 +130,7 @@ impl SignupProcess<EmailVerified> {
 }
 
 impl SignupProcess<CompletionTimedOut> {
-    pub fn extend_timed_token(self) -> SignupProcess<EmailVerified> {
+    pub fn extend_completion_time(self) -> SignupProcess<EmailVerified> {
         let state = EmailVerified {
             email: self.state.email,
         };
