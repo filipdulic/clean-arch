@@ -54,7 +54,7 @@ where
         + Present<user::get_one::Result>
         + Present<user::get_all::Result>
         + Present<signup_process::initialize::Result>
-        + Present<signup_process::add_email::Result>
+        + Present<signup_process::verify_email::Result>
         + Present<signup_process::complete::Result>,
 {
     pub const fn new(db: Arc<D>, presenter: P) -> Self {
@@ -69,10 +69,12 @@ where
     pub fn update_user(
         &self,
         id: &str,
-        username: impl Into<String>,
         email: impl Into<String>,
+        username: impl Into<String>,
+        password: impl Into<String>,
     ) -> <P as Present<user::update::Result>>::ViewModel {
-        self.user_controller().update_user(id, username, email)
+        self.user_controller()
+            .update_user(id, email, username, password)
     }
     pub fn delete_user(&self, id: &str) -> <P as Present<user::delete::Result>>::ViewModel {
         self.user_controller().delete_user(id)
@@ -85,23 +87,25 @@ where
     }
     pub fn initialize_signup_process(
         &self,
-        username: impl Into<String>,
+        email: impl Into<String>,
     ) -> <P as Present<signup_process::initialize::Result>>::ViewModel {
         self.signup_process_controller()
-            .initialize_signup_process(username)
+            .initialize_signup_process(email)
     }
-    pub fn add_email_to_signup_process(
+    pub fn verify_email_to_signup_process(
         &self,
         id: &str,
-        email: impl Into<String>,
-    ) -> <P as Present<signup_process::add_email::Result>>::ViewModel {
+    ) -> <P as Present<signup_process::verify_email::Result>>::ViewModel {
         self.signup_process_controller()
-            .add_email_to_signup_process(id, email)
+            .verify_email_to_signup_process(id)
     }
     pub fn complete_signup_process(
         &self,
         id: &str,
+        username: impl Into<String>,
+        password: impl Into<String>,
     ) -> <P as Present<signup_process::complete::Result>>::ViewModel {
-        self.signup_process_controller().complete_signup_process(id)
+        self.signup_process_controller()
+            .complete_signup_process(id, username, password)
     }
 }

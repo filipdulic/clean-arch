@@ -57,9 +57,9 @@ pub mod initialize {
     pub type Result = result::Result<Response, Error>;
 }
 
-pub mod add_email {
+pub mod verify_email {
     use super::{Id, ParseIdError};
-    use crate::application::usecase::signup_process::add_email as uc;
+    use crate::application::usecase::signup_process::verify_email as uc;
     use std::result;
     use thiserror::Error;
 

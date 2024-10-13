@@ -16,9 +16,9 @@ impl Present<signup_process::initialize::Result> for Presenter {
     }
 }
 
-impl Present<signup_process::add_email::Result> for Presenter {
+impl Present<signup_process::verify_email::Result> for Presenter {
     type ViewModel = String;
-    fn present(&self, result: signup_process::add_email::Result) -> Self::ViewModel {
+    fn present(&self, result: signup_process::verify_email::Result) -> Self::ViewModel {
         match result {
             Ok(data) => format!("Added Email to SignupProcess(ID = {})", data.id),
             Err(err) => format!("Unable to Add Email to SignupProcess: {err}"),
