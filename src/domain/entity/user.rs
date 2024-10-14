@@ -1,6 +1,6 @@
 use crate::domain::value_object;
 
-use super::signup_process::{Completed, SignupProcess};
+use super::signup_process::{Completed, Idable, SignupProcess};
 
 pub type Id = value_object::Id<User>;
 pub type UserName = value_object::UserName<User>;
