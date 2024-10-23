@@ -68,6 +68,7 @@ pub_mod_uc!(
     completion_timed_out,
     extend_completion_time,
     delete,
-    complete;
+    complete,
+    get_state_chain;
     no_error: initialize
 );

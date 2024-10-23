@@ -92,6 +92,16 @@ impl Present<signup_process::complete::Result> for Presenter {
     }
 }
 
+impl Present<signup_process::get_state_chain::Result> for Presenter {
+    type ViewModel = String;
+    fn present(&self, result: signup_process::get_state_chain::Result) -> Self::ViewModel {
+        match result {
+            Ok(data) => format!("{:?}", data.state_chain),
+            Err(err) => format!("Unable to get state chain: {err}"),
+        }
+    }
+}
+
 impl Present<user::update::Result> for Presenter {
     type ViewModel = String;
     fn present(&self, result: user::update::Result) -> Self::ViewModel {

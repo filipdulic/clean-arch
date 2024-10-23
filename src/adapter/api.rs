@@ -60,7 +60,8 @@ where
         + Present<signup_process::verification_timed_out::Result>
         + Present<signup_process::delete::Result>
         + Present<signup_process::extend_completion_time::Result>
-        + Present<signup_process::complete::Result>,
+        + Present<signup_process::complete::Result>
+        + Present<signup_process::get_state_chain::Result>,
 {
     pub const fn new(db: Arc<D>, presenter: P) -> Self {
         Self { db, presenter }
@@ -143,5 +144,11 @@ where
     ) -> <P as Present<signup_process::complete::Result>>::ViewModel {
         self.signup_process_controller()
             .complete_signup_process(id, username, password)
+    }
+    pub fn get_state_chain_of_signup_process(
+        &self,
+        id: &str,
+    ) -> <P as Present<signup_process::get_state_chain::Result>>::ViewModel {
+        self.signup_process_controller().get_state_chain(id)
     }
 }
