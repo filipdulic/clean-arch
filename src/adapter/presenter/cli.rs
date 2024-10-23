@@ -26,6 +26,62 @@ impl Present<signup_process::verify_email::Result> for Presenter {
     }
 }
 
+impl Present<signup_process::verification_timed_out::Result> for Presenter {
+    type ViewModel = String;
+    fn present(&self, result: signup_process::verification_timed_out::Result) -> Self::ViewModel {
+        match result {
+            Ok(data) => format!("Verification Timed Out of SignupProcess(ID = {})", data.id),
+            Err(err) => format!("Unable to Verify Email of SignupProcess: {err}"),
+        }
+    }
+}
+
+impl Present<signup_process::completion_timed_out::Result> for Presenter {
+    type ViewModel = String;
+    fn present(&self, result: signup_process::completion_timed_out::Result) -> Self::ViewModel {
+        match result {
+            Ok(data) => format!("Completion Timed Out of SignupProcess(ID = {})", data.id),
+            Err(err) => format!("Unable to Verify Email of SignupProcess: {err}"),
+        }
+    }
+}
+
+impl Present<signup_process::delete::Result> for Presenter {
+    type ViewModel = String;
+    fn present(&self, result: signup_process::delete::Result) -> Self::ViewModel {
+        match result {
+            Ok(data) => format!("SignupProcess(ID = {}) scheduled for deletion", data.id),
+            Err(err) => format!("Unable to delete SignupProcess: {err}"),
+        }
+    }
+}
+
+impl Present<signup_process::extend_verification_time::Result> for Presenter {
+    type ViewModel = String;
+    fn present(&self, result: signup_process::extend_verification_time::Result) -> Self::ViewModel {
+        match result {
+            Ok(data) => format!(
+                "Verification time extended of SignupProcess(ID = {})",
+                data.id
+            ),
+            Err(err) => format!("Unable to extend verification time of SignupProcess: {err}"),
+        }
+    }
+}
+
+impl Present<signup_process::extend_completion_time::Result> for Presenter {
+    type ViewModel = String;
+    fn present(&self, result: signup_process::extend_completion_time::Result) -> Self::ViewModel {
+        match result {
+            Ok(data) => format!(
+                "Completion time extended of SignupProcess(ID = {})",
+                data.id
+            ),
+            Err(err) => format!("Unable to extend completion time of SignupProcess: {err}"),
+        }
+    }
+}
+
 impl Present<signup_process::complete::Result> for Presenter {
     type ViewModel = String;
     fn present(&self, result: signup_process::complete::Result) -> Self::ViewModel {

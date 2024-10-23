@@ -21,6 +21,28 @@ use crate::adapter::{api::Api, db::Db, presenter::cli::Presenter};
 pub enum Command {
     #[clap(about = "Initialize signup process", alias = "sp-init")]
     InitializeSignupProcess { username: String },
+    #[clap(
+        about = "Signup process verification timed out",
+        alias = "sp-verify-timeout"
+    )]
+    SignupProcessVerificationTimedOut { id: String },
+    #[clap(
+        about = "Signup process completion timed out",
+        alias = "sp-complete-timeout"
+    )]
+    SignupProcessCompletionTimedOut { id: String },
+    #[clap(
+        about = "Extend verification time of signup process",
+        alias = "sp-extend-verify"
+    )]
+    ExtendVerificationTimeOfSignupProcess { id: String },
+    #[clap(
+        about = "Extend completion time of signup process",
+        alias = "sp-extend-complete"
+    )]
+    ExtendCompletionTimeOfSignupProcess { id: String },
+    #[clap(about = "Delete signup process", alias = "sp-delete")]
+    DeleteSignupProcess { id: String },
     #[clap(about = "Verify Email of signup process", alias = "sp-verify")]
     VerifyEmailOfSignupProcess { id: String },
     #[clap(about = "Complete signup process", alias = "sp-complete")]
@@ -55,8 +77,28 @@ where
             let res = app_api.initialize_signup_process(username);
             println!("{res}");
         }
+        Command::SignupProcessVerificationTimedOut { id } => {
+            let res = app_api.verification_timed_out_of_signup_process(&id);
+            println!("{res}");
+        }
+        Command::SignupProcessCompletionTimedOut { id } => {
+            let res = app_api.completion_timed_out_of_signup_process(&id);
+            println!("{res}");
+        }
+        Command::ExtendVerificationTimeOfSignupProcess { id } => {
+            let res = app_api.extend_verification_time_of_signup_process(&id);
+            println!("{res}");
+        }
+        Command::ExtendCompletionTimeOfSignupProcess { id } => {
+            let res = app_api.extend_completion_time_of_signup_process(&id);
+            println!("{res}");
+        }
+        Command::DeleteSignupProcess { id } => {
+            let res = app_api.delete_signup_process(&id);
+            println!("{res}");
+        }
         Command::VerifyEmailOfSignupProcess { id } => {
-            let res = app_api.verify_email_to_signup_process(&id);
+            let res = app_api.verify_email_of_signup_process(&id);
             println!("{res}");
         }
         Command::CompleteSignupProcess {

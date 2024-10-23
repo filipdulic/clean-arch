@@ -11,7 +11,9 @@ pub struct Request {
 }
 
 #[derive(Debug)]
-pub struct Response {}
+pub struct Response {
+    pub id: Id,
+}
 pub struct VerificationTimedOut<'r, R> {
     repo: &'r R,
 }
@@ -62,6 +64,6 @@ where
         self.repo
             .save_latest_state(process.into())
             .map_err(|_| Error::NotFound(req.id))?;
-        Ok(Response {})
+        Ok(Response { id: req.id })
     }
 }

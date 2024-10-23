@@ -55,6 +55,11 @@ where
         + Present<user::get_all::Result>
         + Present<signup_process::initialize::Result>
         + Present<signup_process::verify_email::Result>
+        + Present<signup_process::extend_verification_time::Result>
+        + Present<signup_process::completion_timed_out::Result>
+        + Present<signup_process::verification_timed_out::Result>
+        + Present<signup_process::delete::Result>
+        + Present<signup_process::extend_completion_time::Result>
         + Present<signup_process::complete::Result>,
 {
     pub const fn new(db: Arc<D>, presenter: P) -> Self {
@@ -92,12 +97,43 @@ where
         self.signup_process_controller()
             .initialize_signup_process(email)
     }
-    pub fn verify_email_to_signup_process(
+    pub fn verify_email_of_signup_process(
         &self,
         id: &str,
     ) -> <P as Present<signup_process::verify_email::Result>>::ViewModel {
         self.signup_process_controller()
             .verify_email_to_signup_process(id)
+    }
+    pub fn verification_timed_out_of_signup_process(
+        &self,
+        id: &str,
+    ) -> <P as Present<signup_process::verification_timed_out::Result>>::ViewModel {
+        self.signup_process_controller().verification_timed_out(id)
+    }
+    pub fn extend_verification_time_of_signup_process(
+        &self,
+        id: &str,
+    ) -> <P as Present<signup_process::extend_verification_time::Result>>::ViewModel {
+        self.signup_process_controller()
+            .extend_verification_time(id)
+    }
+    pub fn completion_timed_out_of_signup_process(
+        &self,
+        id: &str,
+    ) -> <P as Present<signup_process::completion_timed_out::Result>>::ViewModel {
+        self.signup_process_controller().completion_timed_out(id)
+    }
+    pub fn extend_completion_time_of_signup_process(
+        &self,
+        id: &str,
+    ) -> <P as Present<signup_process::extend_completion_time::Result>>::ViewModel {
+        self.signup_process_controller().extend_completion_time(id)
+    }
+    pub fn delete_signup_process(
+        &self,
+        id: &str,
+    ) -> <P as Present<signup_process::delete::Result>>::ViewModel {
+        self.signup_process_controller().delete(id)
     }
     pub fn complete_signup_process(
         &self,
