@@ -1,50 +1,4 @@
-use std::{fmt, str::FromStr};
-
-use thiserror::Error;
-use uuid::Uuid;
-
-use crate::domain::entity::user;
-
-/// This is the public ID of an area of life.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct Id(Uuid);
-
-impl Id {
-    #[must_use]
-    pub const fn to_uuid(self) -> Uuid {
-        self.0
-    }
-}
-
-impl From<user::Id> for Id {
-    fn from(id: user::Id) -> Self {
-        Self(id.into())
-    }
-}
-
-impl From<Id> for user::Id {
-    fn from(id: Id) -> Self {
-        Self::new(id.0)
-    }
-}
-
-#[derive(Debug, Error)]
-#[error("Unable to parse area of life ID")]
-pub struct ParseIdError;
-
-impl FromStr for Id {
-    type Err = ParseIdError;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let id = s.parse().map_err(|_| ParseIdError)?;
-        Ok(Self(id))
-    }
-}
-
-impl fmt::Display for Id {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
+id_conversion!(user);
 
 pub mod update {
     use super::{Id, ParseIdError};
@@ -66,12 +20,6 @@ pub mod update {
         Repo,
         #[error(transparent)]
         Invalidity(#[from] UserInvalidity),
-    }
-
-    impl From<ParseIdError> for Error {
-        fn from(_: ParseIdError) -> Self {
-            Self::Id
-        }
     }
 
     impl From<uc::Error> for Error {
@@ -151,12 +99,6 @@ pub mod delete {
                 uc::Error::Repo => Error::Repo,
                 uc::Error::NotFound => Error::NotFound,
             }
-        }
-    }
-
-    impl From<ParseIdError> for Error {
-        fn from(_: ParseIdError) -> Self {
-            Self::Id
         }
     }
 }
