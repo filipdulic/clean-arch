@@ -93,7 +93,187 @@ pub mod verify_email {
     }
 }
 
-//todo add id error maping
+pub mod verification_timed_out {
+    use super::{Id, ParseIdError};
+    use crate::application::usecase::signup_process::verification_timed_out as uc;
+    use std::result;
+    use thiserror::Error;
+
+    pub type Request = uc::Request;
+    pub type Response = uc::Response;
+    pub type Result = result::Result<Response, Error>;
+
+    #[derive(Debug, Error)]
+    pub enum Error {
+        #[error("{}", ParseIdError)]
+        Id,
+        #[error("SignupProcess {0:?} not found")]
+        NotFound(Id),
+        #[error("{}", uc::Error::Repo)]
+        Repo,
+    }
+
+    impl From<uc::Error> for Error {
+        fn from(e: uc::Error) -> Self {
+            match e {
+                uc::Error::Repo => Error::Repo,
+                uc::Error::NotFound(id) => Error::NotFound(id.into()),
+            }
+        }
+    }
+
+    impl From<ParseIdError> for Error {
+        fn from(_: ParseIdError) -> Self {
+            Self::Id
+        }
+    }
+}
+
+pub mod extend_verification_time {
+    use super::{Id, ParseIdError};
+    use crate::application::usecase::signup_process::extend_verification_time as uc;
+    use std::result;
+    use thiserror::Error;
+
+    pub type Request = uc::Request;
+    pub type Response = uc::Response;
+    pub type Result = result::Result<Response, Error>;
+
+    #[derive(Debug, Error)]
+    pub enum Error {
+        #[error("{}", ParseIdError)]
+        Id,
+        #[error("SignupProcess {0:?} not found")]
+        NotFound(Id),
+        #[error("{}", uc::Error::Repo)]
+        Repo,
+    }
+
+    impl From<uc::Error> for Error {
+        fn from(e: uc::Error) -> Self {
+            match e {
+                uc::Error::Repo => Error::Repo,
+                uc::Error::NotFound(id) => Error::NotFound(id.into()),
+            }
+        }
+    }
+
+    impl From<ParseIdError> for Error {
+        fn from(_: ParseIdError) -> Self {
+            Self::Id
+        }
+    }
+}
+
+pub mod completion_timed_out {
+    use super::{Id, ParseIdError};
+    use crate::application::usecase::signup_process::completion_timed_out as uc;
+    use std::result;
+    use thiserror::Error;
+
+    pub type Request = uc::Request;
+    pub type Response = uc::Response;
+    pub type Result = result::Result<Response, Error>;
+
+    #[derive(Debug, Error)]
+    pub enum Error {
+        #[error("{}", ParseIdError)]
+        Id,
+        #[error("SignupProcess {0:?} not found")]
+        NotFound(Id),
+        #[error("{}", uc::Error::Repo)]
+        Repo,
+    }
+
+    impl From<uc::Error> for Error {
+        fn from(e: uc::Error) -> Self {
+            match e {
+                uc::Error::Repo => Error::Repo,
+                uc::Error::NotFound(id) => Error::NotFound(id.into()),
+            }
+        }
+    }
+
+    impl From<ParseIdError> for Error {
+        fn from(_: ParseIdError) -> Self {
+            Self::Id
+        }
+    }
+}
+
+pub mod extend_completion_time {
+    use super::{Id, ParseIdError};
+    use crate::application::usecase::signup_process::extend_completion_time as uc;
+    use std::result;
+    use thiserror::Error;
+
+    pub type Request = uc::Request;
+    pub type Response = uc::Response;
+    pub type Result = result::Result<Response, Error>;
+
+    #[derive(Debug, Error)]
+    pub enum Error {
+        #[error("{}", ParseIdError)]
+        Id,
+        #[error("SignupProcess {0:?} not found")]
+        NotFound(Id),
+        #[error("{}", uc::Error::Repo)]
+        Repo,
+    }
+
+    impl From<uc::Error> for Error {
+        fn from(e: uc::Error) -> Self {
+            match e {
+                uc::Error::Repo => Error::Repo,
+                uc::Error::NotFound(id) => Error::NotFound(id.into()),
+            }
+        }
+    }
+
+    impl From<ParseIdError> for Error {
+        fn from(_: ParseIdError) -> Self {
+            Self::Id
+        }
+    }
+}
+
+pub mod delete {
+    use super::{Id, ParseIdError};
+    use crate::application::usecase::signup_process::delete as uc;
+    use std::result;
+    use thiserror::Error;
+
+    pub type Request = uc::Request;
+    pub type Response = uc::Response;
+    pub type Result = result::Result<Response, Error>;
+
+    #[derive(Debug, Error)]
+    pub enum Error {
+        #[error("{}", ParseIdError)]
+        Id,
+        #[error("SignupProcess {0:?} not found")]
+        NotFound(Id),
+        #[error("{}", uc::Error::Repo)]
+        Repo,
+    }
+
+    impl From<uc::Error> for Error {
+        fn from(e: uc::Error) -> Self {
+            match e {
+                uc::Error::Repo => Error::Repo,
+                uc::Error::NotFound(id) => Error::NotFound(id.into()),
+            }
+        }
+    }
+
+    impl From<ParseIdError> for Error {
+        fn from(_: ParseIdError) -> Self {
+            Self::Id
+        }
+    }
+}
+
+// TODO: add id error maping
 pub mod complete {
     use super::{Id, ParseIdError};
     use crate::application::usecase::signup_process::complete as uc;

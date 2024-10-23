@@ -79,7 +79,12 @@ where
             self.repo
                 .save_latest_state(process.clone().into())
                 .map_err(|_| Error::NotFound(req.id))?;
-            let user: User = process.into();
+            let user: User = User::new(
+                crate::domain::entity::user::Id::new(req.id),
+                process.email(),
+                process.username(),
+                process.password(),
+            );
             self.user_repo
                 .save(user.clone().into())
                 .map_err(|_| Error::Repo)?;
