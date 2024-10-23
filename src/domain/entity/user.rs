@@ -1,7 +1,5 @@
 use crate::domain::value_object;
 
-use super::signup_process::{Completed, Idable, SignupProcess};
-
 pub type Id = value_object::Id<User>;
 pub type UserName = value_object::UserName<User>;
 pub type Email = value_object::Email<User>;
@@ -45,17 +43,6 @@ impl User {
     }
     pub const fn password(&self) -> &Password {
         &self.password
-    }
-}
-
-impl From<SignupProcess<Completed>> for User {
-    fn from(signup_process: SignupProcess<Completed>) -> Self {
-        Self {
-            id: Id::new(signup_process.id()),
-            email: signup_process.email(),
-            username: signup_process.username(),
-            password: signup_process.password(),
-        }
     }
 }
 

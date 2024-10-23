@@ -31,22 +31,6 @@ pub enum SignupStateEnum {
 }
 
 pub trait SignupStateTrait: TryFrom<SignupStateEnum> + Into<SignupStateEnum> + Clone {}
-
-pub trait Idable {
-    fn id(&self) -> Id;
-}
-pub trait Delatable: Idable {
-    fn delete(self) -> SignupProcess<ForDeletion>
-    where
-        Self: Sized,
-    {
-        SignupProcess {
-            id: self.id(),
-            state: ForDeletion {},
-        }
-    }
-}
-
 #[derive(Debug, Clone)]
 pub struct Initialized {
     pub email: Email,
@@ -87,13 +71,9 @@ pub struct SignupProcess<S: SignupStateTrait> {
 
 impl<S: SignupStateTrait> SignupProcess<S> {
     pub fn state(&self) -> &S {
-        // chain is never empty
         &self.state
     }
-}
-
-impl<S: SignupStateTrait> Idable for SignupProcess<S> {
-    fn id(&self) -> Id {
+    pub fn id(&self) -> Id {
         self.id
     }
 }
@@ -117,13 +97,15 @@ impl SignupProcess<Initialized> {
     }
 }
 
-impl Delatable for SignupProcess<VerificationTimedOut> {}
-
 impl SignupProcess<VerificationTimedOut> {
     pub fn extend_verification_time(self) -> SignupProcess<Initialized> {
         let state = Initialized {
             email: self.state.email,
         };
+        SignupProcess { id: self.id, state }
+    }
+    pub fn delete(self) -> SignupProcess<ForDeletion> {
+        let state = ForDeletion {};
         SignupProcess { id: self.id, state }
     }
 }
@@ -145,13 +127,15 @@ impl SignupProcess<EmailVerified> {
     }
 }
 
-impl Delatable for SignupProcess<CompletionTimedOut> {}
-
 impl SignupProcess<CompletionTimedOut> {
     pub fn extend_completion_time(self) -> SignupProcess<EmailVerified> {
         let state = EmailVerified {
             email: self.state.email,
         };
+        SignupProcess { id: self.id, state }
+    }
+    pub fn delete(self) -> SignupProcess<ForDeletion> {
+        let state = ForDeletion {};
         SignupProcess { id: self.id, state }
     }
 }
