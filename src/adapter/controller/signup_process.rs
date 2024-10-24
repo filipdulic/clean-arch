@@ -23,7 +23,8 @@ where
         + Present<app::extend_verification_time::Result>
         + Present<app::extend_completion_time::Result>
         + Present<app::verify_email::Result>
-        + Present<app::complete::Result>,
+        + Present<app::complete::Result>
+        + Present<app::get_state_chain::Result>,
 {
     pub const fn new(db: &'d D, presenter: &'p P) -> Self {
         Self { db, presenter }
@@ -149,6 +150,21 @@ where
                 };
                 log::debug!("Completing SignupProcess with id: '{}'", id);
                 let interactor = uc::complete::Complete::new(self.db, self.db);
+                interactor.exec(req).map_err(Into::into)
+            });
+        self.presenter.present(res)
+    }
+    pub fn get_state_chain(
+        &self,
+        id: &str,
+    ) -> <P as Present<app::get_state_chain::Result>>::ViewModel {
+        let res = id
+            .parse::<app::Id>()
+            .map_err(|_| app::get_state_chain::Error::Id)
+            .and_then(|id| {
+                let req = app::get_state_chain::Request { id: id.into() };
+                log::debug!("Getting state chain of SignupProcess with id: '{}'", id);
+                let interactor = uc::get_state_chain::GetStateChain::new(self.db);
                 interactor.exec(req).map_err(Into::into)
             });
         self.presenter.present(res)

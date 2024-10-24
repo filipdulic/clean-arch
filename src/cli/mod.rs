@@ -51,6 +51,8 @@ pub enum Command {
         username: String,
         password: String,
     },
+    #[clap(about = "Get state chain for signup process", alias = "sp-chain")]
+    GetStateChain { id: String },
     #[clap(about = "List all users")]
     ListUsers,
     #[clap(about = "Read user")]
@@ -107,6 +109,10 @@ where
             password,
         } => {
             let res = app_api.complete_signup_process(&id, username, password);
+            println!("{res}");
+        }
+        Command::GetStateChain { id } => {
+            let res = app_api.get_state_chain_of_signup_process(&id);
             println!("{res}");
         }
         Command::ListUsers => {
