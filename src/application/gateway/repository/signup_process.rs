@@ -1,8 +1,6 @@
 use crate::domain::entity::signup_process::*;
 use thiserror::Error;
 
-use super::AbstractRepo;
-
 #[derive(Debug, Error)]
 pub enum GetError {
     #[error("SignupProcess not found")]
@@ -58,7 +56,7 @@ impl<S: SignupStateTrait + Clone + 'static> TryFrom<Record> for SignupProcess<S>
 }
 
 // TODO: make it async
-pub trait Repo: Send + Sync + AbstractRepo {
+pub trait Repo: Send + Sync {
     fn save_latest_state(&self, record: Record) -> Result<(), SaveError>;
     fn get_latest_state(&self, id: Id) -> Result<Record, GetError>;
     fn get_state_chain(&self, id: Id) -> Result<Vec<Record>, GetError>;

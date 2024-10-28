@@ -19,8 +19,8 @@ pub struct Response {
     pub state_chain: Vec<Record>,
 }
 
-pub struct GetStateChain<'r, R> {
-    repo: &'r R,
+pub struct GetStateChain<'d, D> {
+    db: &'d D,
 }
 
 #[derive(Debug, Error)]
@@ -40,9 +40,9 @@ impl From<(GetError, Id)> for Error {
     }
 }
 
-impl<'r, R> Usecase<'r, R> for GetStateChain<'r, R>
+impl<'d, D> Usecase<'d, D> for GetStateChain<'d, D>
 where
-    R: Repo,
+    D: Repo,
 {
     type Request = Request;
     type Response = Response;
@@ -50,12 +50,12 @@ where
     fn exec(&self, req: Request) -> Result<Response, Error> {
         log::debug!("Get signup process state chain");
         let state_chain = self
-            .repo
+            .db
             .get_state_chain(req.id)
             .map_err(|err| (err, req.id))?;
         Ok(Self::Response { state_chain })
     }
-    fn new(repo: &'r R) -> Self {
-        Self { repo }
+    fn new(db: &'d D) -> Self {
+        Self { db }
     }
 }

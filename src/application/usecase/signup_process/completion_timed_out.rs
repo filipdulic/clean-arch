@@ -17,8 +17,8 @@ pub struct Request {
 pub struct Response {
     pub id: Id,
 }
-pub struct CompletionTimedOut<'r, R> {
-    repo: &'r R,
+pub struct CompletionTimedOut<'d, D> {
+    db: &'d D,
 }
 
 #[derive(Debug, Error)]
@@ -46,9 +46,9 @@ impl From<(GetError, Id)> for Error {
     }
 }
 
-impl<'r, R> Usecase<'r, R> for CompletionTimedOut<'r, R>
+impl<'d, D> Usecase<'d, D> for CompletionTimedOut<'d, D>
 where
-    R: Repo,
+    D: Repo,
 {
     type Request = Request;
     type Response = Response;
@@ -57,19 +57,19 @@ where
     fn exec(&self, req: Self::Request) -> Result<Self::Response, Self::Error> {
         log::debug!("SignupProcess verification timed out: {:?}", req);
         let record = self
-            .repo
+            .db
             .get_latest_state(req.id)
             .map_err(|err| (err, req.id))?;
         let process: SignupProcess<EmailVerified> =
             record.try_into().map_err(|err| (err, req.id))?;
         let process = process.completion_timed_out();
-        self.repo
+        self.db
             .save_latest_state(process.into())
-            .map_err(|_| Error::NotFound(req.id))?;
-        Ok(Response { id: req.id })
+            .map_err(|_| Self::Error::NotFound(req.id))?;
+        Ok(Self::Response { id: req.id })
     }
 
-    fn new(repo: &'r R) -> Self {
-        Self { repo }
+    fn new(db: &'d D) -> Self {
+        Self { db }
     }
 }

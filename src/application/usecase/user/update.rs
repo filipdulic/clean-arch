@@ -24,8 +24,8 @@ pub struct Request {
 
 pub type Response = ();
 
-pub struct Update<'r, R> {
-    repo: &'r R,
+pub struct Update<'d, D> {
+    db: &'d D,
 }
 
 #[derive(Debug, Error)]
@@ -55,9 +55,9 @@ impl From<(GetError, Id)> for Error {
     }
 }
 
-impl<'r, R> Usecase<'r, R> for Update<'r, R>
+impl<'d, D> Usecase<'d, D> for Update<'d, D>
 where
-    R: Repo,
+    D: Repo,
 {
     type Request = Request;
     type Response = Response;
@@ -74,12 +74,12 @@ where
         let email = Email::new(req.email);
         let password = Password::new(req.password);
         let user = User::new(req.id, email, username, password);
-        let _ = self.repo.get(req.id).map_err(|err| (err, req.id))?;
-        self.repo.save(user.into())?;
+        let _ = self.db.get(req.id).map_err(|err| (err, req.id))?;
+        self.db.save(user.into())?;
         Ok(())
     }
 
-    fn new(repo: &'r R) -> Self {
-        Self { repo }
+    fn new(db: &'d D) -> Self {
+        Self { db }
     }
 }

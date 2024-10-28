@@ -16,8 +16,8 @@ pub struct Request {
 pub struct Response;
 
 /// Delete area of life by ID usecase interactor
-pub struct Delete<'r, R> {
-    repo: &'r R,
+pub struct Delete<'d, D> {
+    db: &'d D,
 }
 
 #[derive(Debug, Error)]
@@ -37,9 +37,9 @@ impl From<DeleteError> for Error {
     }
 }
 
-impl<'r, R> Usecase<'r, R> for Delete<'r, R>
+impl<'d, D> Usecase<'d, D> for Delete<'d, D>
 where
-    R: Repo,
+    D: Repo,
 {
     type Request = Request;
     type Response = Response;
@@ -47,11 +47,11 @@ where
 
     fn exec(&self, req: Self::Request) -> Result<Self::Response, Self::Error> {
         log::debug!("Delete User by ID: {:?}", req);
-        self.repo.delete(req.id)?;
-        Ok(Response {})
+        self.db.delete(req.id)?;
+        Ok(Self::Response {})
     }
 
-    fn new(repo: &'r R) -> Self {
-        Self { repo }
+    fn new(db: &'d D) -> Self {
+        Self { db }
     }
 }

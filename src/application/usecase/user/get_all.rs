@@ -18,8 +18,8 @@ pub struct Response {
 }
 
 /// Get all users usecase interactor
-pub struct GetAll<'r, R> {
-    repo: &'r R,
+pub struct GetAll<'d, D> {
+    db: &'d D,
 }
 
 #[derive(Debug, Error)]
@@ -36,9 +36,9 @@ impl From<GetAllError> for Error {
     }
 }
 
-impl<'r, R> Usecase<'r, R> for GetAll<'r, R>
+impl<'d, D> Usecase<'d, D> for GetAll<'d, D>
 where
-    R: Repo,
+    D: Repo,
 {
     type Request = Request;
     type Response = Response;
@@ -46,11 +46,11 @@ where
 
     fn exec(&self, _req: Self::Request) -> Result<Self::Response, Self::Error> {
         log::debug!("Get all users");
-        let users = self.repo.get_all()?.into_iter().map(User::from).collect();
-        Ok(Response { users })
+        let users = self.db.get_all()?.into_iter().map(User::from).collect();
+        Ok(Self::Response { users })
     }
 
-    fn new(repo: &'r R) -> Self {
-        Self { repo }
+    fn new(db: &'d D) -> Self {
+        Self { db }
     }
 }

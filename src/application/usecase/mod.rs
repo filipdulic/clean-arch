@@ -1,12 +1,7 @@
-use super::gateway::repository::AbstractRepo;
-
 pub mod signup_process;
 pub mod user;
 
-pub trait Usecase<'d, D>
-where
-    D: AbstractRepo,
-{
+pub trait Usecase<'d, D> {
     type Request;
     type Response;
     type Error;

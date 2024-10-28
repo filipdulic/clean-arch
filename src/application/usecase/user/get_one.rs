@@ -20,8 +20,8 @@ pub struct Response {
 }
 
 /// Get all users usecase interactor
-pub struct GetOne<'r, R> {
-    repo: &'r R,
+pub struct GetOne<'d, D> {
+    db: &'d D,
 }
 
 #[derive(Debug, Error)]
@@ -41,20 +41,9 @@ impl From<GetError> for Error {
     }
 }
 
-impl<'r, R> GetOne<'r, R>
+impl<'d, D> Usecase<'d, D> for GetOne<'d, D>
 where
-    R: Repo,
-{
-    pub fn exec(&self, req: Request) -> Result<Response, Error> {
-        log::debug!("Get user by ID");
-        let user = self.repo.get(req.id)?.into();
-        Ok(Response { user })
-    }
-}
-
-impl<'r, R> Usecase<'r, R> for GetOne<'r, R>
-where
-    R: Repo,
+    D: Repo,
 {
     type Request = Request;
     type Response = Response;
@@ -62,11 +51,11 @@ where
 
     fn exec(&self, req: Self::Request) -> Result<Self::Response, Self::Error> {
         log::debug!("Get user by ID");
-        let user = self.repo.get(req.id)?.into();
+        let user = self.db.get(req.id)?.into();
         Ok(Self::Response { user })
     }
 
-    fn new(repo: &'r R) -> Self {
-        Self { repo }
+    fn new(db: &'d D) -> Self {
+        Self { db }
     }
 }
