@@ -1,7 +1,10 @@
 use crate::{
-    application::gateway::repository::{
-        signup_process::{GetError, Repo, SaveError},
-        user,
+    application::{
+        gateway::repository::{
+            signup_process::{GetError, Repo, SaveError},
+            user,
+        },
+        usecase::Usecase,
     },
     domain::entity::{
         signup_process::{EmailVerified, Id, SignupProcess, SignupStateEnum},
@@ -22,15 +25,10 @@ pub struct Request {
 pub struct Response {
     pub record: user::Record,
 }
-pub struct Complete<'r1, 'r2, R1, R2> {
-    repo: &'r1 R1,
-    user_repo: &'r2 R2,
-}
-
-impl<'r1, 'r2, R1, R2> Complete<'r1, 'r2, R1, R2> {
-    pub fn new(repo: &'r1 R1, user_repo: &'r2 R2) -> Self {
-        Self { repo, user_repo }
-    }
+pub struct Complete<'r, R> {
+    // TODO: figure out unit of work and transaction operations on db trait I guess?
+    repo: &'r R,
+    user_repo: &'r R,
 }
 
 #[derive(Debug, Error)]
@@ -58,13 +56,15 @@ impl From<(GetError, Id)> for Error {
     }
 }
 
-impl<'r1, 'r2, R1, R2> Complete<'r1, 'r2, R1, R2>
+impl<'r, R> Usecase<'r, R> for Complete<'r, R>
 where
-    R1: Repo,
-    R2: user::Repo,
+    R: Repo + user::Repo,
 {
-    /// Create a new user with the given name.
-    pub fn exec(&self, req: Request) -> Result<Response, Error> {
+    type Request = Request;
+    type Response = Response;
+    type Error = Error;
+
+    fn exec(&self, req: Self::Request) -> Result<Self::Response, Self::Error> {
         log::debug!("SignupProcess Completed: {:?}", req);
         let record = self
             .repo
@@ -93,6 +93,13 @@ where
             })
         } else {
             Err(Error::Repo)
+        }
+    }
+
+    fn new(repo: &'r R) -> Self {
+        Self {
+            repo,
+            user_repo: repo,
         }
     }
 }

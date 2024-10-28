@@ -1,5 +1,8 @@
 use crate::{
-    application::gateway::repository::signup_process::{GetError, Repo, SaveError},
+    application::{
+        gateway::repository::signup_process::{GetError, Repo, SaveError},
+        usecase::Usecase,
+    },
     domain::entity::signup_process::{Id, Initialized, SignupProcess},
 };
 
@@ -16,12 +19,6 @@ pub struct Response {
 }
 pub struct VerifyEmail<'r, R> {
     repo: &'r R,
-}
-
-impl<'r, R> VerifyEmail<'r, R> {
-    pub fn new(repo: &'r R) -> Self {
-        Self { repo }
-    }
 }
 
 #[derive(Debug, Error)]
@@ -49,12 +46,15 @@ impl From<(GetError, Id)> for Error {
     }
 }
 
-impl<'r, R> VerifyEmail<'r, R>
+impl<'r, R> Usecase<'r, R> for VerifyEmail<'r, R>
 where
     R: Repo,
 {
+    type Request = Request;
+    type Response = Response;
+    type Error = Error;
     /// Create a new user with the given name.
-    pub fn exec(&self, req: Request) -> Result<Response, Error> {
+    fn exec(&self, req: Request) -> Result<Response, Error> {
         log::debug!("SignupProcess Email Verified: {:?}", req);
         let record = self
             .repo
@@ -65,6 +65,9 @@ where
         self.repo
             .save_latest_state(process.into())
             .map_err(|_| Error::NotFound(req.id))?;
-        Ok(Response { id: req.id })
+        Ok(Self::Response { id: req.id })
+    }
+    fn new(repo: &'r R) -> Self {
+        Self { repo }
     }
 }

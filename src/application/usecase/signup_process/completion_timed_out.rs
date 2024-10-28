@@ -1,5 +1,8 @@
 use crate::{
-    application::gateway::repository::signup_process::{GetError, Repo, SaveError},
+    application::{
+        gateway::repository::signup_process::{GetError, Repo, SaveError},
+        usecase::Usecase,
+    },
     domain::entity::signup_process::{EmailVerified, Id, SignupProcess},
 };
 
@@ -16,12 +19,6 @@ pub struct Response {
 }
 pub struct CompletionTimedOut<'r, R> {
     repo: &'r R,
-}
-
-impl<'r, R> CompletionTimedOut<'r, R> {
-    pub fn new(repo: &'r R) -> Self {
-        Self { repo }
-    }
 }
 
 #[derive(Debug, Error)]
@@ -49,11 +46,15 @@ impl From<(GetError, Id)> for Error {
     }
 }
 
-impl<'r, R> CompletionTimedOut<'r, R>
+impl<'r, R> Usecase<'r, R> for CompletionTimedOut<'r, R>
 where
     R: Repo,
 {
-    pub fn exec(&self, req: Request) -> Result<Response, Error> {
+    type Request = Request;
+    type Response = Response;
+    type Error = Error;
+
+    fn exec(&self, req: Self::Request) -> Result<Self::Response, Self::Error> {
         log::debug!("SignupProcess verification timed out: {:?}", req);
         let record = self
             .repo
@@ -66,5 +67,9 @@ where
             .save_latest_state(process.into())
             .map_err(|_| Error::NotFound(req.id))?;
         Ok(Response { id: req.id })
+    }
+
+    fn new(repo: &'r R) -> Self {
+        Self { repo }
     }
 }
