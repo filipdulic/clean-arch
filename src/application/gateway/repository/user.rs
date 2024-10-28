@@ -1,6 +1,8 @@
 use crate::domain::entity::user::*;
 use thiserror::Error;
 
+use super::AbstractRepo;
+
 #[derive(Debug, Error)]
 pub enum GetError {
     #[error("User not found")]
@@ -47,7 +49,7 @@ impl From<Record> for User {
 }
 
 // TODO: make it async
-pub trait Repo: Send + Sync {
+pub trait Repo: Send + Sync + AbstractRepo {
     fn save(&self, record: Record) -> Result<(), SaveError>;
     fn get(&self, id: Id) -> Result<Record, GetError>;
     fn get_all(&self) -> Result<Vec<Record>, GetAllError>;

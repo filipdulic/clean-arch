@@ -1,5 +1,8 @@
 use crate::{
-    application::gateway::repository::user::{GetError, Repo},
+    application::{
+        gateway::repository::user::{GetError, Repo},
+        usecase::Usecase,
+    },
     domain::entity::user::{Id, User},
 };
 
@@ -19,12 +22,6 @@ pub struct Response {
 /// Get all users usecase interactor
 pub struct GetOne<'r, R> {
     repo: &'r R,
-}
-
-impl<'r, R> GetOne<'r, R> {
-    pub fn new(repo: &'r R) -> Self {
-        Self { repo }
-    }
 }
 
 #[derive(Debug, Error)]
@@ -52,5 +49,24 @@ where
         log::debug!("Get user by ID");
         let user = self.repo.get(req.id)?.into();
         Ok(Response { user })
+    }
+}
+
+impl<'r, R> Usecase<'r, R> for GetOne<'r, R>
+where
+    R: Repo,
+{
+    type Request = Request;
+    type Response = Response;
+    type Error = Error;
+
+    fn exec(&self, req: Self::Request) -> Result<Self::Response, Self::Error> {
+        log::debug!("Get user by ID");
+        let user = self.repo.get(req.id)?.into();
+        Ok(Self::Response { user })
+    }
+
+    fn new(repo: &'r R) -> Self {
+        Self { repo }
     }
 }

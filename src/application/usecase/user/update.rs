@@ -1,7 +1,10 @@
 use crate::{
     application::{
         gateway::repository::user::{GetError, Repo, SaveError},
-        usecase::user::validate::{self, validate_user_properties, UserInvalidity},
+        usecase::{
+            user::validate::{self, validate_user_properties, UserInvalidity},
+            Usecase,
+        },
     },
     domain::{
         entity::user::{Email, Id, User, UserName},
@@ -23,12 +26,6 @@ pub type Response = ();
 
 pub struct Update<'r, R> {
     repo: &'r R,
-}
-
-impl<'r, R> Update<'r, R> {
-    pub fn new(repo: &'r R) -> Self {
-        Self { repo }
-    }
 }
 
 #[derive(Debug, Error)]
@@ -58,12 +55,15 @@ impl From<(GetError, Id)> for Error {
     }
 }
 
-impl<'r, R> Update<'r, R>
+impl<'r, R> Usecase<'r, R> for Update<'r, R>
 where
     R: Repo,
 {
-    /// Update a area of life.
-    pub fn exec(&self, req: Request) -> Result<Response, Error> {
+    type Request = Request;
+    type Response = Response;
+    type Error = Error;
+
+    fn exec(&self, req: Self::Request) -> Result<Self::Response, Self::Error> {
         log::debug!("Update User: {:?}", req);
         validate_user_properties(&validate::Request {
             username: &req.username,
@@ -77,5 +77,9 @@ where
         let _ = self.repo.get(req.id).map_err(|err| (err, req.id))?;
         self.repo.save(user.into())?;
         Ok(())
+    }
+
+    fn new(repo: &'r R) -> Self {
+        Self { repo }
     }
 }
