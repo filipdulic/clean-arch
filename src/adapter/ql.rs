@@ -1,124 +1,32 @@
 use crate::application::gateway::repository as repo;
 use crate::application::usecase::user::{self, delete::Delete, update::Update};
-pub trait Usecase<'d, D>
-where
-    D: repo::user::Repo,
-{
-    type Request;
-    type Response;
-    type Error;
-    fn exec_u(&self, req: Self::Request) -> Result<Self::Response, Self::Error>;
-    fn new_u(db: &'d D) -> Self;
+use crate::application::usecase::Usecase;
+use thiserror::Error;
+
+// TODO: use thiserror
+#[derive(Error, Debug)]
+pub enum Error<'r, R, U: Usecase<'r, R>> {
+    #[error("Unable to parse id")]
+    ParseIdError,
+    #[error("Unable to parse input")]
+    ParseInputError,
+    #[error("Usecase error")]
+    UsecaseError(U::Error), // impl from thing...
 }
 
-pub mod error {
-    pub mod user {
-        pub mod delete {
-
-            use crate::application::usecase::user::delete as uc;
-
-            use thiserror::Error;
-
-            #[derive(Debug, Error)]
-            pub enum Error {
-                #[error("Id parse error")]
-                ParseIdError,
-                #[error("{}", uc::Error::NotFound)]
-                NotFound,
-                #[error("{}", uc::Error::Repo)]
-                Repo,
-            }
-
-            impl From<uc::Error> for Error {
-                fn from(e: uc::Error) -> Self {
-                    match e {
-                        uc::Error::Repo => Error::Repo,
-                        uc::Error::NotFound => Error::NotFound,
-                    }
-                }
-            }
-        }
-        pub mod update {
-            use crate::{
-                application::usecase::user::{update as uc, validate::UserInvalidity},
-                domain::entity::user::Id,
-            };
-            use thiserror::Error;
-
-            #[derive(Debug, Error)]
-            pub enum Error {
-                #[error("Id parse error")]
-                ParseIdError,
-                #[error("User {0:?} not found")]
-                NotFound(Id),
-                #[error("{}", uc::Error::Repo)]
-                Repo,
-                #[error(transparent)]
-                Invalidity(#[from] UserInvalidity),
-            }
-
-            impl From<uc::Error> for Error {
-                fn from(from: uc::Error) -> Self {
-                    match from {
-                        uc::Error::NotFound(id) => Self::NotFound(id.into()),
-                        uc::Error::Invalidity(i) => Self::Invalidity(i),
-                        uc::Error::Repo => Self::Repo,
-                    }
-                }
-            }
-        }
-    }
-}
-use error::user as user_error;
 pub trait Ingester<'a, A, U: Usecase<'a, A>>
 where
     A: repo::user::Repo,
 {
     type InputModel;
-    fn ingest(&self, input: Self::InputModel) -> Result<U::Request, U::Error>;
+    fn ingest(&self, input: Self::InputModel) -> Result<U::Request, Error<'a, A, U>>;
 }
 pub trait Presenter<'a, A, U: Usecase<'a, A>>
 where
     A: repo::user::Repo,
 {
     type ViewModel;
-    fn present(&self, data: Result<U::Response, U::Error>) -> Self::ViewModel;
-}
-
-pub trait Boundry<'a, A, U: Usecase<'a, A>>: Ingester<'a, A, U> + Presenter<'a, A, U>
-where
-    A: repo::user::Repo,
-{
-}
-
-impl<'u, U> Usecase<'u, U> for Delete<'u, U>
-where
-    U: repo::user::Repo,
-{
-    type Request = user::delete::Request;
-    type Response = user::delete::Response;
-    type Error = user_error::delete::Error;
-    fn exec_u(&self, req: Self::Request) -> Result<Self::Response, Self::Error> {
-        self.exec(req).map_err(Self::Error::from)
-    }
-    fn new_u(db: &'u U) -> Self {
-        Self::new(db)
-    }
-}
-
-impl<'u, U> Usecase<'u, U> for Update<'u, U>
-where
-    U: repo::user::Repo,
-{
-    type Request = user::update::Request;
-    type Response = user::update::Response;
-    type Error = user_error::update::Error;
-    fn exec_u(&self, req: Self::Request) -> Result<Self::Response, Self::Error> {
-        self.exec(req).map_err(Self::Error::from)
-    }
-    fn new_u(db: &'u U) -> Self {
-        Self::new(db)
-    }
+    fn present(&self, data: Result<U::Response, Error<'a, A, U>>) -> Self::ViewModel;
 }
 
 pub struct Controller<'d, 'b, D, B> {
@@ -129,7 +37,10 @@ pub struct Controller<'d, 'b, D, B> {
 impl<'d, 'b, D, B> Controller<'d, 'b, D, B>
 where
     D: repo::user::Repo,
-    B: Boundry<'d, D, Delete<'d, D>> + Boundry<'d, D, Update<'d, D>>,
+    B: Presenter<'d, D, Delete<'d, D>>
+        + Presenter<'d, D, Update<'d, D>>
+        + Ingester<'d, D, Delete<'d, D>>
+        + Ingester<'d, D, Update<'d, D>>,
 {
     pub const fn new(db: &'d D, boundry: &'b B) -> Self {
         Self { db, boundry }
@@ -141,10 +52,13 @@ where
     ) -> <B as Presenter<'d, D, U>>::ViewModel
     where
         U: Usecase<'d, D>,
-        B: Boundry<'d, D, U> + Ingester<'d, D, U> + Presenter<'d, D, U>,
+        B: Ingester<'d, D, U> + Presenter<'d, D, U>,
     {
-        let req = <B as Ingester<'d, D, U>>::ingest(self.boundry, input)
-            .and_then(|req| U::new_u(self.db).exec_u(req));
+        let req = <B as Ingester<'d, D, U>>::ingest(self.boundry, input).and_then(|req| {
+            U::new(self.db)
+                .exec(req)
+                .map_err(|e| Error::UsecaseError(e))
+        });
         <B as Presenter<'d, D, U>>::present(self.boundry, req)
     }
 }
@@ -159,10 +73,9 @@ where
     fn ingest(
         &self,
         input: String,
-    ) -> Result<<Delete<'r, R> as Usecase<'r, R>>::Request, <Delete<'r, R> as Usecase<'r, R>>::Error>
-    {
+    ) -> Result<<Delete<'r, R> as Usecase<'r, R>>::Request, Error<'r, R, Delete<'r, R>>> {
         uuid::Uuid::parse_str(&input)
-            .map_err(|_| user_error::delete::Error::ParseIdError)
+            .map_err(|_| Error::ParseIdError)
             .map(|id| user::delete::Request { id: id.into() })
     }
 }
@@ -173,10 +86,7 @@ where
     type ViewModel = String;
     fn present(
         &self,
-        data: Result<
-            <Delete<'r, R> as Usecase<'r, R>>::Response,
-            <Delete<'r, R> as Usecase<'r, R>>::Error,
-        >,
+        data: Result<<Delete<'r, R> as Usecase<'r, R>>::Response, Error<'r, R, Delete<'r, R>>>,
     ) -> Self::ViewModel {
         match data {
             Ok(_) => "Deleted User".to_string(),
@@ -184,8 +94,6 @@ where
         }
     }
 }
-
-impl<'r, R> Boundry<'r, R, Delete<'r, R>> for UserStringBoundry where R: repo::user::Repo {}
 
 pub struct Input {
     id: String,
@@ -202,10 +110,9 @@ where
     fn ingest(
         &self,
         input: Self::InputModel,
-    ) -> Result<<Update<'r, R> as Usecase<'r, R>>::Request, <Update<'r, R> as Usecase<'r, R>>::Error>
-    {
+    ) -> Result<<Update<'r, R> as Usecase<'r, R>>::Request, Error<'r, R, Update<'r, R>>> {
         uuid::Uuid::parse_str(&input.id)
-            .map_err(|_| user_error::update::Error::ParseIdError)
+            .map_err(|_| Error::ParseInputError)
             .map(|id| user::update::Request {
                 id: id.into(),
                 email: input.email,
@@ -222,10 +129,7 @@ where
     type ViewModel = String;
     fn present(
         &self,
-        data: Result<
-            <Update<'r, R> as Usecase<'r, R>>::Response,
-            <Update<'r, R> as Usecase<'r, R>>::Error,
-        >,
+        data: Result<<Update<'r, R> as Usecase<'r, R>>::Response, Error<'r, R, Update<'r, R>>>,
     ) -> Self::ViewModel {
         match data {
             Ok(_) => "Updated User".to_string(),
@@ -233,7 +137,6 @@ where
         }
     }
 }
-impl<'r, R> Boundry<'r, R, Update<'r, R>> for UserStringBoundry where R: repo::user::Repo {}
 
 pub struct API<'d, D, B> {
     db: &'d D,
@@ -243,7 +146,10 @@ pub struct API<'d, D, B> {
 impl<'d, D, B> API<'d, D, B>
 where
     D: repo::user::Repo + 'd,
-    B: Boundry<'d, D, Delete<'d, D>> + Boundry<'d, D, Update<'d, D>>,
+    B: Ingester<'d, D, Delete<'d, D>>
+        + Ingester<'d, D, Update<'d, D>>
+        + Presenter<'d, D, Delete<'d, D>>
+        + Presenter<'d, D, Update<'d, D>>,
 {
     pub const fn new(db: &'d D, boundry: B) -> Self {
         Self { db, boundry }
@@ -258,7 +164,7 @@ where
     ) -> <B as Presenter<'d, D, U>>::ViewModel
     where
         U: Usecase<'d, D>,
-        B: Boundry<'d, D, U> + Ingester<'d, D, U> + Presenter<'d, D, U>,
+        B: Ingester<'d, D, U> + Presenter<'d, D, U>,
     {
         self.controller().handle_usecase::<U>(input)
     }
