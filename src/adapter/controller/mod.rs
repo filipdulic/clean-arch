@@ -27,5 +27,58 @@
 //! *Error Handling: It handles any errors that occur during the interaction with
 //!     the use case and prepares appropriate responses.
 
+use crate::application::{
+    gateway::repository as repo,
+    usecase::{
+        user::{delete::Delete, update::Update},
+        Usecase,
+    },
+};
+
+use super::boundary::{Error, Ingester, Presenter};
+
 pub mod signup_process;
 pub mod user;
+
+pub trait Controller<'d, D: 'd, B> {
+    fn db(&self) -> &'d D;
+    fn handle_usecase<U>(
+        &self,
+        input: <B as Ingester<'d, D, U>>::InputModel,
+    ) -> <B as Presenter<'d, D, U>>::ViewModel
+    where
+        U: Usecase<'d, D>,
+        B: Ingester<'d, D, U> + Presenter<'d, D, U>,
+    {
+        let req = <B as Ingester<'d, D, U>>::ingest(input).and_then(|req| {
+            U::new(self.db())
+                .exec(req)
+                .map_err(|e| Error::UsecaseError(e))
+        });
+        <B as Presenter<'d, D, U>>::present(req)
+    }
+}
+
+pub struct UserController<'d, 'b, D, B> {
+    db: &'d D,
+    boundry: &'b B,
+}
+
+impl<'d, 'b, D, B> UserController<'d, 'b, D, B>
+where
+    D: repo::user::Repo,
+    B: Presenter<'d, D, Delete<'d, D>>
+        + Presenter<'d, D, Update<'d, D>>
+        + Ingester<'d, D, Delete<'d, D>>
+        + Ingester<'d, D, Update<'d, D>>,
+{
+    pub const fn new(db: &'d D, boundry: &'b B) -> Self {
+        Self { db, boundry }
+    }
+}
+
+impl<'d, 'b, D, B> Controller<'d, D, B> for UserController<'d, 'b, D, B> {
+    fn db(&self) -> &'d D {
+        self.db
+    }
+}
