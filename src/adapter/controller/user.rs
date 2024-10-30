@@ -1,77 +1,38 @@
+use std::sync::Arc;
+
 use crate::{
-    adapter::{model::app::user as app, presenter::Present},
-    application::{gateway::repository::user::Repo, identifier::NewId, usecase::user as uc},
-    domain::entity::user,
+    adapter::boundary::{Ingester, Presenter},
+    application::{
+        gateway::repository as repo,
+        usecase::user::{delete::Delete, get_all::GetAll, get_one::GetOne, update::Update},
+    },
 };
 
-pub struct Controller<'d, 'p, D, P> {
-    db: &'d D,
-    presenter: &'p P,
+use super::Controller;
+
+pub struct UserController<D, B> {
+    db: Arc<D>,
+    #[allow(dead_code)]
+    boundry: B,
 }
 
-impl<'d, 'p, D, P> Controller<'d, 'p, D, P>
+impl<D, B> Controller<D, B> for UserController<D, B>
 where
-    D: Repo + NewId<user::Id>,
-    P: Present<app::delete::Result>
-        + Present<app::update::Result>
-        + Present<app::get_one::Result>
-        + Present<app::get_all::Result>,
+    D: repo::user::Repo,
+    B: Presenter<D, Delete<D>>
+        + Presenter<D, Update<D>>
+        + Presenter<D, GetOne<D>>
+        + Presenter<D, GetAll<D>>
+        + Ingester<D, Delete<D>>
+        + Ingester<D, GetOne<D>>
+        + Ingester<D, GetAll<D>>
+        + Ingester<D, Update<D>>,
 {
-    pub const fn new(db: &'d D, presenter: &'p P) -> Self {
-        Self { db, presenter }
+    fn new(db: Arc<D>, boundry: B) -> Self {
+        Self { db, boundry }
     }
-    pub fn delete_user(&self, id: &str) -> <P as Present<app::delete::Result>>::ViewModel {
-        let res = id
-            .parse::<app::Id>()
-            .map_err(|_| app::delete::Error::Id)
-            .and_then(|id| {
-                let req = app::delete::Request { id: id.into() };
-                log::debug!("Deleting User with id: '{}'", id);
-                let interactor = uc::delete::Delete::new(self.db);
-                interactor.exec(req).map_err(app::delete::Error::from)
-            });
-        self.presenter.present(res)
-    }
-    pub fn update_user(
-        &self,
-        id: &str,
-        email: impl Into<String>,
-        username: impl Into<String>,
-        password: impl Into<String>,
-    ) -> <P as Present<app::update::Result>>::ViewModel {
-        let res = id
-            .parse::<app::Id>()
-            .map_err(|_| app::update::Error::Id)
-            .and_then(|id| {
-                let req = app::update::Request {
-                    id: id.into(),
-                    email: email.into(),
-                    username: username.into(),
-                    password: password.into(),
-                };
-                log::debug!("Updating User with id: '{}'", id);
-                let interactor = uc::update::Update::new(self.db);
-                interactor.exec(req).map_err(Into::into)
-            });
-        self.presenter.present(res)
-    }
-    pub fn get_one_user(&self, id: &str) -> <P as Present<app::get_one::Result>>::ViewModel {
-        let res = id
-            .parse::<app::Id>()
-            .map_err(|_| app::get_one::Error::Id)
-            .and_then(|id| {
-                let req = app::get_one::Request { id: id.into() };
-                log::debug!("Getting User with id: '{}'", id);
-                let interactor = uc::get_one::GetOne::new(self.db);
-                interactor.exec(req).map_err(app::get_one::Error::from)
-            });
-        self.presenter.present(res)
-    }
-    pub fn get_all_users(&self) -> <P as Present<app::get_all::Result>>::ViewModel {
-        log::debug!("Getting all Users");
-        let req = app::get_all::Request {};
-        let interactor = uc::get_all::GetAll::new(self.db);
-        let res = interactor.exec(req).map_err(app::get_all::Error::from);
-        self.presenter.present(res)
+
+    fn db(&self) -> Arc<D> {
+        self.db.clone()
     }
 }

@@ -7,6 +7,7 @@ mod models;
 mod signup_process;
 mod user;
 
+#[derive(Debug, Clone)]
 pub struct JsonFile {
     signup_processes: Store,
     users: Store,

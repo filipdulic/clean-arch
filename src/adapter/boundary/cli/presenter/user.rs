@@ -6,13 +6,13 @@ use crate::{
     },
 };
 
-impl<'d, D> Presenter<'d, D, Update<'d, D>> for Boundary
+impl<D> Presenter<D, Update<D>> for Boundary
 where
     D: Repo,
 {
     type ViewModel = String;
 
-    fn present(data: UsecaseResponseResult<'d, D, Update<'d, D>>) -> Self::ViewModel {
+    fn present(data: UsecaseResponseResult<D, Update<D>>) -> Self::ViewModel {
         match data {
             Ok(()) => "Updated ".to_string(),
             Err(err) => format!("Unable to update user: {err}"),
@@ -20,13 +20,13 @@ where
     }
 }
 
-impl<'d, D> Presenter<'d, D, GetOne<'d, D>> for Boundary
+impl<D> Presenter<D, GetOne<D>> for Boundary
 where
     D: Repo,
 {
     type ViewModel = String;
 
-    fn present(data: UsecaseResponseResult<'d, D, GetOne<'d, D>>) -> Self::ViewModel {
+    fn present(data: UsecaseResponseResult<D, GetOne<D>>) -> Self::ViewModel {
         match data {
             Ok(data) => format!("{:?}", data.user),
             Err(err) => format!("Unable to find user: {err}"),
@@ -34,13 +34,13 @@ where
     }
 }
 
-impl<'d, D> Presenter<'d, D, GetAll<'d, D>> for Boundary
+impl<D> Presenter<D, GetAll<D>> for Boundary
 where
     D: Repo,
 {
     type ViewModel = String;
 
-    fn present(data: UsecaseResponseResult<'d, D, GetAll<'d, D>>) -> Self::ViewModel {
+    fn present(data: UsecaseResponseResult<D, GetAll<D>>) -> Self::ViewModel {
         match data {
             Ok(resp) => resp
                 .users
@@ -53,13 +53,13 @@ where
     }
 }
 
-impl<'d, D> Presenter<'d, D, Delete<'d, D>> for Boundary
+impl<D> Presenter<D, Delete<D>> for Boundary
 where
     D: Repo,
 {
     type ViewModel = String;
 
-    fn present(data: UsecaseResponseResult<'d, D, Delete<'d, D>>) -> Self::ViewModel {
+    fn present(data: UsecaseResponseResult<D, Delete<D>>) -> Self::ViewModel {
         match data {
             Ok(_) => "Successfully deleted user".to_string(),
             Err(err) => format!("Unable to delete user {err}"),

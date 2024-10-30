@@ -14,12 +14,12 @@ use crate::{
     domain::entity::user::Id,
 };
 
-impl<'d, D> Ingester<'d, D, Delete<'d, D>> for Boundary
+impl<D> Ingester<D, Delete<D>> for Boundary
 where
     D: Repo,
 {
     type InputModel = String;
-    fn ingest(input: Self::InputModel) -> UsecaseRequestResult<'d, D, Delete<'d, D>> {
+    fn ingest(input: Self::InputModel) -> UsecaseRequestResult<D, Delete<D>> {
         input
             .parse()
             .map_err(|_| Error::ParseInputError)
@@ -27,12 +27,12 @@ where
     }
 }
 
-impl<'d, D> Ingester<'d, D, Update<'d, D>> for Boundary
+impl<D> Ingester<D, Update<D>> for Boundary
 where
     D: Repo,
 {
     type InputModel = (String, String, String, String);
-    fn ingest(input: Self::InputModel) -> UsecaseRequestResult<'d, D, Update<'d, D>> {
+    fn ingest(input: Self::InputModel) -> UsecaseRequestResult<D, Update<D>> {
         let (id, email, username, password) = input;
         id.parse()
             .map_err(|_| Error::ParseInputError)
@@ -45,12 +45,12 @@ where
     }
 }
 
-impl<'d, D> Ingester<'d, D, GetOne<'d, D>> for Boundary
+impl<D> Ingester<D, GetOne<D>> for Boundary
 where
     D: Repo,
 {
     type InputModel = String;
-    fn ingest(input: Self::InputModel) -> UsecaseRequestResult<'d, D, GetOne<'d, D>> {
+    fn ingest(input: Self::InputModel) -> UsecaseRequestResult<D, GetOne<D>> {
         input
             .parse()
             .map_err(|_| Error::ParseInputError)
@@ -58,12 +58,12 @@ where
     }
 }
 
-impl<'d, D> Ingester<'d, D, GetAll<'d, D>> for Boundary
+impl<D> Ingester<D, GetAll<D>> for Boundary
 where
     D: Repo,
 {
     type InputModel = ();
-    fn ingest(_: Self::InputModel) -> UsecaseRequestResult<'d, D, GetAll<'d, D>> {
+    fn ingest(_: Self::InputModel) -> UsecaseRequestResult<D, GetAll<D>> {
         Ok(GetAllRequest {})
     }
 }

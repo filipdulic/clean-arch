@@ -14,13 +14,13 @@ use crate::{
     domain::entity::signup_process::Id,
 };
 
-impl<'d, D> Presenter<'d, D, Complete<'d, D>> for Boundary
+impl<D> Presenter<D, Complete<D>> for Boundary
 where
     D: Repo + UserRepo,
 {
     type ViewModel = String;
 
-    fn present(data: UsecaseResponseResult<'d, D, Complete<'d, D>>) -> Self::ViewModel {
+    fn present(data: UsecaseResponseResult<D, Complete<D>>) -> Self::ViewModel {
         match data {
             Ok(data) => format!("SignupProcess Completed -> User Created: {:?}", data.record),
             Err(err) => format!("Unable find SignupProcess: {err}"),
@@ -28,13 +28,13 @@ where
     }
 }
 
-impl<'d, D> Presenter<'d, D, CompletionTimedOut<'d, D>> for Boundary
+impl<D> Presenter<D, CompletionTimedOut<D>> for Boundary
 where
     D: Repo,
 {
     type ViewModel = String;
 
-    fn present(data: UsecaseResponseResult<'d, D, CompletionTimedOut<'d, D>>) -> Self::ViewModel {
+    fn present(data: UsecaseResponseResult<D, CompletionTimedOut<D>>) -> Self::ViewModel {
         match data {
             Ok(data) => format!("Completion Timed Out of SignupProcess(ID = {})", data.id),
             Err(err) => format!("Unable to Verify Email of SignupProcess: {err}"),
@@ -42,13 +42,13 @@ where
     }
 }
 
-impl<'d, D> Presenter<'d, D, Delete<'d, D>> for Boundary
+impl<D> Presenter<D, Delete<D>> for Boundary
 where
     D: Repo,
 {
     type ViewModel = String;
 
-    fn present(data: UsecaseResponseResult<'d, D, Delete<'d, D>>) -> Self::ViewModel {
+    fn present(data: UsecaseResponseResult<D, Delete<D>>) -> Self::ViewModel {
         match data {
             Ok(data) => format!("SignupProcess(ID = {}) scheduled for deletion", data.id),
             Err(err) => format!("Unable to delete SignupProcess: {err}"),
@@ -56,13 +56,13 @@ where
     }
 }
 
-impl<'d, D> Presenter<'d, D, ExtendCompletionTime<'d, D>> for Boundary
+impl<D> Presenter<D, ExtendCompletionTime<D>> for Boundary
 where
     D: Repo,
 {
     type ViewModel = String;
 
-    fn present(data: UsecaseResponseResult<'d, D, ExtendCompletionTime<'d, D>>) -> Self::ViewModel {
+    fn present(data: UsecaseResponseResult<D, ExtendCompletionTime<D>>) -> Self::ViewModel {
         match data {
             Ok(data) => format!(
                 "Completion time extended of SignupProcess(ID = {})",
@@ -73,15 +73,13 @@ where
     }
 }
 
-impl<'d, D> Presenter<'d, D, ExtendVerificationTime<'d, D>> for Boundary
+impl<D> Presenter<D, ExtendVerificationTime<D>> for Boundary
 where
     D: Repo,
 {
     type ViewModel = String;
 
-    fn present(
-        data: UsecaseResponseResult<'d, D, ExtendVerificationTime<'d, D>>,
-    ) -> Self::ViewModel {
+    fn present(data: UsecaseResponseResult<D, ExtendVerificationTime<D>>) -> Self::ViewModel {
         match data {
             Ok(data) => format!(
                 "Verification time extended of SignupProcess(ID = {})",
@@ -92,13 +90,13 @@ where
     }
 }
 
-impl<'d, D> Presenter<'d, D, GetStateChain<'d, D>> for Boundary
+impl<D> Presenter<D, GetStateChain<D>> for Boundary
 where
     D: Repo,
 {
     type ViewModel = String;
 
-    fn present(data: UsecaseResponseResult<'d, D, GetStateChain<'d, D>>) -> Self::ViewModel {
+    fn present(data: UsecaseResponseResult<D, GetStateChain<D>>) -> Self::ViewModel {
         match data {
             Ok(data) => format!("{:?}", data.state_chain),
             Err(err) => format!("Unable to get state chain: {err}"),
@@ -106,13 +104,13 @@ where
     }
 }
 
-impl<'d, D> Presenter<'d, D, Initialize<'d, D>> for Boundary
+impl<D> Presenter<D, Initialize<D>> for Boundary
 where
     D: Repo + NewId<Id>,
 {
     type ViewModel = String;
 
-    fn present(data: UsecaseResponseResult<'d, D, Initialize<'d, D>>) -> Self::ViewModel {
+    fn present(data: UsecaseResponseResult<D, Initialize<D>>) -> Self::ViewModel {
         match data {
             Ok(data) => format!("Created a SignupProcess(ID = {})", data.id),
             Err(err) => format!("Unable to create a SignupProcess: {err}"),
@@ -120,13 +118,13 @@ where
     }
 }
 
-impl<'d, D> Presenter<'d, D, VerificationTimedOut<'d, D>> for Boundary
+impl<D> Presenter<D, VerificationTimedOut<D>> for Boundary
 where
     D: Repo,
 {
     type ViewModel = String;
 
-    fn present(data: UsecaseResponseResult<'d, D, VerificationTimedOut<'d, D>>) -> Self::ViewModel {
+    fn present(data: UsecaseResponseResult<D, VerificationTimedOut<D>>) -> Self::ViewModel {
         match data {
             Ok(data) => format!("Verification Timed Out of SignupProcess(ID = {})", data.id),
             Err(err) => format!("Unable to Verify Email of SignupProcess: {err}"),
@@ -134,13 +132,13 @@ where
     }
 }
 
-impl<'d, D> Presenter<'d, D, VerifyEmail<'d, D>> for Boundary
+impl<D> Presenter<D, VerifyEmail<D>> for Boundary
 where
     D: Repo,
 {
     type ViewModel = String;
 
-    fn present(data: UsecaseResponseResult<'d, D, VerifyEmail<'d, D>>) -> Self::ViewModel {
+    fn present(data: UsecaseResponseResult<D, VerifyEmail<D>>) -> Self::ViewModel {
         match data {
             Ok(data) => format!("Email Verified of SignupProcess(ID = {})", data.id),
             Err(err) => format!("Unable to Verify Email of SignupProcess: {err}"),

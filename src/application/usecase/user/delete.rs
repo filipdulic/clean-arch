@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::{
     application::{
         gateway::repository::user::{DeleteError, Repo},
@@ -16,8 +18,8 @@ pub struct Request {
 pub struct Response;
 
 /// Delete area of life by ID usecase interactor
-pub struct Delete<'d, D> {
-    db: &'d D,
+pub struct Delete<D> {
+    db: Arc<D>,
 }
 
 #[derive(Debug, Error)]
@@ -37,7 +39,7 @@ impl From<DeleteError> for Error {
     }
 }
 
-impl<'d, D> Usecase<'d, D> for Delete<'d, D>
+impl<D> Usecase<D> for Delete<D>
 where
     D: Repo,
 {
@@ -51,7 +53,7 @@ where
         Ok(Self::Response {})
     }
 
-    fn new(db: &'d D) -> Self {
+    fn new(db: Arc<D>) -> Self {
         Self { db }
     }
 }

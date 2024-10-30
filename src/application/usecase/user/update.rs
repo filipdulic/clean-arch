@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::{
     application::{
         gateway::repository::user::{GetError, Repo, SaveError},
@@ -24,8 +26,8 @@ pub struct Request {
 
 pub type Response = ();
 
-pub struct Update<'d, D> {
-    db: &'d D,
+pub struct Update<D> {
+    db: Arc<D>,
 }
 
 #[derive(Debug, Error)]
@@ -55,7 +57,7 @@ impl From<(GetError, Id)> for Error {
     }
 }
 
-impl<'d, D> Usecase<'d, D> for Update<'d, D>
+impl<D> Usecase<D> for Update<D>
 where
     D: Repo,
 {
@@ -79,7 +81,7 @@ where
         Ok(())
     }
 
-    fn new(db: &'d D) -> Self {
+    fn new(db: Arc<D>) -> Self {
         Self { db }
     }
 }

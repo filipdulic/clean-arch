@@ -1,8 +1,10 @@
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+#[derive(Debug, Clone)]
+pub struct UserParseIdError; // map this to proper error type
+
 use crate::{
-    adapter::model::app::user::ParseIdError as UserParseIdError,
     application::gateway::repository::{
         signup_process::Record as SignupProcessRecord, user::Record as UserRecord,
     },

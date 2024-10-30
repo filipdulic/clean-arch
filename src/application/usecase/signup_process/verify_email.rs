@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::{
     application::{
         gateway::repository::signup_process::{GetError, Repo, SaveError},
@@ -17,8 +19,8 @@ pub struct Request {
 pub struct Response {
     pub id: Id,
 }
-pub struct VerifyEmail<'d, D> {
-    db: &'d D,
+pub struct VerifyEmail<D> {
+    db: Arc<D>,
 }
 
 #[derive(Debug, Error)]
@@ -46,7 +48,7 @@ impl From<(GetError, Id)> for Error {
     }
 }
 
-impl<'d, D> Usecase<'d, D> for VerifyEmail<'d, D>
+impl<D> Usecase<D> for VerifyEmail<D>
 where
     D: Repo,
 {
@@ -67,7 +69,7 @@ where
             .map_err(|_| Error::NotFound(req.id))?;
         Ok(Self::Response { id: req.id })
     }
-    fn new(db: &'d D) -> Self {
+    fn new(db: Arc<D>) -> Self {
         Self { db }
     }
 }

@@ -15,140 +15,110 @@
 //!     cases, making it easier for external components (e.g., CLI, web server) to
 //!     interact with the application.
 
-use crate::{
-    adapter::{
-        controller,
-        model::app::{signup_process, user},
-        presenter::Present,
-    },
-    application::{gateway::repository as repo, identifier::NewId},
-    domain,
-};
 use std::sync::Arc;
 
-pub struct Api<D, P> {
-    db: Arc<D>,
-    presenter: P,
-}
+use crate::{
+    adapter::{
+        boundary::{Ingester, Presenter},
+        controller,
+    },
+    application::{
+        gateway::repository as repo,
+        identifier::NewId,
+        usecase::{
+            signup_process::{
+                complete::Complete, completion_timed_out::CompletionTimedOut,
+                delete::Delete as SpDelete, extend_completion_time::ExtendCompletionTime,
+                extend_verification_time::ExtendVerificationTime, get_state_chain::GetStateChain,
+                initialize::Initialize, verification_timed_out::VerificationTimedOut,
+                verify_email::VerifyEmail,
+            },
+            user::{delete::Delete, get_all::GetAll, get_one::GetOne, update::Update},
+            Usecase,
+        },
+    },
+    domain,
+};
 
-impl<D, P> Clone for Api<D, P>
+use super::controller::Controller;
+
+#[derive(Clone)]
+pub struct Api<D, B>
 where
-    P: Clone,
+    D: Clone,
+    B: Clone,
 {
-    fn clone(&self) -> Self {
-        let db = Arc::clone(&self.db);
-        let presenter = self.presenter.clone();
-        Self { db, presenter }
-    }
+    db: Arc<D>, // TODO: Change to Arc<<D> to allow for concurrent access
+    boundary: B,
 }
 
-impl<D, P> Api<D, P>
+impl<D, B> Api<D, B>
 where
     D: repo::user::Repo
         + repo::signup_process::Repo
-        + 'static
         + NewId<domain::entity::user::Id>
-        + NewId<domain::entity::signup_process::Id>,
-    P: Present<user::update::Result>
-        + Present<user::delete::Result>
-        + Present<user::get_one::Result>
-        + Present<user::get_all::Result>
-        + Present<signup_process::initialize::Result>
-        + Present<signup_process::verify_email::Result>
-        + Present<signup_process::extend_verification_time::Result>
-        + Present<signup_process::completion_timed_out::Result>
-        + Present<signup_process::verification_timed_out::Result>
-        + Present<signup_process::delete::Result>
-        + Present<signup_process::extend_completion_time::Result>
-        + Present<signup_process::complete::Result>
-        + Present<signup_process::get_state_chain::Result>,
+        + NewId<domain::entity::signup_process::Id>
+        + Clone,
+    B: Presenter<D, SpDelete<D>>
+        + Presenter<D, Initialize<D>>
+        + Presenter<D, VerifyEmail<D>>
+        + Presenter<D, VerificationTimedOut<D>>
+        + Presenter<D, ExtendVerificationTime<D>>
+        + Presenter<D, CompletionTimedOut<D>>
+        + Presenter<D, ExtendCompletionTime<D>>
+        + Presenter<D, GetStateChain<D>>
+        + Presenter<D, Complete<D>>
+        + Presenter<D, Delete<D>>
+        + Presenter<D, Update<D>>
+        + Presenter<D, GetOne<D>>
+        + Presenter<D, GetAll<D>>
+        + Ingester<D, SpDelete<D>>
+        + Ingester<D, Initialize<D>>
+        + Ingester<D, VerifyEmail<D>>
+        + Ingester<D, VerificationTimedOut<D>>
+        + Ingester<D, ExtendVerificationTime<D>>
+        + Ingester<D, CompletionTimedOut<D>>
+        + Ingester<D, ExtendCompletionTime<D>>
+        + Ingester<D, GetStateChain<D>>
+        + Ingester<D, Complete<D>>
+        + Ingester<D, Delete<D>>
+        + Ingester<D, Update<D>>
+        + Ingester<D, GetOne<D>>
+        + Ingester<D, GetAll<D>>
+        + Clone,
 {
-    pub const fn new(db: Arc<D>, presenter: P) -> Self {
-        Self { db, presenter }
+    pub const fn new(db: Arc<D>, boundary: B) -> Self {
+        Self { db, boundary }
     }
-    fn user_controller(&self) -> controller::user::Controller<D, P> {
-        controller::user::Controller::new(&self.db, &self.presenter)
+    fn user_controller(&self) -> controller::user::UserController<D, B> {
+        controller::user::UserController::new(self.db.clone(), self.boundary.clone())
     }
-    fn signup_process_controller(&self) -> controller::signup_process::Controller<D, P> {
-        controller::signup_process::Controller::new(&self.db, &self.presenter)
-    }
-    pub fn update_user(
+    fn signup_process_controller(
         &self,
-        id: &str,
-        email: impl Into<String>,
-        username: impl Into<String>,
-        password: impl Into<String>,
-    ) -> <P as Present<user::update::Result>>::ViewModel {
-        self.user_controller()
-            .update_user(id, email, username, password)
+    ) -> controller::signup_process::SignupProcessController<D, B> {
+        controller::signup_process::SignupProcessController::new(
+            self.db.clone(),
+            self.boundary.clone(),
+        )
     }
-    pub fn delete_user(&self, id: &str) -> <P as Present<user::delete::Result>>::ViewModel {
-        self.user_controller().delete_user(id)
-    }
-    pub fn get_one_user(&self, id: &str) -> <P as Present<user::get_one::Result>>::ViewModel {
-        self.user_controller().get_one_user(id)
-    }
-    pub fn read_all_users(&self) -> <P as Present<user::get_all::Result>>::ViewModel {
-        self.user_controller().get_all_users()
-    }
-    pub fn initialize_signup_process(
+    pub fn handle_user_endpont<U>(
         &self,
-        email: impl Into<String>,
-    ) -> <P as Present<signup_process::initialize::Result>>::ViewModel {
-        self.signup_process_controller()
-            .initialize_signup_process(email)
+        input: <B as Ingester<D, U>>::InputModel,
+    ) -> <B as Presenter<D, U>>::ViewModel
+    where
+        U: Usecase<D>,
+        B: Ingester<D, U> + Presenter<D, U>,
+    {
+        self.user_controller().handle_usecase::<U>(input)
     }
-    pub fn verify_email_of_signup_process(
+    pub fn handle_signup_process_endpoint<U>(
         &self,
-        id: &str,
-    ) -> <P as Present<signup_process::verify_email::Result>>::ViewModel {
-        self.signup_process_controller()
-            .verify_email_to_signup_process(id)
-    }
-    pub fn verification_timed_out_of_signup_process(
-        &self,
-        id: &str,
-    ) -> <P as Present<signup_process::verification_timed_out::Result>>::ViewModel {
-        self.signup_process_controller().verification_timed_out(id)
-    }
-    pub fn extend_verification_time_of_signup_process(
-        &self,
-        id: &str,
-    ) -> <P as Present<signup_process::extend_verification_time::Result>>::ViewModel {
-        self.signup_process_controller()
-            .extend_verification_time(id)
-    }
-    pub fn completion_timed_out_of_signup_process(
-        &self,
-        id: &str,
-    ) -> <P as Present<signup_process::completion_timed_out::Result>>::ViewModel {
-        self.signup_process_controller().completion_timed_out(id)
-    }
-    pub fn extend_completion_time_of_signup_process(
-        &self,
-        id: &str,
-    ) -> <P as Present<signup_process::extend_completion_time::Result>>::ViewModel {
-        self.signup_process_controller().extend_completion_time(id)
-    }
-    pub fn delete_signup_process(
-        &self,
-        id: &str,
-    ) -> <P as Present<signup_process::delete::Result>>::ViewModel {
-        self.signup_process_controller().delete(id)
-    }
-    pub fn complete_signup_process(
-        &self,
-        id: &str,
-        username: impl Into<String>,
-        password: impl Into<String>,
-    ) -> <P as Present<signup_process::complete::Result>>::ViewModel {
-        self.signup_process_controller()
-            .complete_signup_process(id, username, password)
-    }
-    pub fn get_state_chain_of_signup_process(
-        &self,
-        id: &str,
-    ) -> <P as Present<signup_process::get_state_chain::Result>>::ViewModel {
-        self.signup_process_controller().get_state_chain(id)
+        input: <B as Ingester<D, U>>::InputModel,
+    ) -> <B as Presenter<D, U>>::ViewModel
+    where
+        U: Usecase<D>,
+        B: Ingester<D, U> + Presenter<D, U>,
+    {
+        self.signup_process_controller().handle_usecase::<U>(input)
     }
 }

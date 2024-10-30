@@ -8,6 +8,7 @@ use crate::{
         usecase::signup_process::{
             complete::{Complete, Request as CompleteRequest},
             completion_timed_out::{CompletionTimedOut, Request as CompletionTimedOutRequest},
+            delete::{Delete, Request as DeleteRequest},
             extend_completion_time::{
                 ExtendCompletionTime, Request as ExtendCompletionTimeRequest,
             },
@@ -25,12 +26,12 @@ use crate::{
     domain::entity::signup_process::Id,
 };
 
-impl<'d, D> Ingester<'d, D, Complete<'d, D>> for Boundary
+impl<D> Ingester<D, Complete<D>> for Boundary
 where
     D: Repo + UserRepo,
 {
     type InputModel = (String, String, String);
-    fn ingest(input: Self::InputModel) -> UsecaseRequestResult<'d, D, Complete<'d, D>> {
+    fn ingest(input: Self::InputModel) -> UsecaseRequestResult<D, Complete<D>> {
         let (id, username, password) = input;
         id.parse()
             .map_err(|_| Error::ParseInputError)
@@ -42,12 +43,12 @@ where
     }
 }
 
-impl<'d, D> Ingester<'d, D, CompletionTimedOut<'d, D>> for Boundary
+impl<D> Ingester<D, CompletionTimedOut<D>> for Boundary
 where
     D: Repo,
 {
     type InputModel = String;
-    fn ingest(input: Self::InputModel) -> UsecaseRequestResult<'d, D, CompletionTimedOut<'d, D>> {
+    fn ingest(input: Self::InputModel) -> UsecaseRequestResult<D, CompletionTimedOut<D>> {
         input
             .parse()
             .map_err(|_| Error::ParseInputError)
@@ -55,12 +56,12 @@ where
     }
 }
 
-impl<'d, D> Ingester<'d, D, ExtendCompletionTime<'d, D>> for Boundary
+impl<D> Ingester<D, ExtendCompletionTime<D>> for Boundary
 where
     D: Repo,
 {
     type InputModel = String;
-    fn ingest(input: Self::InputModel) -> UsecaseRequestResult<'d, D, ExtendCompletionTime<'d, D>> {
+    fn ingest(input: Self::InputModel) -> UsecaseRequestResult<D, ExtendCompletionTime<D>> {
         input
             .parse()
             .map_err(|_| Error::ParseInputError)
@@ -68,14 +69,12 @@ where
     }
 }
 
-impl<'d, D> Ingester<'d, D, ExtendVerificationTime<'d, D>> for Boundary
+impl<D> Ingester<D, ExtendVerificationTime<D>> for Boundary
 where
     D: Repo,
 {
     type InputModel = String;
-    fn ingest(
-        input: Self::InputModel,
-    ) -> UsecaseRequestResult<'d, D, ExtendVerificationTime<'d, D>> {
+    fn ingest(input: Self::InputModel) -> UsecaseRequestResult<D, ExtendVerificationTime<D>> {
         input
             .parse()
             .map_err(|_| Error::ParseInputError)
@@ -83,12 +82,12 @@ where
     }
 }
 
-impl<'d, D> Ingester<'d, D, GetStateChain<'d, D>> for Boundary
+impl<D> Ingester<D, GetStateChain<D>> for Boundary
 where
     D: Repo,
 {
     type InputModel = String;
-    fn ingest(input: Self::InputModel) -> UsecaseRequestResult<'d, D, GetStateChain<'d, D>> {
+    fn ingest(input: Self::InputModel) -> UsecaseRequestResult<D, GetStateChain<D>> {
         input
             .parse()
             .map_err(|_| Error::ParseInputError)
@@ -96,22 +95,22 @@ where
     }
 }
 
-impl<'d, D> Ingester<'d, D, Initialize<'d, D>> for Boundary
+impl<D> Ingester<D, Initialize<D>> for Boundary
 where
     D: Repo + NewId<Id>,
 {
     type InputModel = String;
-    fn ingest(input: Self::InputModel) -> UsecaseRequestResult<'d, D, Initialize<'d, D>> {
+    fn ingest(input: Self::InputModel) -> UsecaseRequestResult<D, Initialize<D>> {
         Ok(InitializeRequest { email: input })
     }
 }
 
-impl<'d, D> Ingester<'d, D, VerificationTimedOut<'d, D>> for Boundary
+impl<D> Ingester<D, VerificationTimedOut<D>> for Boundary
 where
     D: Repo,
 {
     type InputModel = String;
-    fn ingest(input: Self::InputModel) -> UsecaseRequestResult<'d, D, VerificationTimedOut<'d, D>> {
+    fn ingest(input: Self::InputModel) -> UsecaseRequestResult<D, VerificationTimedOut<D>> {
         input
             .parse()
             .map_err(|_| Error::ParseInputError)
@@ -119,15 +118,28 @@ where
     }
 }
 
-impl<'d, D> Ingester<'d, D, VerifyEmail<'d, D>> for Boundary
+impl<D> Ingester<D, VerifyEmail<D>> for Boundary
 where
     D: Repo,
 {
     type InputModel = String;
-    fn ingest(input: Self::InputModel) -> UsecaseRequestResult<'d, D, VerifyEmail<'d, D>> {
+    fn ingest(input: Self::InputModel) -> UsecaseRequestResult<D, VerifyEmail<D>> {
         input
             .parse()
             .map_err(|_| Error::ParseInputError)
             .map(|uuid: Uuid| VerifyEmailRequest { id: Id::from(uuid) })
+    }
+}
+
+impl<D> Ingester<D, Delete<D>> for Boundary
+where
+    D: Repo,
+{
+    type InputModel = String;
+    fn ingest(input: Self::InputModel) -> UsecaseRequestResult<D, Delete<D>> {
+        input
+            .parse()
+            .map_err(|_| Error::ParseInputError)
+            .map(|uuid: Uuid| DeleteRequest { id: Id::from(uuid) })
     }
 }

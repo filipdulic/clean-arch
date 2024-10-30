@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::{
     application::{
         gateway::repository::{
@@ -25,8 +27,8 @@ pub struct Request {
 pub struct Response {
     pub record: user::Record,
 }
-pub struct Complete<'d, D> {
-    db: &'d D,
+pub struct Complete<D> {
+    db: Arc<D>,
 }
 
 #[derive(Debug, Error)]
@@ -54,7 +56,7 @@ impl From<(GetError, Id)> for Error {
     }
 }
 
-impl<'d, D> Usecase<'d, D> for Complete<'d, D>
+impl<D> Usecase<D> for Complete<D>
 where
     D: Repo + user::Repo,
 {
@@ -74,16 +76,18 @@ where
             let username = UserName::new(req.username);
             let password = Password::new(req.password);
             let process = process.complete(username, password);
-            self.db
-                .save_latest_state(process.clone().into())
-                .map_err(|_| Self::Error::NotFound(req.id))?;
             let user: User = User::new(
                 crate::domain::entity::user::Id::new(req.id),
                 process.email(),
                 process.username(),
                 process.password(),
             );
+            // Save User first, then save SignupProcess
             self.db.save(user.clone().into()).map_err(|_| Error::Repo)?;
+            // if save user fails, we should not save the signup process
+            self.db
+                .save_latest_state(process.clone().into())
+                .map_err(|_| Self::Error::NotFound(req.id))?;
             Ok(Self::Response {
                 record: user.into(),
             })
@@ -92,7 +96,7 @@ where
         }
     }
 
-    fn new(db: &'d D) -> Self {
+    fn new(db: Arc<D>) -> Self {
         Self { db }
     }
 }
