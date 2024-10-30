@@ -1,5 +1,8 @@
 use crate::{
-    adapter::boundary::{cli::Presenter, Presenter as PresenterTrait, UsecaseResponseResult},
+    adapter::boundary::{
+        cli::presenter::Presenter, Presenter as PresenterTrait, UsecaseResponseResult,
+    },
+    adapter::model::cli::view::ViewModel,
     application::{
         gateway::repository::{signup_process::Repo, user::Repo as UserRepo},
         identifier::NewId,
@@ -18,7 +21,7 @@ impl<'d, D> PresenterTrait<'d, D, Complete<'d, D>> for Presenter
 where
     D: Repo + UserRepo,
 {
-    type ViewModel = String;
+    type ViewModel = ViewModel;
 
     fn present(data: UsecaseResponseResult<'d, D, Complete<'d, D>>) -> Self::ViewModel {
         match data {
@@ -32,7 +35,7 @@ impl<'d, D> PresenterTrait<'d, D, CompletionTimedOut<'d, D>> for Presenter
 where
     D: Repo,
 {
-    type ViewModel = String;
+    type ViewModel = ViewModel;
 
     fn present(data: UsecaseResponseResult<'d, D, CompletionTimedOut<'d, D>>) -> Self::ViewModel {
         match data {
@@ -46,7 +49,7 @@ impl<'d, D> PresenterTrait<'d, D, Delete<'d, D>> for Presenter
 where
     D: Repo,
 {
-    type ViewModel = String;
+    type ViewModel = ViewModel;
 
     fn present(data: UsecaseResponseResult<'d, D, Delete<'d, D>>) -> Self::ViewModel {
         match data {
@@ -60,7 +63,7 @@ impl<'d, D> PresenterTrait<'d, D, ExtendCompletionTime<'d, D>> for Presenter
 where
     D: Repo,
 {
-    type ViewModel = String;
+    type ViewModel = ViewModel;
 
     fn present(data: UsecaseResponseResult<'d, D, ExtendCompletionTime<'d, D>>) -> Self::ViewModel {
         match data {
@@ -77,7 +80,7 @@ impl<'d, D> PresenterTrait<'d, D, ExtendVerificationTime<'d, D>> for Presenter
 where
     D: Repo,
 {
-    type ViewModel = String;
+    type ViewModel = ViewModel;
 
     fn present(
         data: UsecaseResponseResult<'d, D, ExtendVerificationTime<'d, D>>,
@@ -96,7 +99,7 @@ impl<'d, D> PresenterTrait<'d, D, GetStateChain<'d, D>> for Presenter
 where
     D: Repo,
 {
-    type ViewModel = String;
+    type ViewModel = ViewModel;
 
     fn present(data: UsecaseResponseResult<'d, D, GetStateChain<'d, D>>) -> Self::ViewModel {
         match data {
@@ -110,7 +113,7 @@ impl<'d, D> PresenterTrait<'d, D, Initialize<'d, D>> for Presenter
 where
     D: Repo + NewId<Id>,
 {
-    type ViewModel = String;
+    type ViewModel = ViewModel;
 
     fn present(data: UsecaseResponseResult<'d, D, Initialize<'d, D>>) -> Self::ViewModel {
         match data {
@@ -124,7 +127,7 @@ impl<'d, D> PresenterTrait<'d, D, VerificationTimedOut<'d, D>> for Presenter
 where
     D: Repo,
 {
-    type ViewModel = String;
+    type ViewModel = ViewModel;
 
     fn present(data: UsecaseResponseResult<'d, D, VerificationTimedOut<'d, D>>) -> Self::ViewModel {
         match data {
@@ -138,7 +141,7 @@ impl<'d, D> PresenterTrait<'d, D, VerifyEmail<'d, D>> for Presenter
 where
     D: Repo,
 {
-    type ViewModel = String;
+    type ViewModel = ViewModel;
 
     fn present(data: UsecaseResponseResult<'d, D, VerifyEmail<'d, D>>) -> Self::ViewModel {
         match data {
