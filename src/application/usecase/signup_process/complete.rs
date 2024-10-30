@@ -1,7 +1,12 @@
+use std::sync::Arc;
+
 use crate::{
-    application::gateway::repository::{
-        signup_process::{GetError, Repo, SaveError},
-        user,
+    application::{
+        gateway::repository::{
+            signup_process::{GetError, Repo, SaveError},
+            user,
+        },
+        usecase::Usecase,
     },
     domain::entity::{
         signup_process::{EmailVerified, Id, SignupProcess, SignupStateEnum},
@@ -22,15 +27,8 @@ pub struct Request {
 pub struct Response {
     pub record: user::Record,
 }
-pub struct Complete<'r1, 'r2, R1, R2> {
-    repo: &'r1 R1,
-    user_repo: &'r2 R2,
-}
-
-impl<'r1, 'r2, R1, R2> Complete<'r1, 'r2, R1, R2> {
-    pub fn new(repo: &'r1 R1, user_repo: &'r2 R2) -> Self {
-        Self { repo, user_repo }
-    }
+pub struct Complete<D> {
+    db: Arc<D>,
 }
 
 #[derive(Debug, Error)]
@@ -58,41 +56,47 @@ impl From<(GetError, Id)> for Error {
     }
 }
 
-impl<'r1, 'r2, R1, R2> Complete<'r1, 'r2, R1, R2>
+impl<D> Usecase<D> for Complete<D>
 where
-    R1: Repo,
-    R2: user::Repo,
+    D: Repo + user::Repo,
 {
-    /// Create a new user with the given name.
-    pub fn exec(&self, req: Request) -> Result<Response, Error> {
+    type Request = Request;
+    type Response = Response;
+    type Error = Error;
+
+    fn exec(&self, req: Self::Request) -> Result<Self::Response, Self::Error> {
         log::debug!("SignupProcess Completed: {:?}", req);
         let record = self
-            .repo
+            .db
             .get_latest_state(req.id)
-            .map_err(|_| Error::Repo)?;
+            .map_err(|_| Self::Error::Repo)?;
         if let SignupStateEnum::EmailVerified { .. } = record.state {
             let process: SignupProcess<EmailVerified> =
                 record.try_into().map_err(|err| (err, req.id))?;
             let username = UserName::new(req.username);
             let password = Password::new(req.password);
             let process = process.complete(username, password);
-            self.repo
-                .save_latest_state(process.clone().into())
-                .map_err(|_| Error::NotFound(req.id))?;
             let user: User = User::new(
                 crate::domain::entity::user::Id::new(req.id),
                 process.email(),
                 process.username(),
                 process.password(),
             );
-            self.user_repo
-                .save(user.clone().into())
-                .map_err(|_| Error::Repo)?;
-            Ok(Response {
+            // Save User first, then save SignupProcess
+            self.db.save(user.clone().into()).map_err(|_| Error::Repo)?;
+            // if save user fails, we should not save the signup process
+            self.db
+                .save_latest_state(process.clone().into())
+                .map_err(|_| Self::Error::NotFound(req.id))?;
+            Ok(Self::Response {
                 record: user.into(),
             })
         } else {
-            Err(Error::Repo)
+            Err(Self::Error::Repo)
         }
+    }
+
+    fn new(db: Arc<D>) -> Self {
+        Self { db }
     }
 }

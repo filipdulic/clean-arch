@@ -1,9 +1,12 @@
 use crate::{
-    application::gateway::repository::user::{GetError, Repo},
+    application::{
+        gateway::repository::user::{GetError, Repo},
+        usecase::Usecase,
+    },
     domain::entity::user::{Id, User},
 };
 
-use std::fmt::Debug;
+use std::{fmt::Debug, sync::Arc};
 use thiserror::Error;
 
 #[derive(Debug)]
@@ -17,14 +20,8 @@ pub struct Response {
 }
 
 /// Get all users usecase interactor
-pub struct GetOne<'r, R> {
-    repo: &'r R,
-}
-
-impl<'r, R> GetOne<'r, R> {
-    pub fn new(repo: &'r R) -> Self {
-        Self { repo }
-    }
+pub struct GetOne<D> {
+    db: Arc<D>,
 }
 
 #[derive(Debug, Error)]
@@ -44,13 +41,21 @@ impl From<GetError> for Error {
     }
 }
 
-impl<'r, R> GetOne<'r, R>
+impl<D> Usecase<D> for GetOne<D>
 where
-    R: Repo,
+    D: Repo,
 {
-    pub fn exec(&self, req: Request) -> Result<Response, Error> {
+    type Request = Request;
+    type Response = Response;
+    type Error = Error;
+
+    fn exec(&self, req: Self::Request) -> Result<Self::Response, Self::Error> {
         log::debug!("Get user by ID");
-        let user = self.repo.get(req.id)?.into();
-        Ok(Response { user })
+        let user = self.db.get(req.id)?.into();
+        Ok(Self::Response { user })
+    }
+
+    fn new(db: Arc<D>) -> Self {
+        Self { db }
     }
 }

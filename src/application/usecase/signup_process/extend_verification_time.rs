@@ -1,5 +1,10 @@
+use std::sync::Arc;
+
 use crate::{
-    application::gateway::repository::signup_process::{GetError, Repo, SaveError},
+    application::{
+        gateway::repository::signup_process::{GetError, Repo, SaveError},
+        usecase::Usecase,
+    },
     domain::entity::signup_process::{Id, SignupProcess, VerificationTimedOut},
 };
 
@@ -14,14 +19,8 @@ pub struct Request {
 pub struct Response {
     pub id: Id,
 }
-pub struct ExtendVerificationTime<'r, R> {
-    repo: &'r R,
-}
-
-impl<'r, R> ExtendVerificationTime<'r, R> {
-    pub fn new(repo: &'r R) -> Self {
-        Self { repo }
-    }
+pub struct ExtendVerificationTime<D> {
+    db: Arc<D>,
 }
 
 #[derive(Debug, Error)]
@@ -49,22 +48,28 @@ impl From<(GetError, Id)> for Error {
     }
 }
 
-impl<'r, R> ExtendVerificationTime<'r, R>
+impl<D> Usecase<D> for ExtendVerificationTime<D>
 where
-    R: Repo,
+    D: Repo,
 {
-    pub fn exec(&self, req: Request) -> Result<Response, Error> {
+    type Request = Request;
+    type Response = Response;
+    type Error = Error;
+    fn exec(&self, req: Request) -> Result<Response, Error> {
         log::debug!("SignupProcess Verification extended: {:?}", req);
         let record = self
-            .repo
+            .db
             .get_latest_state(req.id)
             .map_err(|err| (err, req.id))?;
         let process: SignupProcess<VerificationTimedOut> =
             record.try_into().map_err(|err| (err, req.id))?;
         let process = process.extend_verification_time();
-        self.repo
+        self.db
             .save_latest_state(process.into())
-            .map_err(|_| Error::NotFound(req.id))?;
-        Ok(Response { id: req.id })
+            .map_err(|_| Self::Error::NotFound(req.id))?;
+        Ok(Self::Response { id: req.id })
+    }
+    fn new(db: Arc<D>) -> Self {
+        Self { db }
     }
 }

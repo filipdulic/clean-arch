@@ -15,7 +15,19 @@ use std::sync::Arc;
 
 use clap::Subcommand;
 
-use crate::adapter::{api::Api, db::Db, presenter::cli::Presenter};
+use crate::{
+    adapter::{api::Api, boundary::cli::Boundary, db::Db},
+    application::usecase::{
+        signup_process::{
+            complete::Complete, completion_timed_out::CompletionTimedOut, delete::Delete,
+            extend_completion_time::ExtendCompletionTime,
+            extend_verification_time::ExtendVerificationTime, get_state_chain::GetStateChain,
+            initialize::Initialize, verification_timed_out::VerificationTimedOut,
+            verify_email::VerifyEmail,
+        },
+        user::{delete::Delete as UserDelete, get_all::GetAll, get_one::GetOne, update::Update},
+    },
+};
 
 #[derive(Subcommand)]
 pub enum Command {
@@ -72,35 +84,35 @@ pub fn run<D>(db: Arc<D>, cmd: Command)
 where
     D: Db,
 {
-    let app_api = Api::new(db, Presenter);
+    let app_api = Api::new(db, Boundary);
 
     match cmd {
         Command::InitializeSignupProcess { username } => {
-            let res = app_api.initialize_signup_process(username);
+            let res = app_api.handle_signup_process_endpoint::<Initialize<D>>(username);
             println!("{res}");
         }
         Command::SignupProcessVerificationTimedOut { id } => {
-            let res = app_api.verification_timed_out_of_signup_process(&id);
+            let res = app_api.handle_signup_process_endpoint::<VerificationTimedOut<D>>(id);
             println!("{res}");
         }
         Command::SignupProcessCompletionTimedOut { id } => {
-            let res = app_api.completion_timed_out_of_signup_process(&id);
+            let res = app_api.handle_signup_process_endpoint::<CompletionTimedOut<D>>(id);
             println!("{res}");
         }
         Command::ExtendVerificationTimeOfSignupProcess { id } => {
-            let res = app_api.extend_verification_time_of_signup_process(&id);
+            let res = app_api.handle_signup_process_endpoint::<ExtendVerificationTime<D>>(id);
             println!("{res}");
         }
         Command::ExtendCompletionTimeOfSignupProcess { id } => {
-            let res = app_api.extend_completion_time_of_signup_process(&id);
+            let res = app_api.handle_signup_process_endpoint::<ExtendCompletionTime<D>>(id);
             println!("{res}");
         }
         Command::DeleteSignupProcess { id } => {
-            let res = app_api.delete_signup_process(&id);
+            let res = app_api.handle_signup_process_endpoint::<Delete<D>>(id);
             println!("{res}");
         }
         Command::VerifyEmailOfSignupProcess { id } => {
-            let res = app_api.verify_email_of_signup_process(&id);
+            let res = app_api.handle_signup_process_endpoint::<VerifyEmail<D>>(id);
             println!("{res}");
         }
         Command::CompleteSignupProcess {
@@ -108,23 +120,24 @@ where
             username,
             password,
         } => {
-            let res = app_api.complete_signup_process(&id, username, password);
+            let res =
+                app_api.handle_signup_process_endpoint::<Complete<D>>((id, username, password));
             println!("{res}");
         }
         Command::GetStateChain { id } => {
-            let res = app_api.get_state_chain_of_signup_process(&id);
+            let res = app_api.handle_signup_process_endpoint::<GetStateChain<D>>(id);
             println!("{res}");
         }
         Command::ListUsers => {
-            let res = app_api.read_all_users();
+            let res = app_api.handle_user_endpont::<GetAll<D>>(());
             println!("{res}");
         }
         Command::DeleteUser { id } => {
-            let res = app_api.delete_user(&id);
+            let res = app_api.handle_user_endpont::<UserDelete<D>>(id);
             println!("{res}");
         }
         Command::ReadUser { id } => {
-            let res = app_api.get_one_user(&id);
+            let res = app_api.handle_user_endpont::<GetOne<D>>(id);
             println!("{res}");
         }
         Command::UpdateUser {
@@ -133,7 +146,7 @@ where
             username,
             password,
         } => {
-            let res = app_api.update_user(&id, email, username, password);
+            let res = app_api.handle_user_endpont::<Update<D>>((id, email, username, password));
             println!("{res}");
         }
     }

@@ -1,5 +1,10 @@
+use std::sync::Arc;
+
 use crate::{
-    application::gateway::repository::signup_process::{GetError, Repo, SaveError},
+    application::{
+        gateway::repository::signup_process::{GetError, Repo, SaveError},
+        usecase::Usecase,
+    },
     domain::entity::signup_process::{Id, Initialized, SignupProcess},
 };
 
@@ -14,14 +19,8 @@ pub struct Request {
 pub struct Response {
     pub id: Id,
 }
-pub struct VerificationTimedOut<'r, R> {
-    repo: &'r R,
-}
-
-impl<'r, R> VerificationTimedOut<'r, R> {
-    pub fn new(repo: &'r R) -> Self {
-        Self { repo }
-    }
+pub struct VerificationTimedOut<D> {
+    db: Arc<D>,
 }
 
 #[derive(Debug, Error)]
@@ -49,21 +48,27 @@ impl From<(GetError, Id)> for Error {
     }
 }
 
-impl<'r, R> VerificationTimedOut<'r, R>
+impl<D> Usecase<D> for VerificationTimedOut<D>
 where
-    R: Repo,
+    D: Repo,
 {
-    pub fn exec(&self, req: Request) -> Result<Response, Error> {
+    type Request = Request;
+    type Response = Response;
+    type Error = Error;
+    fn exec(&self, req: Request) -> Result<Response, Error> {
         log::debug!("SignupProcess Verification timed out: {:?}", req);
         let record = self
-            .repo
+            .db
             .get_latest_state(req.id)
             .map_err(|err| (err, req.id))?;
         let process: SignupProcess<Initialized> = record.try_into().map_err(|err| (err, req.id))?;
         let process = process.verification_timed_out();
-        self.repo
+        self.db
             .save_latest_state(process.into())
             .map_err(|_| Error::NotFound(req.id))?;
-        Ok(Response { id: req.id })
+        Ok(Self::Response { id: req.id })
+    }
+    fn new(db: Arc<D>) -> Self {
+        Self { db }
     }
 }

@@ -1,9 +1,12 @@
 use crate::{
-    application::gateway::repository::signup_process::{GetError, Record, Repo},
+    application::{
+        gateway::repository::signup_process::{GetError, Record, Repo},
+        usecase::Usecase,
+    },
     domain::entity::signup_process::Id,
 };
 
-use std::fmt::Debug;
+use std::{fmt::Debug, sync::Arc};
 use thiserror::Error;
 
 #[derive(Debug)]
@@ -16,15 +19,8 @@ pub struct Response {
     pub state_chain: Vec<Record>,
 }
 
-/// Get signup process state chain
-pub struct GetStateChain<'r, R> {
-    repo: &'r R,
-}
-
-impl<'r, R> GetStateChain<'r, R> {
-    pub fn new(repo: &'r R) -> Self {
-        Self { repo }
-    }
+pub struct GetStateChain<D> {
+    db: Arc<D>,
 }
 
 #[derive(Debug, Error)]
@@ -44,16 +40,22 @@ impl From<(GetError, Id)> for Error {
     }
 }
 
-impl<'r, R> GetStateChain<'r, R>
+impl<D> Usecase<D> for GetStateChain<D>
 where
-    R: Repo,
+    D: Repo,
 {
-    pub fn exec(&self, req: Request) -> Result<Response, Error> {
+    type Request = Request;
+    type Response = Response;
+    type Error = Error;
+    fn exec(&self, req: Request) -> Result<Response, Error> {
         log::debug!("Get signup process state chain");
         let state_chain = self
-            .repo
+            .db
             .get_state_chain(req.id)
             .map_err(|err| (err, req.id))?;
-        Ok(Response { state_chain })
+        Ok(Self::Response { state_chain })
+    }
+    fn new(db: Arc<D>) -> Self {
+        Self { db }
     }
 }

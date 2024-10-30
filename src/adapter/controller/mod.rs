@@ -27,5 +27,31 @@
 //! *Error Handling: It handles any errors that occur during the interaction with
 //!     the use case and prepares appropriate responses.
 
+use std::sync::Arc;
+
+use crate::application::usecase::Usecase;
+
+use super::boundary::{Error, Ingester, Presenter};
+
 pub mod signup_process;
 pub mod user;
+
+pub trait Controller<D, B> {
+    fn new(db: Arc<D>, boundary: B) -> Self;
+    fn db(&self) -> Arc<D>;
+    fn handle_usecase<U>(
+        &self,
+        input: <B as Ingester<D, U>>::InputModel,
+    ) -> <B as Presenter<D, U>>::ViewModel
+    where
+        U: Usecase<D>,
+        B: Ingester<D, U> + Presenter<D, U>,
+    {
+        let req = <B as Ingester<D, U>>::ingest(input).and_then(|req| {
+            U::new(self.db())
+                .exec(req)
+                .map_err(|e| Error::UsecaseError(e))
+        });
+        <B as Presenter<D, U>>::present(req)
+    }
+}
