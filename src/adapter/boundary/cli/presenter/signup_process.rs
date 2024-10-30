@@ -1,8 +1,5 @@
 use crate::{
-    adapter::boundary::{
-        cli::presenter::Presenter, Presenter as PresenterTrait, UsecaseResponseResult,
-    },
-    adapter::model::cli::view::ViewModel,
+    adapter::boundary::{cli::Boundary, Presenter, UsecaseResponseResult},
     application::{
         gateway::repository::{signup_process::Repo, user::Repo as UserRepo},
         identifier::NewId,
@@ -17,11 +14,11 @@ use crate::{
     domain::entity::signup_process::Id,
 };
 
-impl<'d, D> PresenterTrait<'d, D, Complete<'d, D>> for Presenter
+impl<'d, D> Presenter<'d, D, Complete<'d, D>> for Boundary
 where
     D: Repo + UserRepo,
 {
-    type ViewModel = ViewModel;
+    type ViewModel = String;
 
     fn present(data: UsecaseResponseResult<'d, D, Complete<'d, D>>) -> Self::ViewModel {
         match data {
@@ -31,11 +28,11 @@ where
     }
 }
 
-impl<'d, D> PresenterTrait<'d, D, CompletionTimedOut<'d, D>> for Presenter
+impl<'d, D> Presenter<'d, D, CompletionTimedOut<'d, D>> for Boundary
 where
     D: Repo,
 {
-    type ViewModel = ViewModel;
+    type ViewModel = String;
 
     fn present(data: UsecaseResponseResult<'d, D, CompletionTimedOut<'d, D>>) -> Self::ViewModel {
         match data {
@@ -45,11 +42,11 @@ where
     }
 }
 
-impl<'d, D> PresenterTrait<'d, D, Delete<'d, D>> for Presenter
+impl<'d, D> Presenter<'d, D, Delete<'d, D>> for Boundary
 where
     D: Repo,
 {
-    type ViewModel = ViewModel;
+    type ViewModel = String;
 
     fn present(data: UsecaseResponseResult<'d, D, Delete<'d, D>>) -> Self::ViewModel {
         match data {
@@ -59,11 +56,11 @@ where
     }
 }
 
-impl<'d, D> PresenterTrait<'d, D, ExtendCompletionTime<'d, D>> for Presenter
+impl<'d, D> Presenter<'d, D, ExtendCompletionTime<'d, D>> for Boundary
 where
     D: Repo,
 {
-    type ViewModel = ViewModel;
+    type ViewModel = String;
 
     fn present(data: UsecaseResponseResult<'d, D, ExtendCompletionTime<'d, D>>) -> Self::ViewModel {
         match data {
@@ -76,11 +73,11 @@ where
     }
 }
 
-impl<'d, D> PresenterTrait<'d, D, ExtendVerificationTime<'d, D>> for Presenter
+impl<'d, D> Presenter<'d, D, ExtendVerificationTime<'d, D>> for Boundary
 where
     D: Repo,
 {
-    type ViewModel = ViewModel;
+    type ViewModel = String;
 
     fn present(
         data: UsecaseResponseResult<'d, D, ExtendVerificationTime<'d, D>>,
@@ -95,11 +92,11 @@ where
     }
 }
 
-impl<'d, D> PresenterTrait<'d, D, GetStateChain<'d, D>> for Presenter
+impl<'d, D> Presenter<'d, D, GetStateChain<'d, D>> for Boundary
 where
     D: Repo,
 {
-    type ViewModel = ViewModel;
+    type ViewModel = String;
 
     fn present(data: UsecaseResponseResult<'d, D, GetStateChain<'d, D>>) -> Self::ViewModel {
         match data {
@@ -109,11 +106,11 @@ where
     }
 }
 
-impl<'d, D> PresenterTrait<'d, D, Initialize<'d, D>> for Presenter
+impl<'d, D> Presenter<'d, D, Initialize<'d, D>> for Boundary
 where
     D: Repo + NewId<Id>,
 {
-    type ViewModel = ViewModel;
+    type ViewModel = String;
 
     fn present(data: UsecaseResponseResult<'d, D, Initialize<'d, D>>) -> Self::ViewModel {
         match data {
@@ -123,11 +120,11 @@ where
     }
 }
 
-impl<'d, D> PresenterTrait<'d, D, VerificationTimedOut<'d, D>> for Presenter
+impl<'d, D> Presenter<'d, D, VerificationTimedOut<'d, D>> for Boundary
 where
     D: Repo,
 {
-    type ViewModel = ViewModel;
+    type ViewModel = String;
 
     fn present(data: UsecaseResponseResult<'d, D, VerificationTimedOut<'d, D>>) -> Self::ViewModel {
         match data {
@@ -137,11 +134,11 @@ where
     }
 }
 
-impl<'d, D> PresenterTrait<'d, D, VerifyEmail<'d, D>> for Presenter
+impl<'d, D> Presenter<'d, D, VerifyEmail<'d, D>> for Boundary
 where
     D: Repo,
 {
-    type ViewModel = ViewModel;
+    type ViewModel = String;
 
     fn present(data: UsecaseResponseResult<'d, D, VerifyEmail<'d, D>>) -> Self::ViewModel {
         match data {

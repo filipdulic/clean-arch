@@ -1,19 +1,16 @@
 use crate::{
-    adapter::boundary::{
-        cli::presenter::Presenter, Presenter as PresenterTrait, UsecaseResponseResult,
-    },
-    adapter::model::cli::view::ViewModel,
+    adapter::boundary::{cli::Boundary, Presenter, UsecaseResponseResult},
     application::{
         gateway::repository::user::Repo,
         usecase::user::{delete::Delete, get_all::GetAll, get_one::GetOne, update::Update},
     },
 };
 
-impl<'d, D> PresenterTrait<'d, D, Update<'d, D>> for Presenter
+impl<'d, D> Presenter<'d, D, Update<'d, D>> for Boundary
 where
     D: Repo,
 {
-    type ViewModel = ViewModel;
+    type ViewModel = String;
 
     fn present(data: UsecaseResponseResult<'d, D, Update<'d, D>>) -> Self::ViewModel {
         match data {
@@ -23,11 +20,11 @@ where
     }
 }
 
-impl<'d, D> PresenterTrait<'d, D, GetOne<'d, D>> for Presenter
+impl<'d, D> Presenter<'d, D, GetOne<'d, D>> for Boundary
 where
     D: Repo,
 {
-    type ViewModel = ViewModel;
+    type ViewModel = String;
 
     fn present(data: UsecaseResponseResult<'d, D, GetOne<'d, D>>) -> Self::ViewModel {
         match data {
@@ -37,11 +34,11 @@ where
     }
 }
 
-impl<'d, D> PresenterTrait<'d, D, GetAll<'d, D>> for Presenter
+impl<'d, D> Presenter<'d, D, GetAll<'d, D>> for Boundary
 where
     D: Repo,
 {
-    type ViewModel = ViewModel;
+    type ViewModel = String;
 
     fn present(data: UsecaseResponseResult<'d, D, GetAll<'d, D>>) -> Self::ViewModel {
         match data {
@@ -56,11 +53,11 @@ where
     }
 }
 
-impl<'d, D> PresenterTrait<'d, D, Delete<'d, D>> for Presenter
+impl<'d, D> Presenter<'d, D, Delete<'d, D>> for Boundary
 where
     D: Repo,
 {
-    type ViewModel = ViewModel;
+    type ViewModel = String;
 
     fn present(data: UsecaseResponseResult<'d, D, Delete<'d, D>>) -> Self::ViewModel {
         match data {
