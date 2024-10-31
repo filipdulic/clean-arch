@@ -7,6 +7,6 @@ use crate::{
 };
 
 pub trait Db:
-    SignupProcessRepo + NewId<SignupProcessId> + UserRepo + NewId<UserId> + 'static + Clone
+    SignupProcessRepo + NewId<SignupProcessId> + UserRepo + NewId<UserId> + Clone
 {
 }
