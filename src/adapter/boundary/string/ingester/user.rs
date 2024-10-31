@@ -1,7 +1,7 @@
 use uuid::Uuid;
 
 use crate::{
-    adapter::boundary::{cli::Boundary, Error, Ingester, UsecaseRequestResult},
+    adapter::boundary::{string::Boundary, Error, Ingester, UsecaseRequestResult},
     application::{
         gateway::repository::user::Repo,
         usecase::user::{

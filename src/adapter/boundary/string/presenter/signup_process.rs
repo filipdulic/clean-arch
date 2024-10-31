@@ -1,5 +1,5 @@
 use crate::{
-    adapter::boundary::{cli::Boundary, Presenter, UsecaseResponseResult},
+    adapter::boundary::{string::Boundary, Presenter, UsecaseResponseResult},
     application::{
         gateway::repository::{signup_process::Repo, user::Repo as UserRepo},
         identifier::NewId,

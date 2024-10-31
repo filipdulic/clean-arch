@@ -16,7 +16,7 @@ use std::sync::Arc;
 use clap::Subcommand;
 
 use crate::{
-    adapter::{api::Api, boundary::cli::Boundary, db::Db},
+    adapter::{api::Api, boundary::string::Boundary, db::Db},
     application::usecase::{
         signup_process::{
             complete::Complete, completion_timed_out::CompletionTimedOut, delete::Delete,

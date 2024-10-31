@@ -1,4 +1,4 @@
-pub mod cli;
+pub mod string;
 
 use thiserror::Error;
 
