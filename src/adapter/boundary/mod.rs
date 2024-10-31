@@ -5,7 +5,7 @@ use thiserror::Error;
 use crate::application::usecase::Usecase;
 
 #[derive(Error, Debug)]
-pub enum Error<R, U: Usecase<R>> {
+pub enum Error<'d, D, U: Usecase<'d, D>> {
     #[error("Unable to parse id")]
     ParseIdError,
     #[error("Unable to parse input")]
@@ -14,15 +14,15 @@ pub enum Error<R, U: Usecase<R>> {
     UsecaseError(U::Error), // impl from thing...
 }
 
-type UsecaseResponseResult<D, U> = Result<<U as Usecase<D>>::Response, Error<D, U>>;
+type UsecaseResponseResult<'d, D, U> = Result<<U as Usecase<'d, D>>::Response, Error<'d, D, U>>;
 
-type UsecaseRequestResult<D, U> = Result<<U as Usecase<D>>::Request, Error<D, U>>;
+type UsecaseRequestResult<'d, D, U> = Result<<U as Usecase<'d, D>>::Request, Error<'d, D, U>>;
 
-pub trait Ingester<A, U: Usecase<A>> {
+pub trait Ingester<'d, D, U: Usecase<'d, D>> {
     type InputModel;
-    fn ingest(input: Self::InputModel) -> UsecaseRequestResult<A, U>;
+    fn ingest(input: Self::InputModel) -> UsecaseRequestResult<'d, D, U>;
 }
-pub trait Presenter<A, U: Usecase<A>> {
+pub trait Presenter<'d, D, U: Usecase<'d, D>> {
     type ViewModel;
-    fn present(data: UsecaseResponseResult<A, U>) -> Self::ViewModel;
+    fn present(data: UsecaseResponseResult<'d, D, U>) -> Self::ViewModel;
 }

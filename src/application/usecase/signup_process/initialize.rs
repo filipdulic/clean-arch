@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use crate::{
     application::{
         gateway::repository::signup_process::{Repo, SaveError},
@@ -23,10 +21,10 @@ pub struct Request {
 pub struct Response {
     pub id: Id,
 }
-pub struct Initialize<D> {
+pub struct Initialize<'d, D> {
     // TODO: figure out a way to separete the id generation from the repo.
     // same issue in complete, perhaps a special service or unit of work?
-    db: Arc<D>,
+    db: &'d D,
 }
 
 #[derive(Debug, Error)]
@@ -45,7 +43,7 @@ impl From<SaveError> for Error {
     }
 }
 
-impl<D> Usecase<D> for Initialize<D>
+impl<'d, D> Usecase<'d, D> for Initialize<'d, D>
 where
     D: Repo + NewId<Id>,
 {
@@ -64,7 +62,7 @@ where
         self.db.save_latest_state(signup_process.into())?;
         Ok(Response { id })
     }
-    fn new(db: Arc<D>) -> Self {
+    fn new(db: &'d D) -> Self {
         Self { db }
     }
 }

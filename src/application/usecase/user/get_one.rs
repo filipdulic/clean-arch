@@ -6,7 +6,6 @@ use crate::{
     domain::entity::user::{Id, User},
 };
 
-use std::{fmt::Debug, sync::Arc};
 use thiserror::Error;
 
 #[derive(Debug)]
@@ -20,8 +19,8 @@ pub struct Response {
 }
 
 /// Get all users usecase interactor
-pub struct GetOne<D> {
-    db: Arc<D>,
+pub struct GetOne<'d, D> {
+    db: &'d D,
 }
 
 #[derive(Debug, Error)]
@@ -41,7 +40,7 @@ impl From<GetError> for Error {
     }
 }
 
-impl<D> Usecase<D> for GetOne<D>
+impl<'d, D> Usecase<'d, D> for GetOne<'d, D>
 where
     D: Repo,
 {
@@ -55,7 +54,7 @@ where
         Ok(Self::Response { user })
     }
 
-    fn new(db: Arc<D>) -> Self {
+    fn new(db: &'d D) -> Self {
         Self { db }
     }
 }

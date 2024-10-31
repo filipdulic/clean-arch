@@ -52,72 +52,70 @@ where
     boundary: B,
 }
 
-impl<D, B> Api<D, B>
+impl<'d, D, B> Api<D, B>
 where
     D: repo::user::Repo
         + repo::signup_process::Repo
         + NewId<domain::entity::user::Id>
         + NewId<domain::entity::signup_process::Id>
-        + Clone,
-    B: Presenter<D, SpDelete<D>>
-        + Presenter<D, Initialize<D>>
-        + Presenter<D, VerifyEmail<D>>
-        + Presenter<D, VerificationTimedOut<D>>
-        + Presenter<D, ExtendVerificationTime<D>>
-        + Presenter<D, CompletionTimedOut<D>>
-        + Presenter<D, ExtendCompletionTime<D>>
-        + Presenter<D, GetStateChain<D>>
-        + Presenter<D, Complete<D>>
-        + Presenter<D, Delete<D>>
-        + Presenter<D, Update<D>>
-        + Presenter<D, GetOne<D>>
-        + Presenter<D, GetAll<D>>
-        + Ingester<D, SpDelete<D>>
-        + Ingester<D, Initialize<D>>
-        + Ingester<D, VerifyEmail<D>>
-        + Ingester<D, VerificationTimedOut<D>>
-        + Ingester<D, ExtendVerificationTime<D>>
-        + Ingester<D, CompletionTimedOut<D>>
-        + Ingester<D, ExtendCompletionTime<D>>
-        + Ingester<D, GetStateChain<D>>
-        + Ingester<D, Complete<D>>
-        + Ingester<D, Delete<D>>
-        + Ingester<D, Update<D>>
-        + Ingester<D, GetOne<D>>
-        + Ingester<D, GetAll<D>>
+        + Clone
+        + 'd,
+    B: Presenter<'d, D, SpDelete<'d, D>>
+        + Presenter<'d, D, Initialize<'d, D>>
+        + Presenter<'d, D, VerifyEmail<'d, D>>
+        + Presenter<'d, D, VerificationTimedOut<'d, D>>
+        + Presenter<'d, D, ExtendVerificationTime<'d, D>>
+        + Presenter<'d, D, CompletionTimedOut<'d, D>>
+        + Presenter<'d, D, ExtendCompletionTime<'d, D>>
+        + Presenter<'d, D, GetStateChain<'d, D>>
+        + Presenter<'d, D, Complete<'d, D>>
+        + Presenter<'d, D, Delete<'d, D>>
+        + Presenter<'d, D, Update<'d, D>>
+        + Presenter<'d, D, GetOne<'d, D>>
+        + Presenter<'d, D, GetAll<'d, D>>
+        + Ingester<'d, D, SpDelete<'d, D>>
+        + Ingester<'d, D, Initialize<'d, D>>
+        + Ingester<'d, D, VerifyEmail<'d, D>>
+        + Ingester<'d, D, VerificationTimedOut<'d, D>>
+        + Ingester<'d, D, ExtendVerificationTime<'d, D>>
+        + Ingester<'d, D, CompletionTimedOut<'d, D>>
+        + Ingester<'d, D, ExtendCompletionTime<'d, D>>
+        + Ingester<'d, D, GetStateChain<'d, D>>
+        + Ingester<'d, D, Complete<'d, D>>
+        + Ingester<'d, D, Delete<'d, D>>
+        + Ingester<'d, D, Update<'d, D>>
+        + Ingester<'d, D, GetOne<'d, D>>
+        + Ingester<'d, D, GetAll<'d, D>>
         + Clone,
 {
     pub const fn new(db: Arc<D>, boundary: B) -> Self {
         Self { db, boundary }
     }
-    fn user_controller(&self) -> controller::user::UserController<D, B> {
-        controller::user::UserController::new(self.db.clone(), self.boundary.clone())
+    fn user_controller(&'d self) -> controller::user::UserController<'d, D, B> {
+        controller::user::UserController::new(&self.db, self.boundary.clone())
     }
     fn signup_process_controller(
-        &self,
-    ) -> controller::signup_process::SignupProcessController<D, B> {
-        controller::signup_process::SignupProcessController::new(
-            self.db.clone(),
-            self.boundary.clone(),
-        )
+        &'d self,
+    ) -> controller::signup_process::SignupProcessController<'d, D, B> {
+        controller::signup_process::SignupProcessController::new(&self.db, self.boundary.clone())
     }
     pub fn handle_user_endpont<U>(
-        &self,
-        input: <B as Ingester<D, U>>::InputModel,
-    ) -> <B as Presenter<D, U>>::ViewModel
+        &'d self,
+        input: <B as Ingester<'d, D, U>>::InputModel,
+    ) -> <B as Presenter<'d, D, U>>::ViewModel
     where
-        U: Usecase<D>,
-        B: Ingester<D, U> + Presenter<D, U>,
+        U: Usecase<'d, D>,
+        B: Ingester<'d, D, U> + Presenter<'d, D, U>,
     {
         self.user_controller().handle_usecase::<U>(input)
     }
     pub fn handle_signup_process_endpoint<U>(
-        &self,
-        input: <B as Ingester<D, U>>::InputModel,
-    ) -> <B as Presenter<D, U>>::ViewModel
+        &'d self,
+        input: <B as Ingester<'d, D, U>>::InputModel,
+    ) -> <B as Presenter<'d, D, U>>::ViewModel
     where
-        U: Usecase<D>,
-        B: Ingester<D, U> + Presenter<D, U>,
+        U: Usecase<'d, D>,
+        B: Ingester<'d, D, U> + Presenter<'d, D, U>,
     {
         self.signup_process_controller().handle_usecase::<U>(input)
     }

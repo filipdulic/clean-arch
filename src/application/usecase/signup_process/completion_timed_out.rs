@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use crate::{
     application::{
         gateway::repository::signup_process::{GetError, Repo, SaveError},
@@ -19,8 +17,8 @@ pub struct Request {
 pub struct Response {
     pub id: Id,
 }
-pub struct CompletionTimedOut<D> {
-    db: Arc<D>,
+pub struct CompletionTimedOut<'d, D> {
+    db: &'d D,
 }
 
 #[derive(Debug, Error)]
@@ -48,7 +46,7 @@ impl From<(GetError, Id)> for Error {
     }
 }
 
-impl<D> Usecase<D> for CompletionTimedOut<D>
+impl<'d, D> Usecase<'d, D> for CompletionTimedOut<'d, D>
 where
     D: Repo,
 {
@@ -71,7 +69,7 @@ where
         Ok(Self::Response { id: req.id })
     }
 
-    fn new(db: Arc<D>) -> Self {
+    fn new(db: &'d D) -> Self {
         Self { db }
     }
 }

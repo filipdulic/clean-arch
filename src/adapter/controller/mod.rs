@@ -27,8 +27,6 @@
 //! *Error Handling: It handles any errors that occur during the interaction with
 //!     the use case and prepares appropriate responses.
 
-use std::sync::Arc;
-
 use crate::application::usecase::Usecase;
 
 use super::boundary::{Error, Ingester, Presenter};
@@ -36,22 +34,22 @@ use super::boundary::{Error, Ingester, Presenter};
 pub mod signup_process;
 pub mod user;
 
-pub trait Controller<D, B> {
-    fn new(db: Arc<D>, boundary: B) -> Self;
-    fn db(&self) -> Arc<D>;
+pub trait Controller<'d, D, B>
+where
+    D: 'd,
+{
+    fn new(db: &'d D, boundary: B) -> Self;
+    fn db(&self) -> &'d D;
     fn handle_usecase<U>(
         &self,
-        input: <B as Ingester<D, U>>::InputModel,
-    ) -> <B as Presenter<D, U>>::ViewModel
+        input: <B as Ingester<'d, D, U>>::InputModel,
+    ) -> <B as Presenter<'d, D, U>>::ViewModel
     where
-        U: Usecase<D>,
-        B: Ingester<D, U> + Presenter<D, U>,
+        U: Usecase<'d, D>,
+        B: Ingester<'d, D, U> + Presenter<'d, D, U>,
     {
-        let req = <B as Ingester<D, U>>::ingest(input).and_then(|req| {
-            U::new(self.db())
-                .exec(req)
-                .map_err(|e| Error::UsecaseError(e))
-        });
+        let req = <B as Ingester<D, U>>::ingest(input)
+            .and_then(|req| U::new(self.db()).exec(req).map_err(Error::UsecaseError));
         <B as Presenter<D, U>>::present(req)
     }
 }

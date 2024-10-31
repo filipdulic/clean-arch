@@ -6,7 +6,6 @@ use crate::{
     domain::entity::signup_process::Id,
 };
 
-use std::{fmt::Debug, sync::Arc};
 use thiserror::Error;
 
 #[derive(Debug)]
@@ -19,8 +18,8 @@ pub struct Response {
     pub state_chain: Vec<Record>,
 }
 
-pub struct GetStateChain<D> {
-    db: Arc<D>,
+pub struct GetStateChain<'d, D> {
+    db: &'d D,
 }
 
 #[derive(Debug, Error)]
@@ -40,7 +39,7 @@ impl From<(GetError, Id)> for Error {
     }
 }
 
-impl<D> Usecase<D> for GetStateChain<D>
+impl<'d, D> Usecase<'d, D> for GetStateChain<'d, D>
 where
     D: Repo,
 {
@@ -55,7 +54,7 @@ where
             .map_err(|err| (err, req.id))?;
         Ok(Self::Response { state_chain })
     }
-    fn new(db: Arc<D>) -> Self {
+    fn new(db: &'d D) -> Self {
         Self { db }
     }
 }
