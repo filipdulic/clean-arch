@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use crate::{
     adapter::boundary::{Ingester, Presenter},
     application::{
@@ -18,37 +16,37 @@ use crate::{
 
 use super::Controller;
 
-pub struct SignupProcessController<D, B> {
-    db: Arc<D>,
+pub struct SignupProcessController<'d, D, B> {
+    db: &'d D,
     #[allow(dead_code)]
     boundry: B,
 }
 
-impl<D, B> Controller<D, B> for SignupProcessController<D, B>
+impl<'d, D, B> Controller<'d, D, B> for SignupProcessController<'d, D, B>
 where
-    D: repo::signup_process::Repo + repo::user::Repo + NewId<signup_process::Id>,
-    B: Presenter<D, Complete<D>>
-        + Presenter<D, CompletionTimedOut<D>>
-        + Presenter<D, ExtendCompletionTime<D>>
-        + Presenter<D, ExtendVerificationTime<D>>
-        + Presenter<D, GetStateChain<D>>
-        + Presenter<D, Initialize<D>>
-        + Presenter<D, VerificationTimedOut<D>>
-        + Presenter<D, VerifyEmail<D>>
-        + Ingester<D, Complete<D>>
-        + Ingester<D, CompletionTimedOut<D>>
-        + Ingester<D, ExtendCompletionTime<D>>
-        + Ingester<D, ExtendVerificationTime<D>>
-        + Ingester<D, GetStateChain<D>>
-        + Ingester<D, Initialize<D>>
-        + Ingester<D, VerificationTimedOut<D>>
-        + Ingester<D, VerifyEmail<D>>,
+    D: repo::signup_process::Repo + repo::user::Repo + NewId<signup_process::Id> + 'd,
+    B: Presenter<'d, D, Complete<'d, D>>
+        + Presenter<'d, D, CompletionTimedOut<'d, D>>
+        + Presenter<'d, D, ExtendCompletionTime<'d, D>>
+        + Presenter<'d, D, ExtendVerificationTime<'d, D>>
+        + Presenter<'d, D, GetStateChain<'d, D>>
+        + Presenter<'d, D, Initialize<'d, D>>
+        + Presenter<'d, D, VerificationTimedOut<'d, D>>
+        + Presenter<'d, D, VerifyEmail<'d, D>>
+        + Ingester<'d, D, Complete<'d, D>>
+        + Ingester<'d, D, CompletionTimedOut<'d, D>>
+        + Ingester<'d, D, ExtendCompletionTime<'d, D>>
+        + Ingester<'d, D, ExtendVerificationTime<'d, D>>
+        + Ingester<'d, D, GetStateChain<'d, D>>
+        + Ingester<'d, D, Initialize<'d, D>>
+        + Ingester<'d, D, VerificationTimedOut<'d, D>>
+        + Ingester<'d, D, VerifyEmail<'d, D>>,
 {
-    fn new(db: Arc<D>, boundry: B) -> Self {
+    fn new(db: &'d D, boundry: B) -> Self {
         Self { db, boundry }
     }
 
-    fn db(&self) -> Arc<D> {
-        self.db.clone()
+    fn db(&self) -> &'d D {
+        self.db
     }
 }

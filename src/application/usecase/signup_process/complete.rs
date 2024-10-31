@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use crate::{
     application::{
         gateway::repository::{
@@ -27,8 +25,8 @@ pub struct Request {
 pub struct Response {
     pub record: user::Record,
 }
-pub struct Complete<D> {
-    db: Arc<D>,
+pub struct Complete<'d, D> {
+    db: &'d D,
 }
 
 #[derive(Debug, Error)]
@@ -56,7 +54,7 @@ impl From<(GetError, Id)> for Error {
     }
 }
 
-impl<D> Usecase<D> for Complete<D>
+impl<'d, D> Usecase<'d, D> for Complete<'d, D>
 where
     D: Repo + user::Repo,
 {
@@ -96,7 +94,7 @@ where
         }
     }
 
-    fn new(db: Arc<D>) -> Self {
+    fn new(db: &'d D) -> Self {
         Self { db }
     }
 }
