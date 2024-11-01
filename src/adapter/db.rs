@@ -10,3 +10,9 @@ pub trait Db:
     SignupProcessRepo + NewId<SignupProcessId> + UserRepo + NewId<UserId> + Clone
 {
 }
+
+pub trait Transactional {
+    fn run_in_transaction<'d, F, R, E>(&'d self, f: F) -> Result<R, E>
+    where
+        F: FnOnce(&'d Self) -> Result<R, E>;
+}

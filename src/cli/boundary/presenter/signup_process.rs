@@ -1,5 +1,8 @@
 use crate::{
-    adapter::boundary::{string::Boundary, Presenter, UsecaseResponseResult},
+    adapter::{
+        boundary::{Presenter, UsecaseResponseResult},
+        db::Transactional,
+    },
     application::{
         gateway::repository::{signup_process::Repo, user::Repo as UserRepo},
         identifier::NewId,
@@ -11,12 +14,13 @@ use crate::{
             verify_email::VerifyEmail,
         },
     },
+    cli::boundary::Boundary,
     domain::entity::signup_process::Id,
 };
 
 impl<'d, D> Presenter<'d, D, Complete<'d, D>> for Boundary
 where
-    D: Repo + UserRepo,
+    D: Repo + UserRepo + Transactional,
 {
     type ViewModel = String;
 

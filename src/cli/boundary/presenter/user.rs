@@ -1,5 +1,6 @@
+use super::super::Boundary;
 use crate::{
-    adapter::boundary::{string::Boundary, Presenter, UsecaseResponseResult},
+    adapter::boundary::{Presenter, UsecaseResponseResult},
     application::{
         gateway::repository::user::Repo,
         usecase::user::{delete::Delete, get_all::GetAll, get_one::GetOne, update::Update},

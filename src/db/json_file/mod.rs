@@ -1,4 +1,4 @@
-use crate::adapter::db::Db;
+use crate::adapter::db::{Db, Transactional};
 use crate::application::identifier::NewIdError;
 use jfs::{Config, Store};
 use std::{fs, io, path::Path};
@@ -39,6 +39,15 @@ impl JsonFile {
 }
 
 impl Db for JsonFile {}
+
+impl Transactional for JsonFile {
+    fn run_in_transaction<'d, F, R, E>(&'d self, f: F) -> Result<R, E>
+    where
+        F: FnOnce(&'d Self) -> Result<R, E>,
+    {
+        f(self)
+    }
+}
 
 #[cfg(test)]
 mod tests {
