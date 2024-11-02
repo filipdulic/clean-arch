@@ -1,11 +1,11 @@
 use std::{marker::PhantomData, sync::Arc};
 
-use crate::{
-    adapter::boundary::{Ingester, Presenter},
-    application::usecase::Usecase,
-};
+use crate::application::usecase::Usecase;
 
-use super::{boundary::Error, db::Transactional};
+use super::{
+    boundary::{Error, Ingester, Presenter},
+    db::Transactional,
+};
 
 #[derive(Clone)]
 pub struct Api<D, B> {
