@@ -7,7 +7,7 @@ publish = false
 
 [dependencies]
 # Workspace dependencies
-ca-domain = "0.1.0"
+ca-domain = { version = "=0.1.0", path = "../domain" }
 
 # External dependencies
 log = "0.4"

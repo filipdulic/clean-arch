@@ -6,6 +6,7 @@ edition.workspace = true
 rust-version.workspace = true
 publish = false
 
+
 [[bin]]
 name = "clean-arch"
 path = "src/bin/cli-json-file.rs"
@@ -23,16 +24,11 @@ exclude = ["crates/web-app"]
 authors = ["Filip Dulic <filip.dulic@gmail.com>"]
 version = "0.1.0"
 edition = "2021"
-rust-version = "1.79"
+rust-version = "1.81.0"
+
 
 [dependencies]
 # Workspace dependencies
-ca-infrastructure = "0.1.0"
+ca-infrastructure = { version = "0.1.0", path = "crates/infrastructure" }
 # External dependencies
 clap = { version = "4.5", features = ["derive"] }
-
-[patch.crates-io]
-ca-adapter = { path = "crates/adapter" }
-ca-application = { path = "crates/application" }
-ca-domain = { path = "crates/domain" }
-ca-infrastructure = { path = "crates/infrastructure" }
