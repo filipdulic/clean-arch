@@ -1,0 +1,9 @@
+[package]
+name = "ca-domain"
+version.workspace = true
+edition.workspace = true
+publish = false
+
+[dependencies]
+# Workspace dependencies
+uuid = "1.11.0"

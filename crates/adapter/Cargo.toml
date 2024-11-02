@@ -1,0 +1,14 @@
+[package]
+name = "ca-adapter"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish = false
+
+[dependencies]
+# Workspace dependencies
+ca-application = "=0.1.0"
+ca-domain = "=0.1.0"
+
+# External dependencies
+thiserror = "1.0"

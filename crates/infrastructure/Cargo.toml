@@ -1,0 +1,26 @@
+[package]
+name = "ca-infrastructure"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish = false
+
+[dependencies]
+
+# Workspace dependencies
+ca-adapter = "=0.1.0"
+ca-application = "=0.1.0"
+ca-domain = "=0.1.0"
+
+# External dependencies
+clap = { version = "4.5", features = ["derive"] }
+directories = "5.0"
+log = "0.4"
+jfs = "0.9.0"
+uuid = "1.11.0"
+serde = { version = "1.0", features = ["derive"] }
+
+[dev-dependencies]
+rstest = "0.23.0"
+env_logger = "0.11.5"
+tempfile = "3.2.0"
