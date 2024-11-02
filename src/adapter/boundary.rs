@@ -1,5 +1,3 @@
-pub mod string;
-
 use thiserror::Error;
 
 use crate::application::usecase::Usecase;
@@ -14,9 +12,9 @@ pub enum Error<'d, D, U: Usecase<'d, D>> {
     UsecaseError(U::Error), // impl from thing...
 }
 
-type UsecaseResponseResult<'d, D, U> = Result<<U as Usecase<'d, D>>::Response, Error<'d, D, U>>;
+pub type UsecaseResponseResult<'d, D, U> = Result<<U as Usecase<'d, D>>::Response, Error<'d, D, U>>;
 
-type UsecaseRequestResult<'d, D, U> = Result<<U as Usecase<'d, D>>::Request, Error<'d, D, U>>;
+pub type UsecaseRequestResult<'d, D, U> = Result<<U as Usecase<'d, D>>::Request, Error<'d, D, U>>;
 
 pub trait Ingester<'d, D, U: Usecase<'d, D>> {
     type InputModel;

@@ -1,7 +1,10 @@
 use uuid::Uuid;
 
 use crate::{
-    adapter::boundary::{string::Boundary, Error, Ingester, UsecaseRequestResult},
+    adapter::{
+        boundary::{Error, Ingester, UsecaseRequestResult},
+        db::Transactional,
+    },
     application::{
         gateway::repository::{signup_process::Repo, user::Repo as UserRepo},
         identifier::NewId,
@@ -23,12 +26,13 @@ use crate::{
             verify_email::{Request as VerifyEmailRequest, VerifyEmail},
         },
     },
+    cli::boundary::Boundary,
     domain::entity::signup_process::Id,
 };
 
 impl<'d, D> Ingester<'d, D, Complete<'d, D>> for Boundary
 where
-    D: Repo + UserRepo,
+    D: Repo + UserRepo + Transactional,
 {
     type InputModel = (String, String, String);
     fn ingest(input: Self::InputModel) -> UsecaseRequestResult<'d, D, Complete<'d, D>> {
