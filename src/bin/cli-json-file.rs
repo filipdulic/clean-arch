@@ -1,6 +1,6 @@
 use clap::Parser;
-use clean_arch::infrastructure::interface::cli;
-use clean_arch::infrastructure::utils::storage::data_storage;
+use ca_infrastructure::interface::cli;
+use ca_infrastructure::utils::storage::data_storage;
 use std::{path::PathBuf, sync::Arc};
 
 #[derive(Parser)]
