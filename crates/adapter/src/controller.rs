@@ -8,12 +8,12 @@ use super::{
 };
 
 #[derive(Clone)]
-pub struct Api<D, B> {
-    db: Arc<D>, // TODO: Change to Arc<<D> to allow for concurrent access
+pub struct Controller<D, B> {
+    db: Arc<D>,
     phantom: PhantomData<B>,
 }
 
-impl<'d, D, B> Api<D, B>
+impl<'d, D, B> Controller<D, B>
 where
     D: Transactional + Clone + 'd,
 {
@@ -23,7 +23,7 @@ where
             phantom: PhantomData,
         }
     }
-    pub fn handle_endpoint<U>(
+    pub fn handle_usecase<U>(
         &'d self,
         input: <B as Ingester<'d, D, U>>::InputModel,
     ) -> <B as Presenter<'d, D, U>>::ViewModel

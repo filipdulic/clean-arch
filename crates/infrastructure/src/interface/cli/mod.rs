@@ -17,7 +17,7 @@ use std::sync::Arc;
 use clap::Subcommand;
 
 use ca_adapter::{
-    api::Api,
+    controller::Controller,
     db::{Db, Transactional},
 };
 use ca_application::usecase::{
@@ -86,35 +86,35 @@ pub fn run<D>(db: Arc<D>, cmd: Command)
 where
     D: Db + Transactional,
 {
-    let app_api = Api::<D, boundary::Boundary>::new(db);
+    let app_controller = Controller::<D, boundary::Boundary>::new(db);
 
     match cmd {
         Command::InitializeSignupProcess { username } => {
-            let res = app_api.handle_endpoint::<Initialize<D>>(username);
+            let res = app_controller.handle_usecase::<Initialize<D>>(username);
             println!("{res}");
         }
         Command::SignupProcessVerificationTimedOut { id } => {
-            let res = app_api.handle_endpoint::<VerificationTimedOut<D>>(id);
+            let res = app_controller.handle_usecase::<VerificationTimedOut<D>>(id);
             println!("{res}");
         }
         Command::SignupProcessCompletionTimedOut { id } => {
-            let res = app_api.handle_endpoint::<CompletionTimedOut<D>>(id);
+            let res = app_controller.handle_usecase::<CompletionTimedOut<D>>(id);
             println!("{res}");
         }
         Command::ExtendVerificationTimeOfSignupProcess { id } => {
-            let res = app_api.handle_endpoint::<ExtendVerificationTime<D>>(id);
+            let res = app_controller.handle_usecase::<ExtendVerificationTime<D>>(id);
             println!("{res}");
         }
         Command::ExtendCompletionTimeOfSignupProcess { id } => {
-            let res = app_api.handle_endpoint::<ExtendCompletionTime<D>>(id);
+            let res = app_controller.handle_usecase::<ExtendCompletionTime<D>>(id);
             println!("{res}");
         }
         Command::DeleteSignupProcess { id } => {
-            let res = app_api.handle_endpoint::<Delete<D>>(id);
+            let res = app_controller.handle_usecase::<Delete<D>>(id);
             println!("{res}");
         }
         Command::VerifyEmailOfSignupProcess { id } => {
-            let res = app_api.handle_endpoint::<VerifyEmail<D>>(id);
+            let res = app_controller.handle_usecase::<VerifyEmail<D>>(id);
             println!("{res}");
         }
         Command::CompleteSignupProcess {
@@ -122,23 +122,23 @@ where
             username,
             password,
         } => {
-            let res = app_api.handle_endpoint::<Complete<D>>((id, username, password));
+            let res = app_controller.handle_usecase::<Complete<D>>((id, username, password));
             println!("{res}");
         }
         Command::GetStateChain { id } => {
-            let res = app_api.handle_endpoint::<GetStateChain<D>>(id);
+            let res = app_controller.handle_usecase::<GetStateChain<D>>(id);
             println!("{res}");
         }
         Command::ListUsers => {
-            let res = app_api.handle_endpoint::<GetAll<D>>(());
+            let res = app_controller.handle_usecase::<GetAll<D>>(());
             println!("{res}");
         }
         Command::DeleteUser { id } => {
-            let res = app_api.handle_endpoint::<UserDelete<D>>(id);
+            let res = app_controller.handle_usecase::<UserDelete<D>>(id);
             println!("{res}");
         }
         Command::ReadUser { id } => {
-            let res = app_api.handle_endpoint::<GetOne<D>>(id);
+            let res = app_controller.handle_usecase::<GetOne<D>>(id);
             println!("{res}");
         }
         Command::UpdateUser {
@@ -147,7 +147,7 @@ where
             username,
             password,
         } => {
-            let res = app_api.handle_endpoint::<Update<D>>((id, email, username, password));
+            let res = app_controller.handle_usecase::<Update<D>>((id, email, username, password));
             println!("{res}");
         }
     }
