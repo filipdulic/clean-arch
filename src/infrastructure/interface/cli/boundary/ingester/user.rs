@@ -11,9 +11,10 @@ use crate::{
             update::{Request as UpdateRequest, Update},
         },
     },
-    cli::boundary::Boundary,
     domain::entity::user::Id,
 };
+
+use super::super::Boundary;
 
 impl<'d, D> Ingester<'d, D, Delete<'d, D>> for Boundary
 where

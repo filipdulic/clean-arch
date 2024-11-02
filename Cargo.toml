@@ -2,6 +2,11 @@
 name = "clean-arch"
 version = "0.1.0"
 edition = "2021"
+default-run = "cli-json-file"
+
+[[bin]]
+name = "cli-json-file"
+path = "src/bin/cli-json-file.rs"
 
 [dependencies]
 directories = "5.0.1"
@@ -11,22 +16,21 @@ log = "0.4.22"
 mockall = "0.13.0"
 rstest = "0.23.0"
 tempfile = "3.13.0"
-thiserror = "1.0.64"
+thiserror = "1.0.66"
 
 [dependencies.serde]
-version = "1.0.210"
+version = "1.0.214"
 features = ["derive"]
 
 [dependencies.clap]
-version = "4.5.19"
+version = "4.5.20"
 features = ["derive"]
 
 [dependencies.uuid]
-version = "1.10.0"
+version = "1.11.0"
 features = [
     "v4",                # Lets you generate random UUIDs
     "fast-rng",          # Use a faster (but still sufficiently random) RNG
     "macro-diagnostics", # Enable better diagnostics for compile-time UUIDs
     "serde",             # Enable Serilize and Deserialize derive
 ]
-

@@ -14,9 +14,10 @@ use crate::{
             verify_email::VerifyEmail,
         },
     },
-    cli::boundary::Boundary,
     domain::entity::signup_process::Id,
 };
+
+use super::super::Boundary;
 
 impl<'d, D> Presenter<'d, D, Complete<'d, D>> for Boundary
 where

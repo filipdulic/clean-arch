@@ -1,5 +1,6 @@
 use uuid::Uuid;
 
+use super::super::Boundary;
 use crate::{
     adapter::{
         boundary::{Error, Ingester, UsecaseRequestResult},
@@ -26,7 +27,6 @@ use crate::{
             verify_email::{Request as VerifyEmailRequest, VerifyEmail},
         },
     },
-    cli::boundary::Boundary,
     domain::entity::signup_process::Id,
 };
 

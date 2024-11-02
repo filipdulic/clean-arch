@@ -8,10 +8,6 @@
 pub mod adapter;
 /// The application module contains the use cases of the application.
 pub mod application;
-/// The cli module contains the command-line interface for the application.
-pub mod cli;
-/// The db module contains the database implementation.
-pub mod db;
 /// The domain module contains the domain entities and business rules.
 pub mod domain;
 /// The infrastructure module contains the implementation of the infrastructure components.
