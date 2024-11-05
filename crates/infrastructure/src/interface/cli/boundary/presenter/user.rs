@@ -2,13 +2,13 @@ use super::super::Boundary;
 
 use ca_adapter::boundary::{Presenter, UsecaseResponseResult};
 use ca_application::{
-    gateway::repository::user::Repo,
+    gateway::UserRepoProvider,
     usecase::user::{delete::Delete, get_all::GetAll, get_one::GetOne, update::Update},
 };
 
 impl<'d, D> Presenter<'d, D, Update<'d, D>> for Boundary
 where
-    D: Repo,
+    D: UserRepoProvider,
 {
     type ViewModel = String;
 
@@ -22,7 +22,7 @@ where
 
 impl<'d, D> Presenter<'d, D, GetOne<'d, D>> for Boundary
 where
-    D: Repo,
+    D: UserRepoProvider,
 {
     type ViewModel = String;
 
@@ -36,7 +36,7 @@ where
 
 impl<'d, D> Presenter<'d, D, GetAll<'d, D>> for Boundary
 where
-    D: Repo,
+    D: UserRepoProvider,
 {
     type ViewModel = String;
 
@@ -55,7 +55,7 @@ where
 
 impl<'d, D> Presenter<'d, D, Delete<'d, D>> for Boundary
 where
-    D: Repo,
+    D: UserRepoProvider,
 {
     type ViewModel = String;
 

@@ -1,5 +1,8 @@
 use crate::{
-    gateway::repository::signup_process::{GetError, Record, Repo},
+    gateway::{
+        repository::signup_process::{GetError, Record},
+        SignupProcessRepoProvider,
+    },
     usecase::Usecase,
 };
 
@@ -18,7 +21,7 @@ pub struct Response {
 }
 
 pub struct GetStateChain<'d, D> {
-    db: &'d D,
+    dependency_provider: &'d D,
 }
 
 #[derive(Debug, Error)]
@@ -40,7 +43,7 @@ impl From<(GetError, Id)> for Error {
 
 impl<'d, D> Usecase<'d, D> for GetStateChain<'d, D>
 where
-    D: Repo,
+    D: SignupProcessRepoProvider,
 {
     type Request = Request;
     type Response = Response;
@@ -48,12 +51,15 @@ where
     fn exec(&self, req: Request) -> Result<Response, Error> {
         log::debug!("Get signup process state chain");
         let state_chain = self
-            .db
+            .dependency_provider
+            .signup_process_repo()
             .get_state_chain(req.id)
             .map_err(|err| (err, req.id))?;
         Ok(Self::Response { state_chain })
     }
-    fn new(db: &'d D) -> Self {
-        Self { db }
+    fn new(dependency_provider: &'d D) -> Self {
+        Self {
+            dependency_provider,
+        }
     }
 }

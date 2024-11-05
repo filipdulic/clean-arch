@@ -1,5 +1,8 @@
 use crate::{
-    gateway::repository::signup_process::{GetError, Repo, SaveError},
+    gateway::{
+        repository::signup_process::{GetError, SaveError},
+        SignupProcessRepoProvider,
+    },
     usecase::Usecase,
 };
 
@@ -17,7 +20,7 @@ pub struct Response {
     pub id: Id,
 }
 pub struct VerifyEmail<'d, D> {
-    db: &'d D,
+    dependency_provider: &'d D,
 }
 
 #[derive(Debug, Error)]
@@ -47,7 +50,7 @@ impl From<(GetError, Id)> for Error {
 
 impl<'d, D> Usecase<'d, D> for VerifyEmail<'d, D>
 where
-    D: Repo,
+    D: SignupProcessRepoProvider,
 {
     type Request = Request;
     type Response = Response;
@@ -56,17 +59,21 @@ where
     fn exec(&self, req: Request) -> Result<Response, Error> {
         log::debug!("SignupProcess Email Verified: {:?}", req);
         let record = self
-            .db
+            .dependency_provider
+            .signup_process_repo()
             .get_latest_state(req.id)
             .map_err(|err| (err, req.id))?;
         let process: SignupProcess<Initialized> = record.try_into().map_err(|err| (err, req.id))?;
         let process = process.verify_email();
-        self.db
+        self.dependency_provider
+            .signup_process_repo()
             .save_latest_state(process.into())
             .map_err(|_| Error::NotFound(req.id))?;
         Ok(Self::Response { id: req.id })
     }
-    fn new(db: &'d D) -> Self {
-        Self { db }
+    fn new(dependency_provider: &'d D) -> Self {
+        Self {
+            dependency_provider,
+        }
     }
 }

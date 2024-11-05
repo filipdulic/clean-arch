@@ -4,22 +4,22 @@ use ca_application::usecase::Usecase;
 
 use super::{
     boundary::{Error, Ingester, Presenter},
-    db::Transactional,
+    dependency_provider::Transactional,
 };
 
 #[derive(Clone)]
 pub struct Controller<D, B> {
-    db: Arc<D>,
-    phantom: PhantomData<B>,
+    dependency_provider: Arc<D>,
+    phantom: PhantomData<(B, D)>,
 }
 
 impl<'d, D, B> Controller<D, B>
 where
-    D: Transactional + Clone + 'd,
+    D: 'd + Transactional,
 {
-    pub const fn new(db: Arc<D>) -> Self {
+    pub const fn new(dependency_provider: Arc<D>) -> Self {
         Self {
-            db,
+            dependency_provider,
             phantom: PhantomData,
         }
     }
@@ -32,7 +32,7 @@ where
         B: Ingester<'d, D, U> + Presenter<'d, D, U>,
     {
         let req = <B as Ingester<D, U>>::ingest(input).and_then(|req| {
-            self.db
+            self.dependency_provider
                 .run_in_transaction(|db| U::new(db).exec(req).map_err(Error::UsecaseError))
         });
         <B as Presenter<D, U>>::present(req)
