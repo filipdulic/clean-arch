@@ -16,10 +16,7 @@ use std::sync::Arc;
 
 use clap::Subcommand;
 
-use ca_adapter::{
-    controller::Controller,
-    db::{Db, Transactional},
-};
+use ca_adapter::{controller::Controller, dependency_provider::Transactional};
 use ca_application::usecase::{
     signup_process::{
         complete::Complete, completion_timed_out::CompletionTimedOut, delete::Delete,
@@ -84,7 +81,7 @@ pub enum Command {
 
 pub fn run<D>(db: Arc<D>, cmd: Command)
 where
-    D: Db + Transactional,
+    D: Transactional,
 {
     let app_controller = Controller::<D, boundary::Boundary>::new(db);
 

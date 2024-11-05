@@ -1,13 +1,9 @@
 use uuid::Uuid;
 
 use super::super::Boundary;
-use ca_adapter::{
-    boundary::{Error, Ingester, UsecaseRequestResult},
-    db::Transactional,
-};
+use ca_adapter::boundary::{Error, Ingester, UsecaseRequestResult};
 use ca_application::{
-    gateway::repository::{signup_process::Repo, user::Repo as UserRepo},
-    identifier::NewId,
+    gateway::{SignupProcessIdGenProvider, SignupProcessRepoProvider, UserRepoProvider},
     usecase::signup_process::{
         complete::{Complete, Request as CompleteRequest},
         completion_timed_out::{CompletionTimedOut, Request as CompletionTimedOutRequest},
@@ -26,7 +22,7 @@ use ca_domain::entity::signup_process::Id;
 
 impl<'d, D> Ingester<'d, D, Complete<'d, D>> for Boundary
 where
-    D: Repo + UserRepo + Transactional,
+    D: SignupProcessRepoProvider + UserRepoProvider,
 {
     type InputModel = (String, String, String);
     fn ingest(input: Self::InputModel) -> UsecaseRequestResult<'d, D, Complete<'d, D>> {
@@ -43,7 +39,7 @@ where
 
 impl<'d, D> Ingester<'d, D, CompletionTimedOut<'d, D>> for Boundary
 where
-    D: Repo,
+    D: SignupProcessRepoProvider,
 {
     type InputModel = String;
     fn ingest(input: Self::InputModel) -> UsecaseRequestResult<'d, D, CompletionTimedOut<'d, D>> {
@@ -56,7 +52,7 @@ where
 
 impl<'d, D> Ingester<'d, D, ExtendCompletionTime<'d, D>> for Boundary
 where
-    D: Repo,
+    D: SignupProcessRepoProvider,
 {
     type InputModel = String;
     fn ingest(input: Self::InputModel) -> UsecaseRequestResult<'d, D, ExtendCompletionTime<'d, D>> {
@@ -69,7 +65,7 @@ where
 
 impl<'d, D> Ingester<'d, D, ExtendVerificationTime<'d, D>> for Boundary
 where
-    D: Repo,
+    D: SignupProcessRepoProvider,
 {
     type InputModel = String;
     fn ingest(
@@ -84,7 +80,7 @@ where
 
 impl<'d, D> Ingester<'d, D, GetStateChain<'d, D>> for Boundary
 where
-    D: Repo,
+    D: SignupProcessRepoProvider,
 {
     type InputModel = String;
     fn ingest(input: Self::InputModel) -> UsecaseRequestResult<'d, D, GetStateChain<'d, D>> {
@@ -97,7 +93,7 @@ where
 
 impl<'d, D> Ingester<'d, D, Initialize<'d, D>> for Boundary
 where
-    D: Repo + NewId<Id>,
+    D: SignupProcessRepoProvider + SignupProcessIdGenProvider,
 {
     type InputModel = String;
     fn ingest(input: Self::InputModel) -> UsecaseRequestResult<'d, D, Initialize<'d, D>> {
@@ -107,7 +103,7 @@ where
 
 impl<'d, D> Ingester<'d, D, VerificationTimedOut<'d, D>> for Boundary
 where
-    D: Repo,
+    D: SignupProcessRepoProvider,
 {
     type InputModel = String;
     fn ingest(input: Self::InputModel) -> UsecaseRequestResult<'d, D, VerificationTimedOut<'d, D>> {
@@ -120,7 +116,7 @@ where
 
 impl<'d, D> Ingester<'d, D, VerifyEmail<'d, D>> for Boundary
 where
-    D: Repo,
+    D: SignupProcessRepoProvider,
 {
     type InputModel = String;
     fn ingest(input: Self::InputModel) -> UsecaseRequestResult<'d, D, VerifyEmail<'d, D>> {
@@ -133,7 +129,7 @@ where
 
 impl<'d, D> Ingester<'d, D, Delete<'d, D>> for Boundary
 where
-    D: Repo,
+    D: SignupProcessRepoProvider,
 {
     type InputModel = String;
     fn ingest(input: Self::InputModel) -> UsecaseRequestResult<'d, D, Delete<'d, D>> {

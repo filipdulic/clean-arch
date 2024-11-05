@@ -1,7 +1,10 @@
 use crate::{
-    gateway::repository::{
-        signup_process::{GetError, Repo, SaveError},
-        user,
+    gateway::{
+        repository::{
+            signup_process::{GetError, SaveError},
+            user,
+        },
+        SignupProcessRepoProvider, UserRepoProvider,
     },
     usecase::Usecase,
 };
@@ -25,7 +28,7 @@ pub struct Response {
     pub record: user::Record,
 }
 pub struct Complete<'d, D> {
-    db: &'d D,
+    dependency_provider: &'d D,
 }
 
 #[derive(Debug, Error)]
@@ -55,7 +58,7 @@ impl From<(GetError, Id)> for Error {
 
 impl<'d, D> Usecase<'d, D> for Complete<'d, D>
 where
-    D: Repo + user::Repo,
+    D: SignupProcessRepoProvider + UserRepoProvider,
 {
     type Request = Request;
     type Response = Response;
@@ -64,7 +67,8 @@ where
     fn exec(&self, req: Self::Request) -> Result<Self::Response, Self::Error> {
         log::debug!("SignupProcess Completed: {:?}", req);
         let record = self
-            .db
+            .dependency_provider
+            .signup_process_repo()
             .get_latest_state(req.id)
             .map_err(|_| Self::Error::Repo)?;
         if let SignupStateEnum::EmailVerified { .. } = record.state {
@@ -80,9 +84,13 @@ where
                 process.password(),
             );
             // Save User first, then save SignupProcess
-            self.db.save(user.clone().into()).map_err(|_| Error::Repo)?;
+            self.dependency_provider
+                .user_repo()
+                .save(user.clone().into())
+                .map_err(|_| Error::Repo)?;
             // if save user fails, we should not save the signup process
-            self.db
+            self.dependency_provider
+                .signup_process_repo()
                 .save_latest_state(process.clone().into())
                 .map_err(|_| Self::Error::NotFound(req.id))?;
             Ok(Self::Response {
@@ -94,6 +102,8 @@ where
     }
 
     fn new(db: &'d D) -> Self {
-        Self { db }
+        Self {
+            dependency_provider: db,
+        }
     }
 }

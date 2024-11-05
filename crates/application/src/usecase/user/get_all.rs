@@ -1,5 +1,5 @@
 use crate::{
-    gateway::repository::user::{GetAllError, Repo},
+    gateway::{repository::user::GetAllError, UserRepoProvider},
     usecase::Usecase,
 };
 use ca_domain::entity::user::User;
@@ -15,7 +15,7 @@ pub struct Response {
 
 /// Get all users usecase interactor
 pub struct GetAll<'d, D> {
-    db: &'d D,
+    dependency_provider: &'d D,
 }
 
 #[derive(Debug, Error)]
@@ -34,7 +34,7 @@ impl From<GetAllError> for Error {
 
 impl<'d, D> Usecase<'d, D> for GetAll<'d, D>
 where
-    D: Repo,
+    D: UserRepoProvider,
 {
     type Request = Request;
     type Response = Response;
@@ -42,11 +42,19 @@ where
 
     fn exec(&self, _req: Self::Request) -> Result<Self::Response, Self::Error> {
         log::debug!("Get all users");
-        let users = self.db.get_all()?.into_iter().map(User::from).collect();
+        let users = self
+            .dependency_provider
+            .user_repo()
+            .get_all()?
+            .into_iter()
+            .map(User::from)
+            .collect();
         Ok(Self::Response { users })
     }
 
-    fn new(db: &'d D) -> Self {
-        Self { db }
+    fn new(dependency_provider: &'d D) -> Self {
+        Self {
+            dependency_provider,
+        }
     }
 }

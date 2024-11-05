@@ -1,5 +1,8 @@
 use crate::{
-    gateway::repository::user::{GetError, Repo, SaveError},
+    gateway::{
+        repository::user::{GetError, SaveError},
+        UserRepoProvider,
+    },
     usecase::{
         user::validate::{self, validate_user_properties, UserInvalidity},
         Usecase,
@@ -22,7 +25,7 @@ pub struct Request {
 pub type Response = ();
 
 pub struct Update<'d, D> {
-    db: &'d D,
+    dependency_provider: &'d D,
 }
 
 #[derive(Debug, Error)]
@@ -54,7 +57,7 @@ impl From<(GetError, Id)> for Error {
 
 impl<'d, D> Usecase<'d, D> for Update<'d, D>
 where
-    D: Repo,
+    D: UserRepoProvider,
 {
     type Request = Request;
     type Response = Response;
@@ -71,12 +74,18 @@ where
         let email = Email::new(req.email);
         let password = Password::new(req.password);
         let user = User::new(req.id, email, username, password);
-        let _ = self.db.get(req.id).map_err(|err| (err, req.id))?;
-        self.db.save(user.into())?;
+        let _ = self
+            .dependency_provider
+            .user_repo()
+            .get(req.id)
+            .map_err(|err| (err, req.id))?;
+        self.dependency_provider.user_repo().save(user.into())?;
         Ok(())
     }
 
-    fn new(db: &'d D) -> Self {
-        Self { db }
+    fn new(dependency_provider: &'d D) -> Self {
+        Self {
+            dependency_provider,
+        }
     }
 }

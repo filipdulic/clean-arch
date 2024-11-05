@@ -1,10 +1,6 @@
-use ca_adapter::{
-    boundary::{Presenter, UsecaseResponseResult},
-    db::Transactional,
-};
+use ca_adapter::boundary::{Presenter, UsecaseResponseResult};
 use ca_application::{
-    gateway::repository::{signup_process::Repo, user::Repo as UserRepo},
-    identifier::NewId,
+    gateway::{SignupProcessIdGenProvider, SignupProcessRepoProvider, UserRepoProvider},
     usecase::signup_process::{
         complete::Complete, completion_timed_out::CompletionTimedOut, delete::Delete,
         extend_completion_time::ExtendCompletionTime,
@@ -13,13 +9,12 @@ use ca_application::{
         verify_email::VerifyEmail,
     },
 };
-use ca_domain::entity::signup_process::Id;
 
 use super::super::Boundary;
 
 impl<'d, D> Presenter<'d, D, Complete<'d, D>> for Boundary
 where
-    D: Repo + UserRepo + Transactional,
+    D: SignupProcessRepoProvider + UserRepoProvider,
 {
     type ViewModel = String;
 
@@ -33,7 +28,7 @@ where
 
 impl<'d, D> Presenter<'d, D, CompletionTimedOut<'d, D>> for Boundary
 where
-    D: Repo,
+    D: SignupProcessRepoProvider,
 {
     type ViewModel = String;
 
@@ -47,7 +42,7 @@ where
 
 impl<'d, D> Presenter<'d, D, Delete<'d, D>> for Boundary
 where
-    D: Repo,
+    D: SignupProcessRepoProvider,
 {
     type ViewModel = String;
 
@@ -61,7 +56,7 @@ where
 
 impl<'d, D> Presenter<'d, D, ExtendCompletionTime<'d, D>> for Boundary
 where
-    D: Repo,
+    D: SignupProcessRepoProvider,
 {
     type ViewModel = String;
 
@@ -78,7 +73,7 @@ where
 
 impl<'d, D> Presenter<'d, D, ExtendVerificationTime<'d, D>> for Boundary
 where
-    D: Repo,
+    D: SignupProcessRepoProvider,
 {
     type ViewModel = String;
 
@@ -97,7 +92,7 @@ where
 
 impl<'d, D> Presenter<'d, D, GetStateChain<'d, D>> for Boundary
 where
-    D: Repo,
+    D: SignupProcessRepoProvider,
 {
     type ViewModel = String;
 
@@ -111,7 +106,7 @@ where
 
 impl<'d, D> Presenter<'d, D, Initialize<'d, D>> for Boundary
 where
-    D: Repo + NewId<Id>,
+    D: SignupProcessRepoProvider + SignupProcessIdGenProvider,
 {
     type ViewModel = String;
 
@@ -125,7 +120,7 @@ where
 
 impl<'d, D> Presenter<'d, D, VerificationTimedOut<'d, D>> for Boundary
 where
-    D: Repo,
+    D: SignupProcessRepoProvider,
 {
     type ViewModel = String;
 
@@ -139,7 +134,7 @@ where
 
 impl<'d, D> Presenter<'d, D, VerifyEmail<'d, D>> for Boundary
 where
-    D: Repo,
+    D: SignupProcessRepoProvider,
 {
     type ViewModel = String;
 

@@ -1,5 +1,5 @@
 use crate::{
-    gateway::repository::user::{DeleteError, Repo},
+    gateway::{repository::user::DeleteError, UserRepoProvider},
     usecase::Usecase,
 };
 
@@ -16,7 +16,7 @@ pub struct Response;
 
 /// Delete area of life by ID usecase interactor
 pub struct Delete<'d, D> {
-    db: &'d D,
+    dependency_provider: &'d D,
 }
 
 #[derive(Debug, Error)]
@@ -38,7 +38,7 @@ impl From<DeleteError> for Error {
 
 impl<'d, D> Usecase<'d, D> for Delete<'d, D>
 where
-    D: Repo,
+    D: UserRepoProvider,
 {
     type Request = Request;
     type Response = Response;
@@ -46,11 +46,13 @@ where
 
     fn exec(&self, req: Self::Request) -> Result<Self::Response, Self::Error> {
         log::debug!("Delete User by ID: {:?}", req);
-        self.db.delete(req.id)?;
+        self.dependency_provider.user_repo().delete(req.id)?;
         Ok(Self::Response {})
     }
 
-    fn new(db: &'d D) -> Self {
-        Self { db }
+    fn new(dependency_provider: &'d D) -> Self {
+        Self {
+            dependency_provider,
+        }
     }
 }

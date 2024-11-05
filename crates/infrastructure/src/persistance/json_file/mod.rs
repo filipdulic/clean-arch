@@ -1,4 +1,3 @@
-use ca_adapter::db::{Db, Transactional};
 use ca_application::identifier::NewIdError;
 use jfs::{Config, Store};
 use std::{fs, io, path::Path};
@@ -35,17 +34,6 @@ impl JsonFile {
     {
         let new_id = Uuid::new_v4();
         Ok(I::from(new_id))
-    }
-}
-
-impl Db for JsonFile {}
-
-impl Transactional for JsonFile {
-    fn run_in_transaction<'d, F, R, E>(&'d self, f: F) -> Result<R, E>
-    where
-        F: FnOnce(&'d Self) -> Result<R, E>,
-    {
-        f(self)
     }
 }
 
