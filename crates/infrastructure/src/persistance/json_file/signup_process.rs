@@ -23,10 +23,7 @@ impl Repo for JsonFile {
         let model: models::SignupProcess = record.into();
         let id = model.signup_process_id.clone();
         let res = self.signup_processes.get::<Vec<models::SignupProcess>>(&id);
-        let mut models = Vec::new();
-        if res.is_ok() {
-            models = res.unwrap();
-        }
+        let mut models = res.unwrap_or_default();
         models.push(model);
         self.signup_processes
             .save_with_id::<Vec<models::SignupProcess>>(&models, &id)

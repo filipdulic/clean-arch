@@ -1,3 +1,4 @@
+use thiserror::Error;
 pub struct EmailAddress(String);
 impl EmailAddress {
     pub fn new(address: &str) -> Self {
@@ -7,9 +8,11 @@ impl EmailAddress {
         &self.0
     }
 }
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum EmailServiceError {
-    InvalidEmailAddress,
+    #[error("Invalid email address: {0}")]
+    InvalidEmailAddress(String),
+    #[error("Failed to send email")]
     SendEmailFailed,
 }
 pub trait EmailService {

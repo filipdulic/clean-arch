@@ -124,8 +124,12 @@ impl From<SignupStateEnum> for EntitySignupStateEnum {
 
 impl From<SignupProcess> for SignupProcessRecord {
     fn from(value: SignupProcess) -> SignupProcessRecord {
+        let id = match value.signup_process_id.parse::<Uuid>() {
+            Ok(id) => id.into(),
+            Err(_) => unreachable!(),
+        };
         SignupProcessRecord {
-            id: value.signup_process_id.parse::<Uuid>().unwrap().into(),
+            id,
             state: value.state.into(),
         }
     }

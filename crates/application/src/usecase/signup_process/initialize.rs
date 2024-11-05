@@ -1,7 +1,7 @@
 use crate::{
     gateway::{
         repository::{signup_process::SaveError, token::GenError as TokenRepoError},
-        service::email::EmailAddress,
+        service::email::{EmailAddress, EmailServiceError},
         EmailVerificationServiceProvider, SignupProcessIdGenProvider, SignupProcessRepoProvider,
         TokenRepoProvider,
     },
@@ -38,6 +38,8 @@ pub enum Error {
     NewId,
     #[error("Token Repo error: {0}")]
     TokenRepoError(#[from] TokenRepoError),
+    #[error("Email Service error: {0}")]
+    EmailServiceError(#[from] EmailServiceError),
 }
 
 impl From<SaveError> for Error {
@@ -81,8 +83,7 @@ where
             .token;
         self.dependency_provider
             .email_verification_service()
-            .send_verification_email(EmailAddress::new(email.as_ref()), token.as_str())
-            .unwrap();
+            .send_verification_email(EmailAddress::new(email.as_ref()), token.as_str())?;
         Ok(Response { id })
     }
     fn new(dependency_provider: &'d D) -> Self {

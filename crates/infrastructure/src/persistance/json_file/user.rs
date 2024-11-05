@@ -38,8 +38,10 @@ impl Repo for JsonFile {
                     GetError::Connection
                 }
             })?;
-        let record = models::User::try_into(model).unwrap();
-        Ok(record)
+        match model.try_into() {
+            Ok(record) => Ok(record),
+            Err(_) => unreachable!(), // stored user should be valid
+        }
     }
     fn get_all(&self) -> Result<Vec<Record>, GetAllError> {
         log::debug!("Get all users from JSON file");
@@ -51,8 +53,10 @@ impl Repo for JsonFile {
         let records = models
             .into_iter()
             .map(|model| {
-                let record: Record = model.try_into().unwrap();
-                record
+                match model.try_into() {
+                    Ok(record) => record,
+                    Err(_) => unreachable!(), // stored user should be valid
+                }
             })
             .collect();
         Ok(records)

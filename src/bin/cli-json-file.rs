@@ -5,6 +5,7 @@ use ca_application::gateway::{
     TokenRepoProvider, UserIdGenProvider, UserRepoProvider,
 };
 use ca_application::identifier::NewId;
+use ca_domain::entity::{signup_process::Id as SignupProcessId, user::Id as UserId};
 use ca_infrastructure::service::email::file::FileEmailService;
 use ca_infrastructure::utils::storage::{data_storage, data_storage_directory};
 use ca_infrastructure::{interface::cli, persistance::json_file::JsonFile};
@@ -32,8 +33,6 @@ impl DependancyProvider {
         }
     }
 }
-
-use ca_domain::entity::{signup_process::Id as SignupProcessId, user::Id as UserId};
 
 impl SignupProcessIdGenProvider for DependancyProvider {
     fn signup_process_id_gen(&self) -> &dyn NewId<SignupProcessId> {
@@ -91,13 +90,14 @@ impl Transactional for DependancyProvider {
     }
 }
 
-pub fn main() {
+pub fn main() -> Result<(), std::io::Error> {
     let args = Args::parse();
     let email_folder = data_storage_directory(None);
-    let email_verification_servuce = FileEmailService::try_new(email_folder).unwrap();
+    let email_verification_servuce = FileEmailService::try_new(email_folder)?;
     let dep_provider = Arc::new(DependancyProvider::new(
         data_storage(args.data_dir),
         email_verification_servuce,
     ));
     cli::run(dep_provider, args.command);
+    Ok(())
 }
