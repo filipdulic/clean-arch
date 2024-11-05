@@ -22,3 +22,7 @@ pub trait SignupProcessIdGenProvider {
 pub trait EmailVerificationServiceProvider {
     fn email_verification_service(&self) -> &dyn service::email::EmailVerificationService;
 }
+
+pub trait TokenRepoProvider {
+    fn token_repo(&self) -> &dyn repository::token::Repo;
+}

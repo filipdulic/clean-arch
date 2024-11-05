@@ -55,7 +55,7 @@ pub enum Command {
     #[clap(about = "Delete signup process", alias = "sp-delete")]
     DeleteSignupProcess { id: String },
     #[clap(about = "Verify Email of signup process", alias = "sp-verify")]
-    VerifyEmailOfSignupProcess { id: String },
+    VerifyEmailOfSignupProcess { id: String, token: String },
     #[clap(about = "Complete signup process", alias = "sp-complete")]
     CompleteSignupProcess {
         id: String,
@@ -110,8 +110,8 @@ where
             let res = app_controller.handle_usecase::<Delete<D>>(id);
             println!("{res}");
         }
-        Command::VerifyEmailOfSignupProcess { id } => {
-            let res = app_controller.handle_usecase::<VerifyEmail<D>>(id);
+        Command::VerifyEmailOfSignupProcess { id, token } => {
+            let res = app_controller.handle_usecase::<VerifyEmail<D>>((id, token));
             println!("{res}");
         }
         Command::CompleteSignupProcess {

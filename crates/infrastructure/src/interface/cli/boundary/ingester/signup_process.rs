@@ -5,7 +5,7 @@ use ca_adapter::boundary::{Error, Ingester, UsecaseRequestResult};
 use ca_application::{
     gateway::{
         EmailVerificationServiceProvider, SignupProcessIdGenProvider, SignupProcessRepoProvider,
-        UserRepoProvider,
+        TokenRepoProvider, UserRepoProvider,
     },
     usecase::signup_process::{
         complete::{Complete, Request as CompleteRequest},
@@ -96,7 +96,10 @@ where
 
 impl<'d, D> Ingester<'d, D, Initialize<'d, D>> for Boundary
 where
-    D: SignupProcessRepoProvider + SignupProcessIdGenProvider + EmailVerificationServiceProvider,
+    D: SignupProcessRepoProvider
+        + SignupProcessIdGenProvider
+        + EmailVerificationServiceProvider
+        + TokenRepoProvider,
 {
     type InputModel = String;
     fn ingest(input: Self::InputModel) -> UsecaseRequestResult<'d, D, Initialize<'d, D>> {
@@ -119,14 +122,17 @@ where
 
 impl<'d, D> Ingester<'d, D, VerifyEmail<'d, D>> for Boundary
 where
-    D: SignupProcessRepoProvider,
+    D: SignupProcessRepoProvider + TokenRepoProvider,
 {
-    type InputModel = String;
+    type InputModel = (String, String);
     fn ingest(input: Self::InputModel) -> UsecaseRequestResult<'d, D, VerifyEmail<'d, D>> {
-        input
-            .parse()
+        let (id, token) = input;
+        id.parse()
             .map_err(|_| Error::ParseInputError)
-            .map(|uuid: Uuid| VerifyEmailRequest { id: Id::from(uuid) })
+            .map(|uuid: Uuid| VerifyEmailRequest {
+                id: Id::from(uuid),
+                token,
+            })
     }
 }
 

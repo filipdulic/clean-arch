@@ -1,7 +1,9 @@
 use crate::{
     gateway::{
-        repository::signup_process::SaveError, service::email::EmailAddress,
+        repository::{signup_process::SaveError, token::GenError as TokenRepoError},
+        service::email::EmailAddress,
         EmailVerificationServiceProvider, SignupProcessIdGenProvider, SignupProcessRepoProvider,
+        TokenRepoProvider,
     },
     identifier::NewIdError,
     usecase::Usecase,
@@ -34,6 +36,8 @@ pub enum Error {
     Repo,
     #[error("{}", NewIdError)]
     NewId,
+    #[error("Token Repo error: {0}")]
+    TokenRepoError(#[from] TokenRepoError),
 }
 
 impl From<SaveError> for Error {
@@ -46,7 +50,10 @@ impl From<SaveError> for Error {
 
 impl<'d, D> Usecase<'d, D> for Initialize<'d, D>
 where
-    D: SignupProcessIdGenProvider + SignupProcessRepoProvider + EmailVerificationServiceProvider,
+    D: SignupProcessIdGenProvider
+        + SignupProcessRepoProvider
+        + EmailVerificationServiceProvider
+        + TokenRepoProvider,
 {
     type Request = Request;
     type Response = Response;
@@ -67,7 +74,11 @@ where
         self.dependency_provider
             .signup_process_repo()
             .save_latest_state(signup_process.into())?;
-        let token = format!("token: {}", email.as_ref());
+        let token = self
+            .dependency_provider
+            .token_repo()
+            .gen(email.as_ref())?
+            .token;
         self.dependency_provider
             .email_verification_service()
             .send_verification_email(EmailAddress::new(email.as_ref()), token.as_str())

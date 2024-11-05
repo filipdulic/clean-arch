@@ -2,7 +2,7 @@ use ca_adapter::boundary::{Presenter, UsecaseResponseResult};
 use ca_application::{
     gateway::{
         EmailVerificationServiceProvider, SignupProcessIdGenProvider, SignupProcessRepoProvider,
-        UserRepoProvider,
+        TokenRepoProvider, UserRepoProvider,
     },
     usecase::signup_process::{
         complete::Complete, completion_timed_out::CompletionTimedOut, delete::Delete,
@@ -109,7 +109,10 @@ where
 
 impl<'d, D> Presenter<'d, D, Initialize<'d, D>> for Boundary
 where
-    D: SignupProcessRepoProvider + SignupProcessIdGenProvider + EmailVerificationServiceProvider,
+    D: SignupProcessRepoProvider
+        + SignupProcessIdGenProvider
+        + EmailVerificationServiceProvider
+        + TokenRepoProvider,
 {
     type ViewModel = String;
 
@@ -137,7 +140,7 @@ where
 
 impl<'d, D> Presenter<'d, D, VerifyEmail<'d, D>> for Boundary
 where
-    D: SignupProcessRepoProvider,
+    D: SignupProcessRepoProvider + TokenRepoProvider,
 {
     type ViewModel = String;
 

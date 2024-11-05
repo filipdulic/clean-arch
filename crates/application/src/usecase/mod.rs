@@ -4,7 +4,7 @@ pub mod user;
 pub trait Usecase<'d, D> {
     type Request;
     type Response;
-    type Error;
+    type Error: std::fmt::Debug;
     fn exec(&self, req: Self::Request) -> Result<Self::Response, Self::Error>;
     fn new(db: &'d D) -> Self;
 }
