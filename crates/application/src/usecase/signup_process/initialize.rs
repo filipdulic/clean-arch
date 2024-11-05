@@ -1,7 +1,7 @@
 use crate::{
     gateway::{
-        repository::signup_process::SaveError, SignupProcessIdGenProvider,
-        SignupProcessRepoProvider,
+        repository::signup_process::SaveError, service::email::EmailAddress,
+        EmailVerificationServiceProvider, SignupProcessIdGenProvider, SignupProcessRepoProvider,
     },
     identifier::NewIdError,
     usecase::Usecase,
@@ -46,7 +46,7 @@ impl From<SaveError> for Error {
 
 impl<'d, D> Usecase<'d, D> for Initialize<'d, D>
 where
-    D: SignupProcessIdGenProvider + SignupProcessRepoProvider,
+    D: SignupProcessIdGenProvider + SignupProcessRepoProvider + EmailVerificationServiceProvider,
 {
     type Request = Request;
     type Response = Response;
@@ -63,10 +63,15 @@ where
             .new_id()
             .map_err(|_| Error::NewId)?;
         let email = Email::new(req.email);
-        let signup_process = SignupProcess::new(id, email);
+        let signup_process = SignupProcess::new(id, email.clone());
         self.dependency_provider
             .signup_process_repo()
             .save_latest_state(signup_process.into())?;
+        let token = format!("token: {}", email.as_ref());
+        self.dependency_provider
+            .email_verification_service()
+            .send_verification_email(EmailAddress::new(email.as_ref()), token.as_str())
+            .unwrap();
         Ok(Response { id })
     }
     fn new(dependency_provider: &'d D) -> Self {

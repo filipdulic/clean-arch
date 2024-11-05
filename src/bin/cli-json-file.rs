@@ -1,9 +1,12 @@
 use ca_adapter::dependency_provider::Transactional;
+use ca_application::gateway::service::email::EmailVerificationService;
 use ca_application::gateway::{
-    SignupProcessIdGenProvider, SignupProcessRepoProvider, UserIdGenProvider, UserRepoProvider,
+    EmailVerificationServiceProvider, SignupProcessIdGenProvider, SignupProcessRepoProvider,
+    UserIdGenProvider, UserRepoProvider,
 };
 use ca_application::identifier::NewId;
-use ca_infrastructure::utils::storage::data_storage;
+use ca_infrastructure::service::email::file::FileEmailService;
+use ca_infrastructure::utils::storage::{data_storage, data_storage_directory};
 use ca_infrastructure::{interface::cli, persistance::json_file::JsonFile};
 use clap::Parser;
 use std::{path::PathBuf, sync::Arc};
@@ -18,11 +21,15 @@ struct Args {
 
 struct DependancyProvider {
     db: JsonFile,
+    email_verification_servuce: FileEmailService,
 }
 
 impl DependancyProvider {
-    fn new(db: JsonFile) -> Self {
-        Self { db }
+    fn new(db: JsonFile, email_verification_servuce: FileEmailService) -> Self {
+        Self {
+            db,
+            email_verification_servuce,
+        }
     }
 }
 
@@ -58,7 +65,14 @@ impl Clone for DependancyProvider {
     fn clone(&self) -> Self {
         Self {
             db: self.db.clone(),
+            email_verification_servuce: self.email_verification_servuce.clone(),
         }
+    }
+}
+
+impl EmailVerificationServiceProvider for DependancyProvider {
+    fn email_verification_service(&self) -> &dyn EmailVerificationService {
+        &self.email_verification_servuce
     }
 }
 
@@ -73,6 +87,11 @@ impl Transactional for DependancyProvider {
 
 pub fn main() {
     let args = Args::parse();
-    let dep_provider = Arc::new(DependancyProvider::new(data_storage(args.data_dir)));
+    let email_folder = data_storage_directory(None);
+    let email_verification_servuce = FileEmailService::try_new(email_folder).unwrap();
+    let dep_provider = Arc::new(DependancyProvider::new(
+        data_storage(args.data_dir),
+        email_verification_servuce,
+    ));
     cli::run(dep_provider, args.command);
 }
