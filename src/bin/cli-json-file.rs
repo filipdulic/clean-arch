@@ -2,7 +2,7 @@ use ca_adapter::dependency_provider::Transactional;
 use ca_application::gateway::service::email::EmailVerificationService;
 use ca_application::gateway::{
     EmailVerificationServiceProvider, SignupProcessIdGenProvider, SignupProcessRepoProvider,
-    UserIdGenProvider, UserRepoProvider,
+    TokenRepoProvider, UserIdGenProvider, UserRepoProvider,
 };
 use ca_application::identifier::NewId;
 use ca_infrastructure::service::email::file::FileEmailService;
@@ -57,6 +57,12 @@ impl UserIdGenProvider for DependancyProvider {
 
 impl UserRepoProvider for DependancyProvider {
     fn user_repo(&self) -> &dyn ca_application::gateway::repository::user::Repo {
+        &self.db
+    }
+}
+
+impl TokenRepoProvider for DependancyProvider {
+    fn token_repo(&self) -> &dyn ca_application::gateway::repository::token::Repo {
         &self.db
     }
 }

@@ -1,7 +1,10 @@
 use crate::{
     gateway::{
-        repository::signup_process::{GetError, SaveError},
-        SignupProcessRepoProvider,
+        repository::{
+            signup_process::{GetError, SaveError},
+            token::VerifyError as TokenRepoError,
+        },
+        SignupProcessRepoProvider, TokenRepoProvider,
     },
     usecase::Usecase,
 };
@@ -13,6 +16,7 @@ use thiserror::Error;
 #[derive(Debug)]
 pub struct Request {
     pub id: Id,
+    pub token: String,
 }
 
 #[derive(Debug)]
@@ -29,6 +33,8 @@ pub enum Error {
     NotFound(Id),
     #[error("{}", SaveError::Connection)]
     Repo,
+    #[error("Token Repo error: {0}")]
+    TokenRepoError(#[from] TokenRepoError),
 }
 
 impl From<SaveError> for Error {
@@ -50,7 +56,7 @@ impl From<(GetError, Id)> for Error {
 
 impl<'d, D> Usecase<'d, D> for VerifyEmail<'d, D>
 where
-    D: SignupProcessRepoProvider,
+    D: SignupProcessRepoProvider + TokenRepoProvider,
 {
     type Request = Request;
     type Response = Response;
@@ -64,6 +70,9 @@ where
             .get_latest_state(req.id)
             .map_err(|err| (err, req.id))?;
         let process: SignupProcess<Initialized> = record.try_into().map_err(|err| (err, req.id))?;
+        self.dependency_provider
+            .token_repo()
+            .verify(process.state().email.as_ref(), &req.token)?;
         let process = process.verify_email();
         self.dependency_provider
             .signup_process_repo()

@@ -8,8 +8,8 @@ pub enum Error<'d, D, U: Usecase<'d, D>> {
     ParseIdError,
     #[error("Unable to parse input")]
     ParseInputError,
-    #[error("Usecase error")]
-    UsecaseError(U::Error), // impl from thing...
+    #[error("Usecase error {0:?}")]
+    UsecaseError(U::Error),
 }
 
 pub type UsecaseResponseResult<'d, D, U> = Result<<U as Usecase<'d, D>>::Response, Error<'d, D, U>>;
