@@ -1,5 +1,5 @@
 pub mod interface;
 pub mod persistance;
 
-pub mod utils;
 pub mod service;
+pub mod utils;

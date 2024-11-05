@@ -3,7 +3,10 @@ use uuid::Uuid;
 use super::super::Boundary;
 use ca_adapter::boundary::{Error, Ingester, UsecaseRequestResult};
 use ca_application::{
-    gateway::{SignupProcessIdGenProvider, SignupProcessRepoProvider, UserRepoProvider},
+    gateway::{
+        EmailVerificationServiceProvider, SignupProcessIdGenProvider, SignupProcessRepoProvider,
+        UserRepoProvider,
+    },
     usecase::signup_process::{
         complete::{Complete, Request as CompleteRequest},
         completion_timed_out::{CompletionTimedOut, Request as CompletionTimedOutRequest},
@@ -93,7 +96,7 @@ where
 
 impl<'d, D> Ingester<'d, D, Initialize<'d, D>> for Boundary
 where
-    D: SignupProcessRepoProvider + SignupProcessIdGenProvider,
+    D: SignupProcessRepoProvider + SignupProcessIdGenProvider + EmailVerificationServiceProvider,
 {
     type InputModel = String;
     fn ingest(input: Self::InputModel) -> UsecaseRequestResult<'d, D, Initialize<'d, D>> {

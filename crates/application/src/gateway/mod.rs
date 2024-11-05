@@ -18,3 +18,7 @@ pub trait SignupProcessIdGenProvider {
         &self,
     ) -> &dyn super::identifier::NewId<ca_domain::entity::signup_process::Id>;
 }
+
+pub trait EmailVerificationServiceProvider {
+    fn email_verification_service(&self) -> &dyn service::email::EmailVerificationService;
+}
