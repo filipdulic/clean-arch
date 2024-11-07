@@ -71,7 +71,7 @@ where
             password: &req.password,
         })?;
         let username = UserName::new(req.username);
-        let email = Email::new(req.email);
+        let email = Email::new(&req.email);
         let password = Password::new(req.password);
         let user = User::new(req.id, email, username, password);
         let _ = self
