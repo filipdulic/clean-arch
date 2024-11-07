@@ -1,3 +1,6 @@
+use std::sync::Arc;
+
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -11,6 +14,13 @@ use ca_domain::entity::{
     signup_process::SignupStateEnum as EntitySignupStateEnum,
     user::{self, Password},
 };
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub enum SignupStateFailedError {
+    VerificationEmailSendError,
+    VerificationTimedOut,
+    CompletionTimedOut,
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum SignupStateEnum {
@@ -32,6 +42,10 @@ pub enum SignupStateEnum {
         password: String,
     },
     ForDeletion,
+    Failed {
+        previous_state: Box<SignupStateEnum>,
+        error: SignupStateFailedError,
+    },
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -46,6 +60,39 @@ pub struct User {
 pub struct SignupProcess {
     pub signup_process_id: String,
     pub state: SignupStateEnum,
+    pub entered_at: DateTime<Utc>,
+}
+
+impl From<&SignupStateFailedError> for ca_domain::entity::signup_process::Error {
+    fn from(value: &SignupStateFailedError) -> ca_domain::entity::signup_process::Error {
+        match value {
+            SignupStateFailedError::VerificationEmailSendError => {
+                ca_domain::entity::signup_process::Error::VerificationEmailSendError
+            }
+            SignupStateFailedError::VerificationTimedOut => {
+                ca_domain::entity::signup_process::Error::VerificationTimedOut
+            }
+            SignupStateFailedError::CompletionTimedOut => {
+                ca_domain::entity::signup_process::Error::CompletionTimedOut
+            }
+        }
+    }
+}
+
+impl From<ca_domain::entity::signup_process::Error> for SignupStateFailedError {
+    fn from(value: ca_domain::entity::signup_process::Error) -> SignupStateFailedError {
+        match value {
+            ca_domain::entity::signup_process::Error::VerificationEmailSendError => {
+                SignupStateFailedError::VerificationEmailSendError
+            }
+            ca_domain::entity::signup_process::Error::VerificationTimedOut => {
+                SignupStateFailedError::VerificationTimedOut
+            }
+            ca_domain::entity::signup_process::Error::CompletionTimedOut => {
+                SignupStateFailedError::CompletionTimedOut
+            }
+        }
+    }
 }
 
 impl From<EntitySignupStateEnum> for SignupStateEnum {
@@ -77,6 +124,13 @@ impl From<EntitySignupStateEnum> for SignupStateEnum {
                 password: password.to_string(),
             },
             EntitySignupStateEnum::ForDeletion => SignupStateEnum::ForDeletion,
+            EntitySignupStateEnum::Failed {
+                previous_state,
+                error,
+            } => SignupStateEnum::Failed {
+                previous_state: Box::new(previous_state.as_ref().clone().into()),
+                error: error.into(),
+            },
         }
     }
 }
@@ -85,27 +139,28 @@ impl From<SignupProcessRecord> for SignupProcess {
         SignupProcess {
             signup_process_id: value.id.to_string(),
             state: value.state.into(),
+            entered_at: value.entered_at,
         }
     }
 }
 
-impl From<SignupStateEnum> for EntitySignupStateEnum {
-    fn from(value: SignupStateEnum) -> EntitySignupStateEnum {
+impl From<&SignupStateEnum> for EntitySignupStateEnum {
+    fn from(value: &SignupStateEnum) -> EntitySignupStateEnum {
         match value {
             SignupStateEnum::Initialized { email } => EntitySignupStateEnum::Initialized {
-                email: user::Email::new(email.clone()),
+                email: user::Email::new(email),
             },
             SignupStateEnum::EmailVerified { email } => EntitySignupStateEnum::EmailVerified {
-                email: user::Email::new(email.clone()),
+                email: user::Email::new(email),
             },
             SignupStateEnum::VerificationTimedOut { email } => {
                 EntitySignupStateEnum::VerificationTimedOut {
-                    email: user::Email::new(email.clone()),
+                    email: user::Email::new(email),
                 }
             }
             SignupStateEnum::CompletionTimedOut { email } => {
                 EntitySignupStateEnum::CompletionTimedOut {
-                    email: user::Email::new(email.clone()),
+                    email: user::Email::new(email),
                 }
             }
             SignupStateEnum::Completed {
@@ -113,12 +168,25 @@ impl From<SignupStateEnum> for EntitySignupStateEnum {
                 username,
                 password,
             } => EntitySignupStateEnum::Completed {
-                email: user::Email::new(email.clone()),
+                email: user::Email::new(email),
                 username: user::UserName::new(username.clone()),
                 password: user::Password::new(password.clone()),
             },
             SignupStateEnum::ForDeletion => EntitySignupStateEnum::ForDeletion,
+            SignupStateEnum::Failed {
+                previous_state,
+                error,
+            } => EntitySignupStateEnum::Failed {
+                previous_state: Arc::new(previous_state.as_ref().into()),
+                error: error.into(),
+            },
         }
+    }
+}
+
+impl From<SignupStateEnum> for EntitySignupStateEnum {
+    fn from(value: SignupStateEnum) -> EntitySignupStateEnum {
+        (&value).into()
     }
 }
 
@@ -131,6 +199,7 @@ impl From<SignupProcess> for SignupProcessRecord {
         SignupProcessRecord {
             id,
             state: value.state.into(),
+            entered_at: value.entered_at,
         }
     }
 }
@@ -154,7 +223,7 @@ impl TryInto<UserRecord> for &User {
             .map_err(|_| UserParseIdError)?
             .into();
         let username = user::UserName::new(self.username.clone());
-        let email = user::Email::new(self.email.clone());
+        let email = user::Email::new(&self.email);
         let password = Password::new(self.password.clone());
         Ok(UserRecord {
             user: user::User::new(id, email, username, password),

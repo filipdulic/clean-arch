@@ -1,4 +1,5 @@
 use ca_domain::entity::signup_process::*;
+use chrono::{DateTime, Utc};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -27,6 +28,7 @@ pub enum DeleteError {
 pub struct Record {
     pub id: Id,
     pub state: SignupStateEnum,
+    pub entered_at: DateTime<Utc>,
 }
 
 impl PartialEq for Record {
@@ -42,6 +44,7 @@ impl<S: SignupStateTrait> From<SignupProcess<S>> for Record {
         Record {
             id: process.id(),
             state: process.state().clone().into(),
+            entered_at: process.entered_at(),
         }
     }
 }
@@ -49,7 +52,7 @@ impl<S: SignupStateTrait> From<SignupProcess<S>> for Record {
 impl<S: SignupStateTrait + Clone> TryFrom<Record> for SignupProcess<S> {
     type Error = GetError;
     fn try_from(value: Record) -> Result<Self, Self::Error> {
-        (value.id, value.state)
+        (value.id, value.state, value.entered_at)
             .try_into()
             .map_err(|_| GetError::NotFound)
     }

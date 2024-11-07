@@ -7,8 +7,8 @@ use std::{
 pub struct Email<T>(String, PhantomData<T>);
 
 impl<T> Email<T> {
-    pub const fn new(name: String) -> Self {
-        Self(name, PhantomData)
+    pub fn new(name: impl Into<String>) -> Self {
+        Self(name.into(), PhantomData)
     }
 }
 

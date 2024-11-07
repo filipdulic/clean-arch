@@ -71,19 +71,15 @@ where
             .signup_process_id_gen()
             .new_id()
             .map_err(|_| Error::NewId)?;
-        let email = Email::new(req.email);
-        let signup_process = SignupProcess::new(id, email.clone());
+        let email = Email::new(&req.email);
+        let signup_process = SignupProcess::new(id, email);
         self.dependency_provider
             .signup_process_repo()
             .save_latest_state(signup_process.into())?;
-        let token = self
-            .dependency_provider
-            .token_repo()
-            .gen(email.as_ref())?
-            .token;
+        let token = self.dependency_provider.token_repo().gen(&req.email)?.token;
         self.dependency_provider
             .email_verification_service()
-            .send_verification_email(EmailAddress::new(email.as_ref()), token.as_str())?;
+            .send_verification_email(EmailAddress::new(&req.email), token.as_str())?;
         Ok(Response { id })
     }
     fn new(dependency_provider: &'d D) -> Self {
