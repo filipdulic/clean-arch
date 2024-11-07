@@ -18,7 +18,6 @@ use ca_application::{
         get_state_chain::{GetStateChain, Request as GetStateChainRequest},
         initialize::{Initialize, Request as InitializeRequest},
         send_verification_email::{Request as SendVerificationEmailRequest, SendVerificationEmail},
-        verification_timed_out::{Request as VerificationTimedOutRequest, VerificationTimedOut},
         verify_email::{Request as VerifyEmailRequest, VerifyEmail},
     },
 };
@@ -69,7 +68,7 @@ where
 
 impl<'d, D> Ingester<'d, D, ExtendVerificationTime<'d, D>> for Boundary
 where
-    D: SignupProcessRepoProvider,
+    D: SignupProcessRepoProvider + TokenRepoProvider,
 {
     type InputModel = String;
     fn ingest(
@@ -117,19 +116,6 @@ where
             .parse()
             .map_err(|_| Error::ParseInputError)
             .map(|uuid: Uuid| SendVerificationEmailRequest { id: Id::from(uuid) })
-    }
-}
-
-impl<'d, D> Ingester<'d, D, VerificationTimedOut<'d, D>> for Boundary
-where
-    D: SignupProcessRepoProvider,
-{
-    type InputModel = String;
-    fn ingest(input: Self::InputModel) -> UsecaseRequestResult<'d, D, VerificationTimedOut<'d, D>> {
-        input
-            .parse()
-            .map_err(|_| Error::ParseInputError)
-            .map(|uuid: Uuid| VerificationTimedOutRequest { id: Id::from(uuid) })
     }
 }
 

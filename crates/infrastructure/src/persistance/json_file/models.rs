@@ -67,6 +67,12 @@ pub struct SignupProcess {
     pub entered_at: DateTime<Utc>,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct VerificationToken {
+    pub token: uuid::Uuid,
+    pub created_at: DateTime<Utc>,
+}
+
 impl From<&SignupStateFailedError> for ca_domain::entity::signup_process::Error {
     fn from(value: &SignupStateFailedError) -> ca_domain::entity::signup_process::Error {
         match value {
