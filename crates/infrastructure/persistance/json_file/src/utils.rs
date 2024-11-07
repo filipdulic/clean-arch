@@ -1,7 +1,7 @@
 use directories::UserDirs;
 use std::path::{Path, PathBuf};
 
-use super::super::persistance::json_file::JsonFile;
+use crate::JsonFile;
 
 #[must_use]
 pub fn data_storage(data_dir: Option<PathBuf>) -> JsonFile {

@@ -6,6 +6,7 @@ mod models;
 mod signup_process;
 mod token;
 mod user;
+pub mod utils;
 
 #[derive(Debug, Clone)]
 pub struct JsonFile {

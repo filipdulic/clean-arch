@@ -27,7 +27,7 @@ use ca_application::usecase::{
     user::{delete::Delete as UserDelete, get_all::GetAll, get_one::GetOne, update::Update},
 };
 
-use crate::boundary::string;
+use ca_infrastructure_boundary_string as string;
 
 //use crate::boundary::string::
 #[derive(Subcommand)]

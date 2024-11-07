@@ -1,0 +1,15 @@
+[package]
+name = "ca-infrastructure-service-email-file"
+edition.workspace = true
+rust-version.workspace = true
+version.workspace = true
+publish = false
+
+[dependencies]
+
+# Workspace dependencies
+ca-application = { version = "=0.1.0", path = "../../../../application" }
+
+# External dependencies
+
+[dev-dependencies]

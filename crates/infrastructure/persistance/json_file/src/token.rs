@@ -1,7 +1,6 @@
 use super::{models::VerificationToken, JsonFile};
 use ca_application::gateway::repository::token::*;
 use std::io;
-use uuid;
 
 use chrono::{Duration, Utc};
 
