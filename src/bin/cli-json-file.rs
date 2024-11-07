@@ -6,9 +6,10 @@ use ca_application::gateway::{
 };
 use ca_application::identifier::NewId;
 use ca_domain::entity::{signup_process::Id as SignupProcessId, user::Id as UserId};
-use ca_infrastructure::service::email::file::FileEmailService;
-use ca_infrastructure::utils::storage::{data_storage, data_storage_directory};
-use ca_infrastructure::{interface::cli, persistance::json_file::JsonFile};
+use ca_infrastructure_interface_cli as cli;
+use ca_infrastructure_persistance_json_file::utils::{data_storage, data_storage_directory};
+use ca_infrastructure_persistance_json_file::JsonFile;
+use ca_infrastructure_service_email_file::FileEmailService;
 use clap::Parser;
 use std::{path::PathBuf, sync::Arc};
 

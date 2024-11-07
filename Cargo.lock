@@ -122,14 +122,32 @@ dependencies = [
 ]
 
 [[package]]
-name = "ca-infrastructure"
+name = "ca-infrastructure-boundary-string"
 version = "0.1.0"
 dependencies = [
  "ca-adapter",
  "ca-application",
  "ca-domain",
- "chrono",
+ "uuid",
+]
+
+[[package]]
+name = "ca-infrastructure-interface-cli"
+version = "0.1.0"
+dependencies = [
+ "ca-adapter",
+ "ca-application",
+ "ca-infrastructure-boundary-string",
  "clap",
+]
+
+[[package]]
+name = "ca-infrastructure-persistance-json_file"
+version = "0.1.0"
+dependencies = [
+ "ca-application",
+ "ca-domain",
+ "chrono",
  "directories",
  "env_logger",
  "jfs",
@@ -138,6 +156,13 @@ dependencies = [
  "serde",
  "tempfile",
  "uuid",
+]
+
+[[package]]
+name = "ca-infrastructure-service-email-file"
+version = "0.1.0"
+dependencies = [
+ "ca-application",
 ]
 
 [[package]]
@@ -217,7 +242,10 @@ dependencies = [
  "ca-adapter",
  "ca-application",
  "ca-domain",
- "ca-infrastructure",
+ "ca-infrastructure-boundary-string",
+ "ca-infrastructure-interface-cli",
+ "ca-infrastructure-persistance-json_file",
+ "ca-infrastructure-service-email-file",
  "clap",
 ]
 
@@ -730,9 +758,9 @@ dependencies = [
 
 [[package]]
 name = "rustix"
-version = "0.38.38"
+version = "0.38.39"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aa260229e6538e52293eeb577aabd09945a09d6d9cc0fc550ed7529056c2e32a"
+checksum = "375116bee2be9ed569afe2154ea6a99dfdffd257f533f187498c2a8f5feaf4ee"
 dependencies = [
  "bitflags",
  "errno",
