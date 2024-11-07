@@ -22,8 +22,8 @@ use ca_application::usecase::{
         complete::Complete, completion_timed_out::CompletionTimedOut, delete::Delete,
         extend_completion_time::ExtendCompletionTime,
         extend_verification_time::ExtendVerificationTime, get_state_chain::GetStateChain,
-        initialize::Initialize, verification_timed_out::VerificationTimedOut,
-        verify_email::VerifyEmail,
+        initialize::Initialize, send_verification_email::SendVerificationEmail,
+        verification_timed_out::VerificationTimedOut, verify_email::VerifyEmail,
     },
     user::{delete::Delete as UserDelete, get_all::GetAll, get_one::GetOne, update::Update},
 };
@@ -32,6 +32,11 @@ use ca_application::usecase::{
 pub enum Command {
     #[clap(about = "Initialize signup process", alias = "sp-init")]
     InitializeSignupProcess { username: String },
+    #[clap(
+        about = "Send verification email for signup process",
+        alias = "sp-send-verify"
+    )]
+    SendVerificationEmail { id: String },
     #[clap(
         about = "Signup process verification timed out",
         alias = "sp-verify-timeout"
@@ -88,6 +93,10 @@ where
     match cmd {
         Command::InitializeSignupProcess { username } => {
             let res = app_controller.handle_usecase::<Initialize<D>>(username);
+            println!("{res}");
+        }
+        Command::SendVerificationEmail { id } => {
+            let res = app_controller.handle_usecase::<SendVerificationEmail<D>>(id);
             println!("{res}");
         }
         Command::SignupProcessVerificationTimedOut { id } => {

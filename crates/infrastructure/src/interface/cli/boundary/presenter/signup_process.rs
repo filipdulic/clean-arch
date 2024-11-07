@@ -8,8 +8,8 @@ use ca_application::{
         complete::Complete, completion_timed_out::CompletionTimedOut, delete::Delete,
         extend_completion_time::ExtendCompletionTime,
         extend_verification_time::ExtendVerificationTime, get_state_chain::GetStateChain,
-        initialize::Initialize, verification_timed_out::VerificationTimedOut,
-        verify_email::VerifyEmail,
+        initialize::Initialize, send_verification_email::SendVerificationEmail,
+        verification_timed_out::VerificationTimedOut, verify_email::VerifyEmail,
     },
 };
 
@@ -109,10 +109,7 @@ where
 
 impl<'d, D> Presenter<'d, D, Initialize<'d, D>> for Boundary
 where
-    D: SignupProcessRepoProvider
-        + SignupProcessIdGenProvider
-        + EmailVerificationServiceProvider
-        + TokenRepoProvider,
+    D: SignupProcessRepoProvider + SignupProcessIdGenProvider,
 {
     type ViewModel = String;
 
@@ -120,6 +117,22 @@ where
         match data {
             Ok(data) => format!("Created a SignupProcess(ID = {})", data.id),
             Err(err) => format!("Unable to create a SignupProcess: {err}"),
+        }
+    }
+}
+
+impl<'d, D> Presenter<'d, D, SendVerificationEmail<'d, D>> for Boundary
+where
+    D: SignupProcessRepoProvider + EmailVerificationServiceProvider + TokenRepoProvider,
+{
+    type ViewModel = String;
+
+    fn present(
+        data: UsecaseResponseResult<'d, D, SendVerificationEmail<'d, D>>,
+    ) -> Self::ViewModel {
+        match data {
+            Ok(data) => format!("Verification email sent(ID = {})", data.id),
+            Err(err) => format!("Unable to send verification email: {err}"),
         }
     }
 }
