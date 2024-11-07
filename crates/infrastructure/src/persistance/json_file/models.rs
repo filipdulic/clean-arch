@@ -17,6 +17,7 @@ use ca_domain::entity::{
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum SignupStateFailedError {
+    TokenGenrationFailed,
     VerificationEmailSendError,
     VerificationTimedOut,
     CompletionTimedOut,
@@ -25,6 +26,9 @@ pub enum SignupStateFailedError {
 #[derive(Debug, Serialize, Deserialize)]
 pub enum SignupStateEnum {
     Initialized {
+        email: String,
+    },
+    VerificationEmailSent {
         email: String,
     },
     EmailVerified {
@@ -66,6 +70,9 @@ pub struct SignupProcess {
 impl From<&SignupStateFailedError> for ca_domain::entity::signup_process::Error {
     fn from(value: &SignupStateFailedError) -> ca_domain::entity::signup_process::Error {
         match value {
+            SignupStateFailedError::TokenGenrationFailed => {
+                ca_domain::entity::signup_process::Error::TokenGenrationFailed
+            }
             SignupStateFailedError::VerificationEmailSendError => {
                 ca_domain::entity::signup_process::Error::VerificationEmailSendError
             }
@@ -82,6 +89,9 @@ impl From<&SignupStateFailedError> for ca_domain::entity::signup_process::Error 
 impl From<ca_domain::entity::signup_process::Error> for SignupStateFailedError {
     fn from(value: ca_domain::entity::signup_process::Error) -> SignupStateFailedError {
         match value {
+            ca_domain::entity::signup_process::Error::TokenGenrationFailed => {
+                SignupStateFailedError::TokenGenrationFailed
+            }
             ca_domain::entity::signup_process::Error::VerificationEmailSendError => {
                 SignupStateFailedError::VerificationEmailSendError
             }
@@ -101,6 +111,11 @@ impl From<EntitySignupStateEnum> for SignupStateEnum {
             EntitySignupStateEnum::Initialized { email } => SignupStateEnum::Initialized {
                 email: email.to_string(),
             },
+            EntitySignupStateEnum::VerificationEmailSent { email } => {
+                SignupStateEnum::VerificationEmailSent {
+                    email: email.to_string(),
+                }
+            }
             EntitySignupStateEnum::EmailVerified { email } => SignupStateEnum::EmailVerified {
                 email: email.to_string(),
             },
@@ -150,6 +165,11 @@ impl From<&SignupStateEnum> for EntitySignupStateEnum {
             SignupStateEnum::Initialized { email } => EntitySignupStateEnum::Initialized {
                 email: user::Email::new(email),
             },
+            SignupStateEnum::VerificationEmailSent { email } => {
+                EntitySignupStateEnum::VerificationEmailSent {
+                    email: user::Email::new(email),
+                }
+            }
             SignupStateEnum::EmailVerified { email } => EntitySignupStateEnum::EmailVerified {
                 email: user::Email::new(email),
             },

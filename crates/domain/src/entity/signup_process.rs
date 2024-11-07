@@ -17,6 +17,9 @@ pub enum SignupStateEnum {
     Initialized {
         email: Email,
     },
+    VerificationEmailSent {
+        email: Email,
+    },
     EmailVerified {
         email: Email,
     },
@@ -44,6 +47,10 @@ pub struct Initialized {
     pub email: Email,
 }
 #[derive(Debug, Clone)]
+pub struct VerificationEmailSent {
+    pub email: Email,
+}
+#[derive(Debug, Clone)]
 pub struct EmailVerified {
     pub email: Email,
 }
@@ -66,6 +73,7 @@ pub struct ForDeletion {}
 
 #[derive(Debug, Clone)]
 pub enum Error {
+    TokenGenrationFailed,
     VerificationEmailSendError,
     VerificationTimedOut,
     CompletionTimedOut,
@@ -78,6 +86,7 @@ pub struct Failed<S: SignupStateTrait> {
 }
 
 impl SignupStateTrait for Initialized {}
+impl SignupStateTrait for VerificationEmailSent {}
 impl SignupStateTrait for EmailVerified {}
 impl SignupStateTrait for VerificationTimedOut {}
 impl SignupStateTrait for CompletionTimedOut {}
@@ -124,6 +133,19 @@ impl SignupProcess<Initialized> {
             entered_at: Utc::now(),
         }
     }
+    pub fn send_verification_email(self) -> SignupProcess<VerificationEmailSent> {
+        let state = VerificationEmailSent {
+            email: self.state.email,
+        };
+        SignupProcess {
+            id: self.id,
+            state,
+            entered_at: Utc::now(),
+        }
+    }
+}
+
+impl SignupProcess<VerificationEmailSent> {
     pub fn verify_email(self) -> SignupProcess<EmailVerified> {
         let state = EmailVerified {
             email: self.state.email,
@@ -245,6 +267,15 @@ impl TryFrom<SignupStateEnum> for Initialized {
         }
     }
 }
+impl TryFrom<SignupStateEnum> for VerificationEmailSent {
+    type Error = ();
+    fn try_from(value: SignupStateEnum) -> Result<Self, Self::Error> {
+        match value {
+            SignupStateEnum::VerificationEmailSent { email } => Ok(Self { email }),
+            _ => Err(()),
+        }
+    }
+}
 impl TryFrom<SignupStateEnum> for EmailVerified {
     type Error = ();
     fn try_from(value: SignupStateEnum) -> Result<Self, Self::Error> {
@@ -336,7 +367,12 @@ impl Into<SignupStateEnum> for Initialized {
         SignupStateEnum::Initialized { email: self.email }
     }
 }
-
+#[allow(clippy::from_over_into)]
+impl Into<SignupStateEnum> for VerificationEmailSent {
+    fn into(self) -> SignupStateEnum {
+        SignupStateEnum::VerificationEmailSent { email: self.email }
+    }
+}
 #[allow(clippy::from_over_into)]
 impl Into<SignupStateEnum> for EmailVerified {
     fn into(self) -> SignupStateEnum {

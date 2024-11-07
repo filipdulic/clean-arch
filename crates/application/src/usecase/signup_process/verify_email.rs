@@ -9,7 +9,7 @@ use crate::{
     usecase::Usecase,
 };
 
-use ca_domain::entity::signup_process::{Id, Initialized, SignupProcess};
+use ca_domain::entity::signup_process::{Id, SignupProcess, VerificationEmailSent};
 
 use thiserror::Error;
 
@@ -69,15 +69,15 @@ where
             .signup_process_repo()
             .get_latest_state(req.id)
             .map_err(|err| (err, req.id))?;
-        let process: SignupProcess<Initialized> = record.try_into().map_err(|err| (err, req.id))?;
+        let process: SignupProcess<VerificationEmailSent> =
+            record.try_into().map_err(|err| (err, req.id))?;
         self.dependency_provider
             .token_repo()
             .verify(process.state().email.as_ref(), &req.token)?;
         let process = process.verify_email();
         self.dependency_provider
             .signup_process_repo()
-            .save_latest_state(process.into())
-            .map_err(|_| Error::NotFound(req.id))?;
+            .save_latest_state(process.into())?;
         Ok(Self::Response { id: req.id })
     }
     fn new(dependency_provider: &'d D) -> Self {

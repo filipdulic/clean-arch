@@ -52,7 +52,10 @@ mod tests {
     mod signup_process {
         use super::*;
         use ca_domain::entity::{
-            signup_process::{EmailVerified, Id as SignupProcessId, Initialized, SignupProcess},
+            signup_process::{
+                EmailVerified, Id as SignupProcessId, Initialized, SignupProcess,
+                VerificationEmailSent,
+            },
             user::{Email, Password, UserName},
         };
         use rstest::*;
@@ -102,7 +105,7 @@ mod tests {
 
             let signup_process = SignupProcess::<Initialized>::try_from(db_record)
                 .unwrap()
-                .verify_email();
+                .send_verification_email();
             let record = SignupProcessRecord::from(signup_process.clone());
             (&db as &dyn SignupProcessRepo)
                 .save_latest_state(record.clone())
@@ -111,6 +114,22 @@ mod tests {
                 .get_latest_state(id)
                 .unwrap();
             // assert loaded state is the changed EmailVerified state.
+            assert_eq!(db_record, record);
+            // Send Email verification
+            let signup_process = SignupProcess::<VerificationEmailSent>::try_from(db_record)
+                .unwrap()
+                .verify_email();
+            // assert state has changed to Completed.
+            let record = SignupProcessRecord::from(signup_process.clone());
+
+            (&db as &dyn SignupProcessRepo)
+                .save_latest_state(record.clone())
+                .unwrap();
+
+            let db_record = (&db as &dyn SignupProcessRepo)
+                .get_latest_state(id)
+                .unwrap();
+            // assert the loaded state is the new Completed state.
             assert_eq!(db_record, record);
             // Completed step
             let signup_process = SignupProcess::<EmailVerified>::try_from(db_record)

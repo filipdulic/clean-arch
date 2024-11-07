@@ -6,7 +6,7 @@ use crate::{
     usecase::Usecase,
 };
 
-use ca_domain::entity::signup_process::{Id, Initialized, SignupProcess};
+use ca_domain::entity::signup_process::{Id, SignupProcess, VerificationEmailSent};
 
 use thiserror::Error;
 
@@ -62,7 +62,8 @@ where
             .signup_process_repo()
             .get_latest_state(req.id)
             .map_err(|err| (err, req.id))?;
-        let process: SignupProcess<Initialized> = record.try_into().map_err(|err| (err, req.id))?;
+        let process: SignupProcess<VerificationEmailSent> =
+            record.try_into().map_err(|err| (err, req.id))?;
         let process = process.verification_timed_out();
         self.dependency_provider
             .signup_process_repo()

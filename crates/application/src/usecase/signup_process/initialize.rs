@@ -1,9 +1,8 @@
 use crate::{
     gateway::{
         repository::{signup_process::SaveError, token::GenError as TokenRepoError},
-        service::email::{EmailAddress, EmailServiceError},
-        EmailVerificationServiceProvider, SignupProcessIdGenProvider, SignupProcessRepoProvider,
-        TokenRepoProvider,
+        service::email::EmailServiceError,
+        SignupProcessIdGenProvider, SignupProcessRepoProvider,
     },
     identifier::NewIdError,
     usecase::Usecase,
@@ -52,10 +51,7 @@ impl From<SaveError> for Error {
 
 impl<'d, D> Usecase<'d, D> for Initialize<'d, D>
 where
-    D: SignupProcessIdGenProvider
-        + SignupProcessRepoProvider
-        + EmailVerificationServiceProvider
-        + TokenRepoProvider,
+    D: SignupProcessIdGenProvider + SignupProcessRepoProvider,
 {
     type Request = Request;
     type Response = Response;
@@ -76,10 +72,6 @@ where
         self.dependency_provider
             .signup_process_repo()
             .save_latest_state(signup_process.into())?;
-        let token = self.dependency_provider.token_repo().gen(&req.email)?.token;
-        self.dependency_provider
-            .email_verification_service()
-            .send_verification_email(EmailAddress::new(&req.email), token.as_str())?;
         Ok(Response { id })
     }
     fn new(dependency_provider: &'d D) -> Self {
