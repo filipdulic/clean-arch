@@ -1,12 +1,12 @@
 use crate::{
     gateway::{
         repository::signup_process::{GetError, SaveError},
-        SignupProcessRepoProvider,
+        SignupProcessRepoProvider, TokenRepoProvider,
     },
     usecase::Usecase,
 };
 
-use ca_domain::entity::signup_process::{Id, SignupProcess, VerificationTimedOut};
+use ca_domain::entity::signup_process::{Failed, Id, SignupProcess, VerificationEmailSent};
 
 use thiserror::Error;
 
@@ -29,6 +29,8 @@ pub enum Error {
     NotFound(Id),
     #[error("{}", SaveError::Connection)]
     Repo,
+    #[error("Token Extension Error {0}")]
+    TokenRepoError(#[from] super::super::super::gateway::repository::token::ExtendError),
 }
 
 impl From<SaveError> for Error {
@@ -50,7 +52,7 @@ impl From<(GetError, Id)> for Error {
 
 impl<'d, D> Usecase<'d, D> for ExtendVerificationTime<'d, D>
 where
-    D: SignupProcessRepoProvider,
+    D: SignupProcessRepoProvider + TokenRepoProvider,
 {
     type Request = Request;
     type Response = Response;
@@ -62,9 +64,13 @@ where
             .signup_process_repo()
             .get_latest_state(req.id)
             .map_err(|err| (err, req.id))?;
-        let process: SignupProcess<VerificationTimedOut> =
+        let process: SignupProcess<Failed<VerificationEmailSent>> =
             record.try_into().map_err(|err| (err, req.id))?;
-        let process = process.extend_verification_time();
+        // update token
+        let process = process.recover();
+        self.dependency_provider
+            .token_repo()
+            .extend(process.state().email.as_ref())?;
         self.dependency_provider
             .signup_process_repo()
             .save_latest_state(process.into())

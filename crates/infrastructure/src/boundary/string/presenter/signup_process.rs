@@ -9,7 +9,7 @@ use ca_application::{
         extend_completion_time::ExtendCompletionTime,
         extend_verification_time::ExtendVerificationTime, get_state_chain::GetStateChain,
         initialize::Initialize, send_verification_email::SendVerificationEmail,
-        verification_timed_out::VerificationTimedOut, verify_email::VerifyEmail,
+        verify_email::VerifyEmail,
     },
 };
 
@@ -76,7 +76,7 @@ where
 
 impl<'d, D> Presenter<'d, D, ExtendVerificationTime<'d, D>> for Boundary
 where
-    D: SignupProcessRepoProvider,
+    D: SignupProcessRepoProvider + TokenRepoProvider,
 {
     type ViewModel = String;
 
@@ -133,20 +133,6 @@ where
         match data {
             Ok(data) => format!("Verification email sent(ID = {})", data.id),
             Err(err) => format!("Unable to send verification email: {err}"),
-        }
-    }
-}
-
-impl<'d, D> Presenter<'d, D, VerificationTimedOut<'d, D>> for Boundary
-where
-    D: SignupProcessRepoProvider,
-{
-    type ViewModel = String;
-
-    fn present(data: UsecaseResponseResult<'d, D, VerificationTimedOut<'d, D>>) -> Self::ViewModel {
-        match data {
-            Ok(data) => format!("Verification Timed Out of SignupProcess(ID = {})", data.id),
-            Err(err) => format!("Unable to Verify Email of SignupProcess: {err}"),
         }
     }
 }

@@ -7,7 +7,7 @@ use crate::{
 };
 
 use ca_domain::entity::signup_process::{
-    CompletionTimedOut, Id, SignupProcess, SignupStateEnum, VerificationTimedOut,
+    CompletionTimedOut, Failed, Id, SignupProcess, SignupStateEnum, VerificationEmailSent,
 };
 
 use thiserror::Error;
@@ -66,7 +66,7 @@ where
             .map_err(|err| (err, req.id))?;
         let process = match record.state {
             SignupStateEnum::VerificationTimedOut { .. } => {
-                match SignupProcess::<VerificationTimedOut>::try_from(record) {
+                match SignupProcess::<Failed<VerificationEmailSent>>::try_from(record) {
                     Ok(process) => process.delete(),
                     Err(_) => return Err((GetError::NotFound, req.id).into()),
                 }

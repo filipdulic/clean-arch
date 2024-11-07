@@ -6,5 +6,4 @@ pub mod extend_verification_time;
 pub mod get_state_chain;
 pub mod initialize;
 pub mod send_verification_email;
-pub mod verification_timed_out;
 pub mod verify_email;

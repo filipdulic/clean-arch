@@ -103,7 +103,11 @@ where
                 .save_latest_state(process.into())?;
             return Err(err.into());
         }
-        Ok(Response { id: process.id() })
+        let process = process.send_verification_email();
+        self.dependency_provider
+            .signup_process_repo()
+            .save_latest_state(process.into())?;
+        Ok(Response { id: req.id })
     }
     fn new(dependency_provider: &'d D) -> Self {
         Self {

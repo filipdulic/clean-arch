@@ -88,7 +88,6 @@ pub struct Failed<S: SignupStateTrait> {
 impl SignupStateTrait for Initialized {}
 impl SignupStateTrait for VerificationEmailSent {}
 impl SignupStateTrait for EmailVerified {}
-impl SignupStateTrait for VerificationTimedOut {}
 impl SignupStateTrait for CompletionTimedOut {}
 impl SignupStateTrait for Completed {}
 impl SignupStateTrait for ForDeletion {}
@@ -150,37 +149,6 @@ impl SignupProcess<VerificationEmailSent> {
         let state = EmailVerified {
             email: self.state.email,
         };
-        SignupProcess {
-            id: self.id,
-            state,
-            entered_at: Utc::now(),
-        }
-    }
-    pub fn verification_timed_out(self) -> SignupProcess<VerificationTimedOut> {
-        let state = VerificationTimedOut {
-            email: self.state.email,
-        };
-        SignupProcess {
-            id: self.id,
-            state,
-            entered_at: Utc::now(),
-        }
-    }
-}
-
-impl SignupProcess<VerificationTimedOut> {
-    pub fn extend_verification_time(self) -> SignupProcess<Initialized> {
-        let state = Initialized {
-            email: self.state.email,
-        };
-        SignupProcess {
-            id: self.id,
-            state,
-            entered_at: Utc::now(),
-        }
-    }
-    pub fn delete(self) -> SignupProcess<ForDeletion> {
-        let state = ForDeletion {};
         SignupProcess {
             id: self.id,
             state,
@@ -250,6 +218,14 @@ impl SignupProcess<Completed> {
 impl<S: SignupStateTrait> SignupProcess<Failed<S>> {
     pub fn recover(&self) -> SignupProcess<S> {
         let state = self.state.previous_state.clone();
+        SignupProcess {
+            id: self.id,
+            state,
+            entered_at: Utc::now(),
+        }
+    }
+    pub fn delete(self) -> SignupProcess<ForDeletion> {
+        let state = ForDeletion {};
         SignupProcess {
             id: self.id,
             state,

@@ -63,7 +63,8 @@ where
     type Error = Error;
     /// Create a new user with the given name.
     fn exec(&self, req: Request) -> Result<Response, Error> {
-        log::debug!("SignupProcess Email Verified: {:?}", req);
+        log::debug!("SignupProcess Email Verification: {:?}", req);
+        // Load record
         let record = self
             .dependency_provider
             .signup_process_repo()
@@ -71,9 +72,23 @@ where
             .map_err(|err| (err, req.id))?;
         let process: SignupProcess<VerificationEmailSent> =
             record.try_into().map_err(|err| (err, req.id))?;
-        self.dependency_provider
+        // Verify the token
+        if let Err(err) = self
+            .dependency_provider
             .token_repo()
-            .verify(process.state().email.as_ref(), &req.token)?;
+            .verify(process.state().email.as_ref(), &req.token)
+        {
+            log::error!("Token Repo error: {:?}", err);
+            if let TokenRepoError::TokenExpired = err {
+                let process =
+                    process.fail(ca_domain::entity::signup_process::Error::VerificationTimedOut);
+                self.dependency_provider
+                    .signup_process_repo()
+                    .save_latest_state(process.into())?;
+            }
+            return Err(err.into());
+        };
+        // Update the process state
         let process = process.verify_email();
         self.dependency_provider
             .signup_process_repo()

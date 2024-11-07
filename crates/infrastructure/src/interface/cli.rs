@@ -11,7 +11,6 @@
 //!     and match them to the defined commands.
 //! * Command Execution: Map the parsed commands to the appropriate functions or
 //!     methods in the application.
-mod boundary;
 use std::sync::Arc;
 
 use clap::Subcommand;
@@ -23,11 +22,14 @@ use ca_application::usecase::{
         extend_completion_time::ExtendCompletionTime,
         extend_verification_time::ExtendVerificationTime, get_state_chain::GetStateChain,
         initialize::Initialize, send_verification_email::SendVerificationEmail,
-        verification_timed_out::VerificationTimedOut, verify_email::VerifyEmail,
+        verify_email::VerifyEmail,
     },
     user::{delete::Delete as UserDelete, get_all::GetAll, get_one::GetOne, update::Update},
 };
 
+use crate::boundary::string;
+
+//use crate::boundary::string::
 #[derive(Subcommand)]
 pub enum Command {
     #[clap(about = "Initialize signup process", alias = "sp-init")]
@@ -37,11 +39,6 @@ pub enum Command {
         alias = "sp-send-verify"
     )]
     SendVerificationEmail { id: String },
-    #[clap(
-        about = "Signup process verification timed out",
-        alias = "sp-verify-timeout"
-    )]
-    SignupProcessVerificationTimedOut { id: String },
     #[clap(
         about = "Signup process completion timed out",
         alias = "sp-complete-timeout"
@@ -88,7 +85,7 @@ pub fn run<D>(db: Arc<D>, cmd: Command)
 where
     D: Transactional,
 {
-    let app_controller = Controller::<D, boundary::Boundary>::new(db);
+    let app_controller = Controller::<D, string::Boundary>::new(db);
 
     match cmd {
         Command::InitializeSignupProcess { username } => {
@@ -97,10 +94,6 @@ where
         }
         Command::SendVerificationEmail { id } => {
             let res = app_controller.handle_usecase::<SendVerificationEmail<D>>(id);
-            println!("{res}");
-        }
-        Command::SignupProcessVerificationTimedOut { id } => {
-            let res = app_controller.handle_usecase::<VerificationTimedOut<D>>(id);
             println!("{res}");
         }
         Command::SignupProcessCompletionTimedOut { id } => {
