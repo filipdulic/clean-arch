@@ -1,6 +1,7 @@
 use ca_domain::entity::user::*;
 use thiserror::Error;
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Error)]
 pub enum GetError {
     #[error("User not found")]
@@ -9,18 +10,21 @@ pub enum GetError {
     Connection,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Error)]
 pub enum SaveError {
     #[error("User repository connection problem")]
     Connection,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Error)]
 pub enum GetAllError {
     #[error("User repository connection problem")]
     Connection,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Error)]
 pub enum DeleteError {
     #[error("User not found")]
@@ -29,6 +33,7 @@ pub enum DeleteError {
     Connection,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub struct Record {
     pub user: User,

@@ -5,6 +5,7 @@ pub type UserName = value_object::UserName<User>;
 pub type Email = value_object::Email<User>;
 pub type Password = value_object::Password<User>;
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone)]
 pub struct User {
     id: Id,

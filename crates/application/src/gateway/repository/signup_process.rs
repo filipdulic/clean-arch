@@ -2,6 +2,7 @@ use ca_domain::entity::signup_process::*;
 use chrono::{DateTime, Utc};
 use thiserror::Error;
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Error)]
 pub enum GetError {
     #[error("SignupProcess not found")]
@@ -10,12 +11,14 @@ pub enum GetError {
     Connection,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Error)]
 pub enum SaveError {
     #[error("SignupProcess repository connection problem")]
     Connection,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Error)]
 pub enum DeleteError {
     #[error("SignupProcess not found")]
@@ -24,6 +27,7 @@ pub enum DeleteError {
     Connection,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone)]
 pub struct Record {
     pub id: Id,

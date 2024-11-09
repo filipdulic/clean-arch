@@ -1,11 +1,13 @@
 use thiserror::Error;
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Error)]
 pub enum GenError {
     #[error("Token repository connection problem")]
     Connection,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Error)]
 pub enum VerifyError {
     #[error("Token not found")]
@@ -18,6 +20,7 @@ pub enum VerifyError {
     TokenExpired,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Error)]
 pub enum ExtendError {
     #[error("Token repository connection problem")]
@@ -26,6 +29,7 @@ pub enum ExtendError {
     NotFound,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub struct Record {
     pub token: String,
