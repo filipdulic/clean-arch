@@ -16,12 +16,16 @@ use ca_domain::entity::{
 
 use thiserror::Error;
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+
 #[derive(Debug)]
 pub struct Request {
     pub id: Id,
     pub username: String,
     pub password: String,
 }
+
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 
 #[derive(Debug)]
 pub struct Response {
@@ -30,6 +34,8 @@ pub struct Response {
 pub struct Complete<'d, D> {
     dependency_provider: &'d D,
 }
+
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 
 #[derive(Debug, Error)]
 pub enum Error {

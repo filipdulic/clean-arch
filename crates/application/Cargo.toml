@@ -7,9 +7,15 @@ publish = false
 
 [dependencies]
 # Workspace dependencies
-ca-domain = { version = "=0.1.0", path = "../domain" }
+ca-domain = { version = "=0.1.0", path = "../domain"}
 chrono = "0.4.38"
+# Serde fetature dependencies
+serde = { version = "1.0.214", features = ["derive"], optional = true }
+uuid = { version = "1.11.0", features = ["v4"] }
 
 # External dependencies
 log = "0.4"
-thiserror = "1.0"
+thiserror = "2.0.1"
+
+[features]
+serde = ["dep:serde", "uuid/serde","ca-domain/serde"]

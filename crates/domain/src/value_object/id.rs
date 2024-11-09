@@ -8,6 +8,8 @@ use std::{
 
 use uuid::Uuid;
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+
 pub struct Id<T> {
     id: Uuid,
     // The `fn() -> T` is a trick to tell the compiler that we don't own anything.

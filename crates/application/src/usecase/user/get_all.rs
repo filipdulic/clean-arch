@@ -5,9 +5,11 @@ use crate::{
 use ca_domain::entity::user::User;
 use thiserror::Error;
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub struct Request;
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub struct Response {
     pub users: Vec<User>,
@@ -18,6 +20,7 @@ pub struct GetAll<'d, D> {
     dependency_provider: &'d D,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Error)]
 pub enum Error {
     #[error("{}", GetAllError::Connection)]

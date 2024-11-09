@@ -13,12 +13,13 @@ use ca_domain::entity::{
     user::Email,
 };
 use thiserror::Error;
-
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub struct Request {
     pub email: String,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub struct Response {
     pub id: Id,
@@ -29,6 +30,7 @@ pub struct Initialize<'d, D> {
     dependency_provider: &'d D,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Error)]
 pub enum Error {
     #[error("{}", SaveError::Connection)]
