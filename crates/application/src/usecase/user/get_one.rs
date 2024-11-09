@@ -6,13 +6,11 @@ use ca_domain::entity::user::{Id, User};
 
 use thiserror::Error;
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub struct Request {
     pub id: Id,
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub struct Response {
     pub user: User,
@@ -23,7 +21,6 @@ pub struct GetOne<'d, D> {
     dependency_provider: &'d D,
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Error)]
 pub enum Error {
     #[error("{}", GetError::NotFound)]

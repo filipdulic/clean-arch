@@ -1,7 +1,6 @@
 use ca_domain::entity::user::{Email, Password, UserName};
 use thiserror::Error;
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub struct Request<'a> {
     pub username: &'a str,
@@ -10,7 +9,6 @@ pub struct Request<'a> {
 }
 pub type Response = Result<(), UserInvalidity>;
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Error)]
 pub enum UserInvalidity {
     #[error(transparent)]
@@ -21,7 +19,6 @@ pub enum UserInvalidity {
     Password(#[from] PasswordInvalidity),
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Error)]
 pub enum UserNameInvalidity {
     #[error("The user name must have at least {min} but has {actual} chars")]
@@ -30,7 +27,6 @@ pub enum UserNameInvalidity {
     MaxLength { max: usize, actual: usize },
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Error)]
 pub enum EmailInvalidity {
     #[error("The email must have at least {min} but has {actual} chars")]
@@ -39,7 +35,6 @@ pub enum EmailInvalidity {
     MaxLength { max: usize, actual: usize },
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Error)]
 pub enum PasswordInvalidity {
     #[error("The password must have at least {min} but has {actual} chars")]

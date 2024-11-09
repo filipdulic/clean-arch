@@ -2,7 +2,7 @@ use std::{
     fmt::{self, Debug, Display},
     marker::PhantomData,
 };
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+
 #[derive(Clone)]
 pub struct Password<T>(String, PhantomData<T>);
 

@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::{
     entity::user::{Email, Password, UserName},
     value_object::{self},
@@ -5,13 +7,11 @@ use crate::{
 
 use chrono::{DateTime, Utc};
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone)]
 pub struct SignupProcessValue;
 
 pub type Id = value_object::Id<SignupProcessValue>;
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone)]
 pub enum SignupStateEnum {
     Initialized {
@@ -36,7 +36,7 @@ pub enum SignupStateEnum {
     },
     ForDeletion,
     Failed {
-        previous_state: Box<SignupStateEnum>,
+        previous_state: Arc<SignupStateEnum>,
         error: Error,
     },
 }
@@ -71,7 +71,6 @@ pub struct Completed {
 #[derive(Debug, Clone)]
 pub struct ForDeletion {}
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone)]
 pub enum Error {
     TokenGenrationFailed,
@@ -391,7 +390,7 @@ impl<S: SignupStateTrait> Into<SignupStateEnum> for Failed<S> {
     fn into(self) -> SignupStateEnum {
         let previous_state: SignupStateEnum = self.previous_state.into();
         SignupStateEnum::Failed {
-            previous_state: Box::new(previous_state),
+            previous_state: Arc::new(previous_state),
             error: self.error,
         }
     }

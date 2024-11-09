@@ -10,13 +10,11 @@ use ca_domain::entity::signup_process::{EmailVerified, Id, SignupProcess};
 
 use thiserror::Error;
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub struct Request {
     pub id: Id,
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub struct Response {
     pub id: Id,
@@ -25,7 +23,6 @@ pub struct CompletionTimedOut<'d, D> {
     dependency_provider: &'d D,
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Error)]
 pub enum Error {
     #[error("SignupProcess {0} not found")]

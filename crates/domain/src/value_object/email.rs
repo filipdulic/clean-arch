@@ -3,8 +3,6 @@ use std::{
     marker::PhantomData,
 };
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-
 #[derive(Clone)]
 pub struct Email<T>(String, PhantomData<T>);
 
