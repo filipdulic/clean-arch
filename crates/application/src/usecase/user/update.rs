@@ -14,7 +14,6 @@ use ca_domain::{
 };
 use thiserror::Error;
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub struct Request {
     pub id: Id,
@@ -29,7 +28,6 @@ pub struct Update<'d, D> {
     dependency_provider: &'d D,
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Error)]
 pub enum Error {
     #[error("User {0} not found")]

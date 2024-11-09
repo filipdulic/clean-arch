@@ -3,7 +3,6 @@ use std::{
     marker::PhantomData,
 };
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone)]
 pub struct UserName<T>(String, PhantomData<T>);
 

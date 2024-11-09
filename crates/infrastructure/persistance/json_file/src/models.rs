@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -201,7 +203,7 @@ impl From<&SignupStateEnum> for EntitySignupStateEnum {
                 previous_state,
                 error,
             } => EntitySignupStateEnum::Failed {
-                previous_state: Box::new(previous_state.as_ref().into()),
+                previous_state: Arc::new(previous_state.as_ref().into()),
                 error: error.into(),
             },
         }

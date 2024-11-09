@@ -1,28 +1,40 @@
-use std::sync::Arc;
+use std::{marker::PhantomData, sync::Arc};
 
 use ca_application::usecase::Usecase;
 
-use super::dependency_provider::Transactional;
+use super::{
+    boundary::{Error, Ingester, Presenter},
+    dependency_provider::Transactional,
+};
 
 #[derive(Clone)]
-pub struct Controller<D> {
+pub struct Controller<D, B> {
     dependency_provider: Arc<D>,
+    phantom: PhantomData<(B, D)>,
 }
 
-impl<'d, D> Controller<D>
+impl<'d, D, B> Controller<D, B>
 where
     D: 'd + Transactional,
 {
     pub const fn new(dependency_provider: Arc<D>) -> Self {
         Self {
             dependency_provider,
+            phantom: PhantomData,
         }
     }
-    pub fn handle_usecase<U>(&'d self, input: U::Request) -> Result<U::Response, U::Error>
+    pub fn handle_usecase<U>(
+        &'d self,
+        input: <B as Ingester<'d, D, U>>::InputModel,
+    ) -> <B as Presenter<'d, D, U>>::ViewModel
     where
         U: Usecase<'d, D>,
+        B: Ingester<'d, D, U> + Presenter<'d, D, U>,
     {
-        self.dependency_provider
-            .run_in_transaction(|db| U::new(db).exec(input))
+        let req = <B as Ingester<D, U>>::ingest(input).and_then(|req| {
+            self.dependency_provider
+                .run_in_transaction(|db| U::new(db).exec(req).map_err(Error::UsecaseError))
+        });
+        <B as Presenter<D, U>>::present(req)
     }
 }

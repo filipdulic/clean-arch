@@ -10,13 +10,10 @@ use ca_domain::entity::signup_process::{CompletionTimedOut, Id, SignupProcess};
 
 use thiserror::Error;
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug)]
 pub struct Request {
     pub id: Id,
 }
-
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 
 #[derive(Debug)]
 pub struct Response {
@@ -25,8 +22,6 @@ pub struct Response {
 pub struct ExtendCompletionTime<'d, D> {
     dependency_provider: &'d D,
 }
-
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 
 #[derive(Debug, Error)]
 pub enum Error {

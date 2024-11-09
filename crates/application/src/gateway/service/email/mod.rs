@@ -1,6 +1,4 @@
 use thiserror::Error;
-
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct EmailAddress(String);
 impl EmailAddress {
     pub fn new(address: &str) -> Self {
@@ -10,8 +8,6 @@ impl EmailAddress {
         &self.0
     }
 }
-
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Error)]
 pub enum EmailServiceError {
     #[error("Invalid email address: {0}")]

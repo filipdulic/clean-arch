@@ -9,7 +9,6 @@ pub trait NewId<Id> {
     fn new_id(&self) -> Result<Id, NewIdError>;
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Error)]
 #[error("Unable to generade a new entity ID")]
 pub struct NewIdError;
