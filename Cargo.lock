@@ -125,23 +125,15 @@ dependencies = [
 ]
 
 [[package]]
-name = "ca-infrastructure-boundary-string"
-version = "0.1.0"
-dependencies = [
- "ca-adapter",
- "ca-application",
- "ca-domain",
- "uuid",
-]
-
-[[package]]
 name = "ca-infrastructure-interface-cli"
 version = "0.1.0"
 dependencies = [
  "ca-adapter",
  "ca-application",
- "ca-infrastructure-boundary-string",
  "clap",
+ "serde",
+ "serde_json",
+ "uuid",
 ]
 
 [[package]]
@@ -245,7 +237,6 @@ dependencies = [
  "ca-adapter",
  "ca-application",
  "ca-domain",
- "ca-infrastructure-boundary-string",
  "ca-infrastructure-interface-cli",
  "ca-infrastructure-persistance-json_file",
  "ca-infrastructure-service-email-file",
