@@ -3,7 +3,7 @@ use crate::{
         repository::signup_process::{GetError, Record},
         SignupProcessRepoProvider,
     },
-    usecase::Usecase,
+    usecase::{Comitable, Usecase},
 };
 
 use ca_domain::entity::signup_process::Id;
@@ -60,6 +60,15 @@ where
     fn new(dependency_provider: &'d D) -> Self {
         Self {
             dependency_provider,
+        }
+    }
+}
+
+impl From<Result<Response, Error>> for Comitable<Response, Error> {
+    fn from(res: Result<Response, Error>) -> Self {
+        match res {
+            Ok(res) => Comitable::Commit(Ok(res)),
+            Err(err) => Comitable::Rollback(Err(err)),
         }
     }
 }

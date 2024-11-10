@@ -3,10 +3,10 @@ use crate::{
         repository::signup_process::{GetError, SaveError},
         SignupProcessRepoProvider,
     },
-    usecase::Usecase,
+    usecase::{Comitable, Usecase},
 };
 
-use ca_domain::entity::signup_process::{CompletionTimedOut, Id, SignupProcess};
+use ca_domain::entity::signup_process::{EmailVerified, Failed, Id, SignupProcess};
 
 use thiserror::Error;
 
@@ -57,15 +57,15 @@ where
     type Error = Error;
 
     fn exec(&self, req: Self::Request) -> Result<Self::Response, Self::Error> {
-        log::debug!("SignupProcess Verification extended: {:?}", req);
+        log::debug!("SignupProcess Completion extended: {:?}", req);
         let record = self
             .dependency_provider
             .signup_process_repo()
             .get_latest_state(req.id)
             .map_err(|err| (err, req.id))?;
-        let process: SignupProcess<CompletionTimedOut> =
+        let process: SignupProcess<Failed<EmailVerified>> =
             record.try_into().map_err(|err| (err, req.id))?;
-        let process = process.extend_completion_time();
+        let process = process.recover();
         self.dependency_provider
             .signup_process_repo()
             .save_latest_state(process.into())
@@ -75,6 +75,15 @@ where
     fn new(dependency_provider: &'d D) -> Self {
         Self {
             dependency_provider,
+        }
+    }
+}
+
+impl From<Result<Response, Error>> for Comitable<Response, Error> {
+    fn from(res: Result<Response, Error>) -> Self {
+        match res {
+            Ok(res) => Comitable::Commit(Ok(res)),
+            Err(err) => Comitable::Rollback(Err(err)),
         }
     }
 }

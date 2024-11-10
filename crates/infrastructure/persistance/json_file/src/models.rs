@@ -34,12 +34,6 @@ pub enum SignupStateEnum {
     EmailVerified {
         email: String,
     },
-    VerificationTimedOut {
-        email: String,
-    },
-    CompletionTimedOut {
-        email: String,
-    },
     Completed {
         email: String,
         username: String,
@@ -125,16 +119,6 @@ impl From<EntitySignupStateEnum> for SignupStateEnum {
             EntitySignupStateEnum::EmailVerified { email } => SignupStateEnum::EmailVerified {
                 email: email.to_string(),
             },
-            EntitySignupStateEnum::VerificationTimedOut { email } => {
-                SignupStateEnum::VerificationTimedOut {
-                    email: email.to_string(),
-                }
-            }
-            EntitySignupStateEnum::CompletionTimedOut { email } => {
-                SignupStateEnum::CompletionTimedOut {
-                    email: email.to_string(),
-                }
-            }
             EntitySignupStateEnum::Completed {
                 email,
                 username,
@@ -179,16 +163,6 @@ impl From<&SignupStateEnum> for EntitySignupStateEnum {
             SignupStateEnum::EmailVerified { email } => EntitySignupStateEnum::EmailVerified {
                 email: user::Email::new(email),
             },
-            SignupStateEnum::VerificationTimedOut { email } => {
-                EntitySignupStateEnum::VerificationTimedOut {
-                    email: user::Email::new(email),
-                }
-            }
-            SignupStateEnum::CompletionTimedOut { email } => {
-                EntitySignupStateEnum::CompletionTimedOut {
-                    email: user::Email::new(email),
-                }
-            }
             SignupStateEnum::Completed {
                 email,
                 username,

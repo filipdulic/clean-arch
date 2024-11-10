@@ -5,8 +5,7 @@ use ca_application::{
         TokenRepoProvider, UserRepoProvider,
     },
     usecase::signup_process::{
-        complete::Complete, completion_timed_out::CompletionTimedOut, delete::Delete,
-        extend_completion_time::ExtendCompletionTime,
+        complete::Complete, delete::Delete, extend_completion_time::ExtendCompletionTime,
         extend_verification_time::ExtendVerificationTime, get_state_chain::GetStateChain,
         initialize::Initialize, send_verification_email::SendVerificationEmail,
         verify_email::VerifyEmail,
@@ -25,20 +24,6 @@ where
         match data {
             Ok(data) => format!("SignupProcess Completed -> User Created: {:?}", data.record),
             Err(err) => format!("Unable find SignupProcess: {err}"),
-        }
-    }
-}
-
-impl<'d, D> Presenter<'d, D, CompletionTimedOut<'d, D>> for Boundary
-where
-    D: SignupProcessRepoProvider,
-{
-    type ViewModel = String;
-
-    fn present(data: UsecaseResponseResult<'d, D, CompletionTimedOut<'d, D>>) -> Self::ViewModel {
-        match data {
-            Ok(data) => format!("Completion Timed Out of SignupProcess(ID = {})", data.id),
-            Err(err) => format!("Unable to Verify Email of SignupProcess: {err}"),
         }
     }
 }

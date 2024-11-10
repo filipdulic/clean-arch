@@ -11,8 +11,6 @@ pub struct FileEmailService {
 
 impl FileEmailService {
     pub fn try_new(folder_path: PathBuf) -> Result<Self, std::io::Error> {
-        // let folder_path = folder_path.join("/emails");
-        // TODO: user ref or AsRef?
         std::fs::create_dir_all(folder_path.clone())?;
 
         Ok(Self { folder_path })

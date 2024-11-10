@@ -23,12 +23,6 @@ pub enum SignupStateEnum {
     EmailVerified {
         email: Email,
     },
-    VerificationTimedOut {
-        email: Email,
-    },
-    CompletionTimedOut {
-        email: Email,
-    },
     Completed {
         email: Email,
         username: UserName,
@@ -52,14 +46,6 @@ pub struct VerificationEmailSent {
 }
 #[derive(Debug, Clone)]
 pub struct EmailVerified {
-    pub email: Email,
-}
-#[derive(Debug, Clone)]
-pub struct VerificationTimedOut {
-    pub email: Email,
-}
-#[derive(Debug, Clone)]
-pub struct CompletionTimedOut {
     pub email: Email,
 }
 #[derive(Debug, Clone)]
@@ -88,7 +74,6 @@ pub struct Failed<S: SignupStateTrait> {
 impl SignupStateTrait for Initialized {}
 impl SignupStateTrait for VerificationEmailSent {}
 impl SignupStateTrait for EmailVerified {}
-impl SignupStateTrait for CompletionTimedOut {}
 impl SignupStateTrait for Completed {}
 impl SignupStateTrait for ForDeletion {}
 impl<S: SignupStateTrait> SignupStateTrait for Failed<S> {}
@@ -170,37 +155,6 @@ impl SignupProcess<EmailVerified> {
             entered_at: Utc::now(),
         }
     }
-    pub fn completion_timed_out(self) -> SignupProcess<CompletionTimedOut> {
-        let state = CompletionTimedOut {
-            email: self.state.email,
-        };
-        SignupProcess {
-            id: self.id,
-            state,
-            entered_at: Utc::now(),
-        }
-    }
-}
-
-impl SignupProcess<CompletionTimedOut> {
-    pub fn extend_completion_time(self) -> SignupProcess<EmailVerified> {
-        let state = EmailVerified {
-            email: self.state.email,
-        };
-        SignupProcess {
-            id: self.id,
-            state,
-            entered_at: Utc::now(),
-        }
-    }
-    pub fn delete(self) -> SignupProcess<ForDeletion> {
-        let state = ForDeletion {};
-        SignupProcess {
-            id: self.id,
-            state,
-            entered_at: Utc::now(),
-        }
-    }
 }
 
 impl SignupProcess<Completed> {
@@ -257,24 +211,6 @@ impl TryFrom<SignupStateEnum> for EmailVerified {
     fn try_from(value: SignupStateEnum) -> Result<Self, Self::Error> {
         match value {
             SignupStateEnum::EmailVerified { email } => Ok(Self { email }),
-            _ => Err(()),
-        }
-    }
-}
-impl TryFrom<SignupStateEnum> for VerificationTimedOut {
-    type Error = ();
-    fn try_from(value: SignupStateEnum) -> Result<Self, Self::Error> {
-        match value {
-            SignupStateEnum::VerificationTimedOut { email } => Ok(Self { email }),
-            _ => Err(()),
-        }
-    }
-}
-impl TryFrom<SignupStateEnum> for CompletionTimedOut {
-    type Error = ();
-    fn try_from(value: SignupStateEnum) -> Result<Self, Self::Error> {
-        match value {
-            SignupStateEnum::CompletionTimedOut { email } => Ok(Self { email }),
             _ => Err(()),
         }
     }
@@ -353,18 +289,6 @@ impl Into<SignupStateEnum> for VerificationEmailSent {
 impl Into<SignupStateEnum> for EmailVerified {
     fn into(self) -> SignupStateEnum {
         SignupStateEnum::EmailVerified { email: self.email }
-    }
-}
-#[allow(clippy::from_over_into)]
-impl Into<SignupStateEnum> for VerificationTimedOut {
-    fn into(self) -> SignupStateEnum {
-        SignupStateEnum::VerificationTimedOut { email: self.email }
-    }
-}
-#[allow(clippy::from_over_into)]
-impl Into<SignupStateEnum> for CompletionTimedOut {
-    fn into(self) -> SignupStateEnum {
-        SignupStateEnum::CompletionTimedOut { email: self.email }
     }
 }
 #[allow(clippy::from_over_into)]

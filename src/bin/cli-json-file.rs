@@ -5,6 +5,7 @@ use ca_application::gateway::{
     TokenRepoProvider, UserIdGenProvider, UserRepoProvider,
 };
 use ca_application::identifier::NewId;
+use ca_application::usecase::Comitable;
 use ca_domain::entity::{signup_process::Id as SignupProcessId, user::Id as UserId};
 use ca_infrastructure_interface_cli as cli;
 use ca_infrastructure_persistance_json_file::utils::{data_storage, data_storage_directory};
@@ -83,11 +84,23 @@ impl EmailVerificationServiceProvider for DependancyProvider {
 }
 
 impl Transactional for DependancyProvider {
+    // TODO: implement a proper transaction
     fn run_in_transaction<'d, F, R, E>(&'d self, f: F) -> Result<R, E>
     where
+        Result<R, E>: Into<Comitable<R, E>>,
         F: FnOnce(&'d Self) -> Result<R, E>,
     {
-        f(self)
+        let res = f(self);
+        match res.into() {
+            Comitable::Commit(inner) => {
+                println!("Commiting");
+                inner
+            }
+            Comitable::Rollback(inner) => {
+                println!("Rolling Back");
+                inner
+            }
+        }
     }
 }
 

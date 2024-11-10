@@ -18,8 +18,7 @@ use clap::Subcommand;
 use ca_adapter::{controller::Controller, dependency_provider::Transactional};
 use ca_application::usecase::{
     signup_process::{
-        complete::Complete, completion_timed_out::CompletionTimedOut, delete::Delete,
-        extend_completion_time::ExtendCompletionTime,
+        complete::Complete, delete::Delete, extend_completion_time::ExtendCompletionTime,
         extend_verification_time::ExtendVerificationTime, get_state_chain::GetStateChain,
         initialize::Initialize, send_verification_email::SendVerificationEmail,
         verify_email::VerifyEmail,
@@ -39,11 +38,6 @@ pub enum Command {
         alias = "sp-send-verify"
     )]
     SendVerificationEmail { id: String },
-    #[clap(
-        about = "Signup process completion timed out",
-        alias = "sp-complete-timeout"
-    )]
-    SignupProcessCompletionTimedOut { id: String },
     #[clap(
         about = "Extend verification time of signup process",
         alias = "sp-extend-verify"
@@ -94,10 +88,6 @@ where
         }
         Command::SendVerificationEmail { id } => {
             let res = app_controller.handle_usecase::<SendVerificationEmail<D>>(id);
-            println!("{res}");
-        }
-        Command::SignupProcessCompletionTimedOut { id } => {
-            let res = app_controller.handle_usecase::<CompletionTimedOut<D>>(id);
             println!("{res}");
         }
         Command::ExtendVerificationTimeOfSignupProcess { id } => {
