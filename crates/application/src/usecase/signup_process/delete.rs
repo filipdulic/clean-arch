@@ -3,11 +3,11 @@ use crate::{
         repository::signup_process::{GetError, SaveError},
         SignupProcessRepoProvider,
     },
-    usecase::Usecase,
+    usecase::{Comitable, Usecase},
 };
 
 use ca_domain::entity::signup_process::{
-    CompletionTimedOut, Failed, Id, SignupProcess, SignupStateEnum, VerificationEmailSent,
+    EmailVerified, Failed, Id, SignupProcess, SignupStateEnum, VerificationEmailSent,
 };
 
 use thiserror::Error;
@@ -64,19 +64,23 @@ where
             .signup_process_repo()
             .get_latest_state(req.id)
             .map_err(|err| (err, req.id))?;
-        let process = match record.state {
-            SignupStateEnum::VerificationTimedOut { .. } => {
-                match SignupProcess::<Failed<VerificationEmailSent>>::try_from(record) {
-                    Ok(process) => process.delete(),
-                    Err(_) => return Err((GetError::NotFound, req.id).into()),
+        let process = match &record.state {
+            SignupStateEnum::Failed {
+                previous_state,
+                error: _,
+            } => match **previous_state {
+                SignupStateEnum::VerificationEmailSent { .. } => {
+                    SignupProcess::<Failed<VerificationEmailSent>>::try_from(record)
+                        .map_err(|_| (GetError::NotFound, req.id))?
+                        .delete()
                 }
-            }
-            SignupStateEnum::CompletionTimedOut { .. } => {
-                match SignupProcess::<CompletionTimedOut>::try_from(record) {
-                    Ok(process) => process.delete(),
-                    Err(_) => return Err((GetError::NotFound, req.id).into()),
+                SignupStateEnum::EmailVerified { .. } => {
+                    SignupProcess::<Failed<EmailVerified>>::try_from(record)
+                        .map_err(|_| (GetError::NotFound, req.id))?
+                        .delete()
                 }
-            }
+                _ => return Err((GetError::NotFound, req.id).into()),
+            },
             _ => return Err((GetError::NotFound, req.id).into()),
         };
 
@@ -89,6 +93,15 @@ where
     fn new(dependency_provider: &'d D) -> Self {
         Self {
             dependency_provider,
+        }
+    }
+}
+
+impl From<Result<Response, Error>> for Comitable<Response, Error> {
+    fn from(res: Result<Response, Error>) -> Self {
+        match res {
+            Ok(res) => Comitable::Commit(Ok(res)),
+            Err(err) => Comitable::Rollback(Err(err)),
         }
     }
 }

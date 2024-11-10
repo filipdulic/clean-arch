@@ -6,14 +6,15 @@ use crate::{
         },
         SignupProcessRepoProvider, UserRepoProvider,
     },
-    usecase::Usecase,
+    usecase::{Comitable, Usecase},
 };
 
 use ca_domain::entity::{
-    signup_process::{EmailVerified, Id, SignupProcess, SignupStateEnum},
+    signup_process::{EmailVerified, Id, SignupProcess},
     user::{Password, User, UserName},
 };
 
+use chrono::{Duration, Utc};
 use thiserror::Error;
 
 #[derive(Debug)]
@@ -37,6 +38,8 @@ pub enum Error {
     Repo,
     #[error("SignupProcess {0} not found")]
     NotFound(Id),
+    #[error("SignupProcess completion timed out")]
+    CompletionTimedOut,
 }
 
 impl From<SaveError> for Error {
@@ -71,39 +74,55 @@ where
             .signup_process_repo()
             .get_latest_state(req.id)
             .map_err(|_| Self::Error::Repo)?;
-        if let SignupStateEnum::EmailVerified { .. } = record.state {
-            let process: SignupProcess<EmailVerified> =
-                record.try_into().map_err(|err| (err, req.id))?;
-            let username = UserName::new(req.username);
-            let password = Password::new(req.password);
-            let process = process.complete(username, password);
-            let user: User = User::new(
-                ca_domain::entity::user::Id::new(req.id),
-                process.email(),
-                process.username(),
-                process.password(),
-            );
-            // Save User first, then save SignupProcess
-            self.dependency_provider
-                .user_repo()
-                .save(user.clone().into())
-                .map_err(|_| Error::Repo)?;
-            // if save user fails, we should not save the signup process
+        let process: SignupProcess<EmailVerified> =
+            record.try_into().map_err(|_| Self::Error::Repo)?;
+        if Utc::now() - Duration::days(1) > process.entered_at() {
+            let process =
+                process.fail(ca_domain::entity::signup_process::Error::CompletionTimedOut);
             self.dependency_provider
                 .signup_process_repo()
-                .save_latest_state(process.clone().into())
-                .map_err(|_| Self::Error::NotFound(req.id))?;
-            Ok(Self::Response {
-                record: user.into(),
-            })
-        } else {
-            Err(Self::Error::Repo)
+                .save_latest_state(process.into())?;
+            return Err(Self::Error::CompletionTimedOut);
         }
+        let username = UserName::new(req.username);
+        let password = Password::new(req.password);
+        let process = process.complete(username, password);
+        let user: User = User::new(
+            ca_domain::entity::user::Id::new(req.id),
+            process.email(),
+            process.username(),
+            process.password(),
+        );
+        // Save User first, then save SignupProcess
+        self.dependency_provider
+            .user_repo()
+            .save(user.clone().into())
+            .map_err(|_| Error::Repo)?;
+        // if save user fails, we should not save the signup process
+        self.dependency_provider
+            .signup_process_repo()
+            .save_latest_state(process.clone().into())
+            .map_err(|_| Self::Error::NotFound(req.id))?;
+        Ok(Self::Response {
+            record: user.into(),
+        })
     }
 
     fn new(db: &'d D) -> Self {
         Self {
             dependency_provider: db,
+        }
+    }
+}
+
+impl From<Result<Response, Error>> for Comitable<Response, Error> {
+    fn from(res: Result<Response, Error>) -> Self {
+        match res {
+            Ok(res) => Comitable::Commit(Ok(res)),
+            Err(err) => match err {
+                Error::CompletionTimedOut => Comitable::Commit(Err(Error::CompletionTimedOut)),
+                _ => Comitable::Rollback(Err(err)),
+            },
         }
     }
 }

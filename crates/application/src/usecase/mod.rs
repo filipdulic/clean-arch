@@ -8,3 +8,8 @@ pub trait Usecase<'d, D> {
     fn exec(&self, req: Self::Request) -> Result<Self::Response, Self::Error>;
     fn new(db: &'d D) -> Self;
 }
+
+pub enum Comitable<R, E> {
+    Commit(Result<R, E>),
+    Rollback(Result<R, E>),
+}

@@ -7,7 +7,7 @@ use crate::{
         service::email::{EmailAddress, EmailServiceError},
         EmailVerificationServiceProvider, SignupProcessRepoProvider, TokenRepoProvider,
     },
-    usecase::Usecase,
+    usecase::{Comitable, Usecase},
 };
 
 use ca_domain::entity::signup_process::{
@@ -25,8 +25,6 @@ pub struct Response {
     pub id: Id,
 }
 pub struct SendVerificationEmail<'d, D> {
-    // TODO: figure out a way to separete the id generation from the repo.
-    // same issue in complete, perhaps a special service or unit of work?
     dependency_provider: &'d D,
 }
 
@@ -112,6 +110,15 @@ where
     fn new(dependency_provider: &'d D) -> Self {
         Self {
             dependency_provider,
+        }
+    }
+}
+
+impl From<Result<Response, Error>> for Comitable<Response, Error> {
+    fn from(res: Result<Response, Error>) -> Self {
+        match res {
+            Ok(res) => Comitable::Commit(Ok(res)),
+            Err(err) => Comitable::Rollback(Err(err)),
         }
     }
 }

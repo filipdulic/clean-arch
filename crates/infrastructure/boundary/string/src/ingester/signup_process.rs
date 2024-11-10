@@ -9,7 +9,6 @@ use ca_application::{
     },
     usecase::signup_process::{
         complete::{Complete, Request as CompleteRequest},
-        completion_timed_out::{CompletionTimedOut, Request as CompletionTimedOutRequest},
         delete::{Delete, Request as DeleteRequest},
         extend_completion_time::{ExtendCompletionTime, Request as ExtendCompletionTimeRequest},
         extend_verification_time::{
@@ -37,19 +36,6 @@ where
                 username,
                 password,
             })
-    }
-}
-
-impl<'d, D> Ingester<'d, D, CompletionTimedOut<'d, D>> for Boundary
-where
-    D: SignupProcessRepoProvider,
-{
-    type InputModel = String;
-    fn ingest(input: Self::InputModel) -> UsecaseRequestResult<'d, D, CompletionTimedOut<'d, D>> {
-        input
-            .parse()
-            .map_err(|_| Error::ParseInputError)
-            .map(|uuid: Uuid| CompletionTimedOutRequest { id: Id::from(uuid) })
     }
 }
 

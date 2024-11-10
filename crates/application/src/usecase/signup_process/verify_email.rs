@@ -6,7 +6,7 @@ use crate::{
         },
         SignupProcessRepoProvider, TokenRepoProvider,
     },
-    usecase::Usecase,
+    usecase::{Comitable, Usecase},
 };
 
 use ca_domain::entity::signup_process::{Id, SignupProcess, VerificationEmailSent};
@@ -98,6 +98,18 @@ where
     fn new(dependency_provider: &'d D) -> Self {
         Self {
             dependency_provider,
+        }
+    }
+}
+
+impl From<Result<Response, Error>> for Comitable<Response, Error> {
+    fn from(res: Result<Response, Error>) -> Self {
+        match res {
+            Ok(res) => Comitable::Commit(Ok(res)),
+            Err(err) => match err {
+                Error::TokenRepoError(TokenRepoError::TokenExpired) => Comitable::Commit(Err(err)),
+                _ => Comitable::Rollback(Err(err)),
+            },
         }
     }
 }
