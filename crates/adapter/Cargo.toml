@@ -11,4 +11,4 @@ ca-application = { version = "=0.1.0", path = "../application" }
 ca-domain = { version = "=0.1.0", path = "../domain" }
 
 # External dependencies
-thiserror = "2.0.2"
+thiserror = "2.0.12"
