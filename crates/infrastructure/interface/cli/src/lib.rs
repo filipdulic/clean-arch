@@ -32,7 +32,7 @@ use ca_infrastructure_boundary_string as string;
 #[derive(Subcommand)]
 pub enum Command {
     #[clap(about = "Initialize signup process", alias = "sp-init")]
-    InitializeSignupProcess { username: String },
+    InitializeSignupProcess { email: String },
     #[clap(
         about = "Send verification email for signup process",
         alias = "sp-send-verify"
@@ -82,8 +82,8 @@ where
     let app_controller = Controller::<D, string::Boundary>::new(db);
 
     match cmd {
-        Command::InitializeSignupProcess { username } => {
-            let res = app_controller.handle_usecase::<Initialize<D>>(username);
+        Command::InitializeSignupProcess { email } => {
+            let res = app_controller.handle_usecase::<Initialize<D>>(email);
             println!("{res}");
         }
         Command::SendVerificationEmail { id } => {

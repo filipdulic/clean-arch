@@ -77,6 +77,9 @@ where
             dependency_provider,
         }
     }
+    fn is_transactional() -> bool {
+        true
+    }
 }
 
 impl From<Result<Response, Error>> for Comitable<Response, Error> {
