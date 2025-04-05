@@ -8,7 +8,7 @@ pub trait Usecase<'d, D> {
     fn exec(&self, req: Self::Request) -> Result<Self::Response, Self::Error>;
     fn new(db: &'d D) -> Self;
     fn is_transactional() -> bool {
-        return false;
+        false
     }
 }
 
