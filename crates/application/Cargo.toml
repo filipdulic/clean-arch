@@ -8,8 +8,8 @@ publish = false
 [dependencies]
 # Workspace dependencies
 ca-domain = { version = "=0.1.0", path = "../domain" }
-chrono = "0.4.38"
+chrono = "0.4.40"
 
 # External dependencies
-log = "0.4"
-thiserror = "1.0"
+log = "0.4.27"
+thiserror = "2.0.12"
