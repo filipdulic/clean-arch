@@ -34,9 +34,15 @@ where
         B: Ingester<'d, D, U> + Presenter<'d, D, U>,
     {
         let req = <B as Ingester<D, U>>::ingest(input).and_then(|req| {
-            self.dependency_provider
-                .run_in_transaction(|db| U::new(db).exec(req))
-                .map_err(|err| Error::UsecaseError(err))
+            if U::is_transactional() {
+                self.dependency_provider
+                    .run_in_transaction(|db| U::new(db).exec(req))
+                    .map_err(|err| Error::UsecaseError(err))
+            } else {
+                U::new(&self.dependency_provider)
+                    .exec(req)
+                    .map_err(|err| Error::UsecaseError(err))
+            }
         });
         <B as Presenter<D, U>>::present(req)
     }
