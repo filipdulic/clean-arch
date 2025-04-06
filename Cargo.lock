@@ -99,6 +99,7 @@ version = "0.1.0"
 dependencies = [
  "ca-application",
  "ca-domain",
+ "serde",
  "thiserror",
 ]
 
@@ -109,6 +110,7 @@ dependencies = [
  "ca-domain",
  "chrono",
  "log",
+ "serde",
  "thiserror",
 ]
 
@@ -118,6 +120,19 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "rstest",
+ "serde",
+ "uuid",
+]
+
+[[package]]
+name = "ca-infrastructure-boundary-json"
+version = "0.1.0"
+dependencies = [
+ "ca-adapter",
+ "ca-application",
+ "ca-domain",
+ "serde",
+ "serde_json",
  "uuid",
 ]
 
@@ -242,6 +257,7 @@ dependencies = [
  "ca-adapter",
  "ca-application",
  "ca-domain",
+ "ca-infrastructure-boundary-json",
  "ca-infrastructure-boundary-string",
  "ca-infrastructure-interface-cli",
  "ca-infrastructure-persistance-json_file",
@@ -808,10 +824,11 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.132"
+version = "1.0.140"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d726bfaff4b320266d395898905d0eba0345aae23b54aee3a737e260fd46db03"
+checksum = "20068b6e96dc6c9bd23e01df8827e6c7e1f2fddd43c21810382803c136b99373"
 dependencies = [
+ "indexmap",
  "itoa",
  "memchr",
  "ryu",

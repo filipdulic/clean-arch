@@ -8,7 +8,7 @@ publish = false
 
 
 [[bin]]
-name = "clean-arch"
+name = "clean-arch-cli-json-file"
 path = "src/bin/cli-json-file.rs"
 
 [workspace]
@@ -17,6 +17,7 @@ members = [
     "crates/application",
     "crates/domain",
     "crates/infrastructure/boundary/string",
+    "crates/infrastructure/boundary/json",
     "crates/infrastructure/interface/cli",
     "crates/infrastructure/persistance/json_file",
     "crates/infrastructure/service/email/file",
@@ -34,6 +35,7 @@ rust-version = "1.81.0"
 # Workspace dependencies
 ca-infrastructure-service-email-file = { version = "0.1.0", path = "crates/infrastructure/service/email/file" }
 ca-infrastructure-boundary-string = { version = "0.1.0", path = "crates/infrastructure/boundary/string" }
+ca-infrastructure-boundary-json = { version = "0.1.0", path = "crates/infrastructure/boundary/json" }
 ca-infrastructure-interface-cli = { version = "0.1.0", path = "crates/infrastructure/interface/cli" }
 ca-infrastructure-persistance-json_file = { version = "0.1.0", path = "crates/infrastructure/persistance/json_file" }
 ca-domain = { version = "0.1.0", path = "crates/domain" }
