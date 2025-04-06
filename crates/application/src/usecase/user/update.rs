@@ -12,9 +12,10 @@ use ca_domain::{
     entity::user::{Email, Id, User, UserName},
     value_object::Password,
 };
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize)]
 pub struct Request {
     pub id: Id,
     pub email: String,
@@ -28,7 +29,7 @@ pub struct Update<'d, D> {
     dependency_provider: &'d D,
 }
 
-#[derive(Debug, Error)]
+#[derive(Debug, Error, Serialize)]
 pub enum Error {
     #[error("User {0} not found")]
     NotFound(Id),

@@ -7,8 +7,9 @@ publish = false
 
 [dependencies]
 # Workspace dependencies
-uuid = { version = "1.16.0", features = ["v4"] }
+uuid = { version = "1.16.0", features = ["v4", "serde"] }
 chrono = "0.4.40"
+serde = { version = "1.0.219", features = ["derive", "rc"] }
 
 [dev-dependencies]
 rstest = "0.25.0"

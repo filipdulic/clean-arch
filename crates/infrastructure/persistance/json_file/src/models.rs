@@ -41,7 +41,7 @@ pub enum SignupStateEnum {
     },
     ForDeletion,
     Failed {
-        previous_state: Box<SignupStateEnum>,
+        previous_state: Arc<SignupStateEnum>,
         error: SignupStateFailedError,
     },
 }
@@ -133,7 +133,7 @@ impl From<EntitySignupStateEnum> for SignupStateEnum {
                 previous_state,
                 error,
             } => SignupStateEnum::Failed {
-                previous_state: Box::new(previous_state.as_ref().clone().into()),
+                previous_state: Arc::new(previous_state.as_ref().clone().into()),
                 error: error.into(),
             },
         }

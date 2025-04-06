@@ -1,3 +1,4 @@
+use serde::Serialize;
 use thiserror::Error;
 pub struct EmailAddress(String);
 impl EmailAddress {
@@ -8,7 +9,7 @@ impl EmailAddress {
         &self.0
     }
 }
-#[derive(Debug, Error)]
+#[derive(Debug, Error, Serialize)]
 pub enum EmailServiceError {
     #[error("Invalid email address: {0}")]
     InvalidEmailAddress(String),

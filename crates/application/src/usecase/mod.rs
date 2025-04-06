@@ -1,14 +1,16 @@
+use serde::{de::DeserializeOwned, Serialize};
+
 pub mod signup_process;
 pub mod user;
 
 pub trait Usecase<'d, D> {
-    type Request;
-    type Response;
-    type Error: std::fmt::Debug;
+    type Request: DeserializeOwned;
+    type Response: Serialize;
+    type Error: std::fmt::Debug + Serialize;
     fn exec(&self, req: Self::Request) -> Result<Self::Response, Self::Error>;
     fn new(db: &'d D) -> Self;
     fn is_transactional() -> bool {
-        return false;
+        false
     }
 }
 

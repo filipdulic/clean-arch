@@ -1,4 +1,5 @@
 use ca_domain::entity::user::*;
+use serde::Serialize;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -29,7 +30,7 @@ pub enum DeleteError {
     Connection,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct Record {
     pub user: User,
 }

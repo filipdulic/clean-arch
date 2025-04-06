@@ -1,4 +1,5 @@
 use ca_domain::entity::user::{Email, Password, UserName};
+use serde::Serialize;
 use thiserror::Error;
 
 #[derive(Debug)]
@@ -9,7 +10,7 @@ pub struct Request<'a> {
 }
 pub type Response = Result<(), UserInvalidity>;
 
-#[derive(Debug, Error)]
+#[derive(Debug, Error, Serialize)]
 pub enum UserInvalidity {
     #[error(transparent)]
     UserName(#[from] UserNameInvalidity),
@@ -19,7 +20,7 @@ pub enum UserInvalidity {
     Password(#[from] PasswordInvalidity),
 }
 
-#[derive(Debug, Error)]
+#[derive(Debug, Error, Serialize)]
 pub enum UserNameInvalidity {
     #[error("The user name must have at least {min} but has {actual} chars")]
     MinLength { min: usize, actual: usize },
@@ -27,7 +28,7 @@ pub enum UserNameInvalidity {
     MaxLength { max: usize, actual: usize },
 }
 
-#[derive(Debug, Error)]
+#[derive(Debug, Error, Serialize)]
 pub enum EmailInvalidity {
     #[error("The email must have at least {min} but has {actual} chars")]
     MinLength { min: usize, actual: usize },
@@ -35,7 +36,7 @@ pub enum EmailInvalidity {
     MaxLength { max: usize, actual: usize },
 }
 
-#[derive(Debug, Error)]
+#[derive(Debug, Error, Serialize)]
 pub enum PasswordInvalidity {
     #[error("The password must have at least {min} but has {actual} chars")]
     MinLength { min: usize, actual: usize },

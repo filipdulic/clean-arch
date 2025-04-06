@@ -4,14 +4,15 @@ use crate::{
 };
 
 use ca_domain::entity::user::Id;
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize)]
 pub struct Request {
     pub id: Id,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct Response;
 
 /// Delete area of life by ID usecase interactor
@@ -19,7 +20,7 @@ pub struct Delete<'d, D> {
     dependency_provider: &'d D,
 }
 
-#[derive(Debug, Error)]
+#[derive(Debug, Error, Serialize)]
 pub enum Error {
     #[error("{}", DeleteError::NotFound)]
     NotFound,

@@ -1,12 +1,13 @@
+use serde::Serialize;
 use thiserror::Error;
 
-#[derive(Debug, Error)]
+#[derive(Debug, Error, Serialize)]
 pub enum GenError {
     #[error("Token repository connection problem")]
     Connection,
 }
 
-#[derive(Debug, Error)]
+#[derive(Debug, Error, Serialize)]
 pub enum VerifyError {
     #[error("Token not found")]
     NotFound,
@@ -18,7 +19,7 @@ pub enum VerifyError {
     TokenExpired,
 }
 
-#[derive(Debug, Error)]
+#[derive(Debug, Error, Serialize)]
 pub enum ExtendError {
     #[error("Token repository connection problem")]
     Connection,
