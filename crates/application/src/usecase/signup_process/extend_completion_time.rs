@@ -8,14 +8,15 @@ use crate::{
 
 use ca_domain::entity::signup_process::{EmailVerified, Failed, Id, SignupProcess};
 
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize)]
 pub struct Request {
     pub id: Id,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct Response {
     pub id: Id,
 }
@@ -23,7 +24,7 @@ pub struct ExtendCompletionTime<'d, D> {
     dependency_provider: &'d D,
 }
 
-#[derive(Debug, Error)]
+#[derive(Debug, Error, Serialize)]
 pub enum Error {
     #[error("SignupProcess {0} not found")]
     NotFound(Id),

@@ -1,3 +1,4 @@
+use serde::Serialize;
 use thiserror::Error;
 
 /// A service that generates a new entity ID.
@@ -9,6 +10,6 @@ pub trait NewId<Id> {
     fn new_id(&self) -> Result<Id, NewIdError>;
 }
 
-#[derive(Debug, Error)]
+#[derive(Debug, Error, Serialize)]
 #[error("Unable to generade a new entity ID")]
 pub struct NewIdError;

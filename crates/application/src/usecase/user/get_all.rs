@@ -3,12 +3,13 @@ use crate::{
     usecase::{Comitable, Usecase},
 };
 use ca_domain::entity::user::User;
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize)]
 pub struct Request;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct Response {
     pub users: Vec<User>,
 }
@@ -18,7 +19,7 @@ pub struct GetAll<'d, D> {
     dependency_provider: &'d D,
 }
 
-#[derive(Debug, Error)]
+#[derive(Debug, Error, Serialize)]
 pub enum Error {
     #[error("{}", GetAllError::Connection)]
     Repo,

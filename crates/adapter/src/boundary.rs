@@ -1,8 +1,9 @@
+use serde::Serialize;
 use thiserror::Error;
 
 use ca_application::usecase::Usecase;
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, Serialize)]
 pub enum Error<'d, D, U: Usecase<'d, D>> {
     #[error("Unable to parse id")]
     ParseIdError,

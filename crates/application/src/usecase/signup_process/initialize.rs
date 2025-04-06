@@ -12,14 +12,15 @@ use ca_domain::entity::{
     signup_process::{Id, SignupProcess},
     user::Email,
 };
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize)]
 pub struct Request {
     pub email: String,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct Response {
     pub id: Id,
 }
@@ -27,7 +28,7 @@ pub struct Initialize<'d, D> {
     dependency_provider: &'d D,
 }
 
-#[derive(Debug, Error)]
+#[derive(Debug, Error, Serialize)]
 pub enum Error {
     #[error("{}", SaveError::Connection)]
     Repo,

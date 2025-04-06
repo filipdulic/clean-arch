@@ -1,3 +1,5 @@
+use serde::Serialize;
+
 use crate::value_object;
 
 pub type Id = value_object::Id<User>;
@@ -5,7 +7,7 @@ pub type UserName = value_object::UserName<User>;
 pub type Email = value_object::Email<User>;
 pub type Password = value_object::Password<User>;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct User {
     id: Id,
     email: Email,

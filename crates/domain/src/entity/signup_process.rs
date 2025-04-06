@@ -6,13 +6,14 @@ use crate::{
 };
 
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SignupProcessValue;
 
 pub type Id = value_object::Id<SignupProcessValue>;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub enum SignupStateEnum {
     Initialized {
         email: Email,
@@ -57,7 +58,7 @@ pub struct Completed {
 #[derive(Debug, Clone)]
 pub struct ForDeletion {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub enum Error {
     TokenGenrationFailed,
     VerificationEmailSendError,

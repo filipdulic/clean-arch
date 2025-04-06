@@ -3,7 +3,9 @@ use std::{
     marker::PhantomData,
 };
 
-#[derive(Clone)]
+use serde::{Deserialize, Serialize};
+
+#[derive(Clone, Serialize, Deserialize)]
 pub struct UserName<T>(String, PhantomData<T>);
 
 impl<T> UserName<T> {

@@ -13,7 +13,7 @@ ca-application = { version = "=0.1.0", path = "../../../application" }
 
 # External dependencies
 uuid = { version = "1.16.0", features = ["v4", "serde"] }
-serde = { version = "1.0.219", features = ["derive"] }
+serde = { version = "1.0.219", features = ["derive", "rc"] }
 log = "0.4.27"
 jfs = "0.9.0"
 chrono = { version = "0.4.40", features = ["serde"] }

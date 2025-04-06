@@ -1,8 +1,9 @@
 use ca_domain::entity::signup_process::*;
 use chrono::{DateTime, Utc};
+use serde::Serialize;
 use thiserror::Error;
 
-#[derive(Debug, Error)]
+#[derive(Debug, Error, Serialize)]
 pub enum GetError {
     #[error("SignupProcess not found")]
     NotFound,
@@ -10,13 +11,13 @@ pub enum GetError {
     Connection,
 }
 
-#[derive(Debug, Error)]
+#[derive(Debug, Error, Serialize)]
 pub enum SaveError {
     #[error("SignupProcess repository connection problem")]
     Connection,
 }
 
-#[derive(Debug, Error)]
+#[derive(Debug, Error, Serialize)]
 pub enum DeleteError {
     #[error("SignupProcess not found")]
     NotFound,
@@ -24,7 +25,7 @@ pub enum DeleteError {
     Connection,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct Record {
     pub id: Id,
     pub state: SignupStateEnum,

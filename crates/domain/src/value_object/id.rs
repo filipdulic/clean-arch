@@ -6,8 +6,10 @@ use std::{
     marker::PhantomData,
 };
 
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+#[derive(Serialize, Deserialize)]
 pub struct Id<T> {
     id: Uuid,
     // The `fn() -> T` is a trick to tell the compiler that we don't own anything.
