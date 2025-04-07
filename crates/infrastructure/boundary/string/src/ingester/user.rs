@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use uuid::Uuid;
 
 use ca_adapter::boundary::{Error, Ingester, UsecaseRequestResult};
@@ -22,7 +24,7 @@ where
     fn ingest(input: Self::InputModel) -> UsecaseRequestResult<'d, D, Delete<'d, D>> {
         input
             .parse()
-            .map_err(|_| Error::ParseInputError)
+            .map_err(|e: <Uuid as FromStr>::Err| Error::ParseInputError(e.to_string()))
             .map(|uuid: Uuid| DeleteRequest { id: Id::from(uuid) })
     }
 }
@@ -35,7 +37,7 @@ where
     fn ingest(input: Self::InputModel) -> UsecaseRequestResult<'d, D, Update<'d, D>> {
         let (id, email, username, password) = input;
         id.parse()
-            .map_err(|_| Error::ParseInputError)
+            .map_err(|e: <Uuid as FromStr>::Err| Error::ParseInputError(e.to_string()))
             .map(|uuid: Uuid| UpdateRequest {
                 id: Id::from(uuid),
                 email,
@@ -53,7 +55,7 @@ where
     fn ingest(input: Self::InputModel) -> UsecaseRequestResult<'d, D, GetOne<'d, D>> {
         input
             .parse()
-            .map_err(|_| Error::ParseInputError)
+            .map_err(|e: <Uuid as FromStr>::Err| Error::ParseInputError(e.to_string()))
             .map(|uuid: Uuid| GetOneRequest { id: Id::from(uuid) })
     }
 }

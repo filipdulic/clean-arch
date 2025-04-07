@@ -157,6 +157,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "ca-infrastructure-interface-cli-json"
+version = "0.1.0"
+dependencies = [
+ "ca-adapter",
+ "ca-application",
+ "ca-infrastructure-boundary-json",
+ "clap",
+ "serde_json",
+]
+
+[[package]]
 name = "ca-infrastructure-persistance-json_file"
 version = "0.1.0"
 dependencies = [
@@ -260,6 +271,7 @@ dependencies = [
  "ca-infrastructure-boundary-json",
  "ca-infrastructure-boundary-string",
  "ca-infrastructure-interface-cli",
+ "ca-infrastructure-interface-cli-json",
  "ca-infrastructure-persistance-json_file",
  "ca-infrastructure-service-email-file",
  "clap",

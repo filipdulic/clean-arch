@@ -11,6 +11,10 @@ publish = false
 name = "clean-arch-cli-json-file"
 path = "src/bin/cli-json-file.rs"
 
+[[bin]]
+name = "clean-arch-cli-json-json-file"
+path = "src/bin/cli-json-json-file.rs"
+
 [workspace]
 members = [
     "crates/adapter",
@@ -19,10 +23,10 @@ members = [
     "crates/infrastructure/boundary/string",
     "crates/infrastructure/boundary/json",
     "crates/infrastructure/interface/cli",
+    "crates/infrastructure/interface/cli-json",
     "crates/infrastructure/persistance/json_file",
     "crates/infrastructure/service/email/file",
 ]
-exclude = ["crates/web-app"]
 
 [workspace.package]
 authors = ["Filip Dulic <filip.dulic@gmail.com>"]
@@ -37,6 +41,7 @@ ca-infrastructure-service-email-file = { version = "0.1.0", path = "crates/infra
 ca-infrastructure-boundary-string = { version = "0.1.0", path = "crates/infrastructure/boundary/string" }
 ca-infrastructure-boundary-json = { version = "0.1.0", path = "crates/infrastructure/boundary/json" }
 ca-infrastructure-interface-cli = { version = "0.1.0", path = "crates/infrastructure/interface/cli" }
+ca-infrastructure-interface-cli-json = { version = "0.1.0", path = "crates/infrastructure/interface/cli-json" }
 ca-infrastructure-persistance-json_file = { version = "0.1.0", path = "crates/infrastructure/persistance/json_file" }
 ca-domain = { version = "0.1.0", path = "crates/domain" }
 ca-application = { version = "0.1.0", path = "crates/application" }

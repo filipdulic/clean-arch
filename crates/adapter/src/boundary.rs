@@ -7,8 +7,8 @@ use ca_application::usecase::Usecase;
 pub enum Error<'d, D, U: Usecase<'d, D>> {
     #[error("Unable to parse id")]
     ParseIdError,
-    #[error("Unable to parse input")]
-    ParseInputError,
+    #[error("Unable to parse input {0}")]
+    ParseInputError(String),
     #[error("Usecase error {0:?}")]
     UsecaseError(U::Error),
 }

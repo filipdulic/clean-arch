@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use uuid::Uuid;
 
 use super::super::Boundary;
@@ -30,7 +32,7 @@ where
     fn ingest(input: Self::InputModel) -> UsecaseRequestResult<'d, D, Complete<'d, D>> {
         let (id, username, password) = input;
         id.parse()
-            .map_err(|_| Error::ParseInputError)
+            .map_err(|e: <Uuid as FromStr>::Err| Error::ParseInputError(e.to_string()))
             .map(|uuid: Uuid| CompleteRequest {
                 id: Id::from(uuid),
                 username,
@@ -47,7 +49,7 @@ where
     fn ingest(input: Self::InputModel) -> UsecaseRequestResult<'d, D, ExtendCompletionTime<'d, D>> {
         input
             .parse()
-            .map_err(|_| Error::ParseInputError)
+            .map_err(|e: <Uuid as FromStr>::Err| Error::ParseInputError(e.to_string()))
             .map(|uuid: Uuid| ExtendCompletionTimeRequest { id: Id::from(uuid) })
     }
 }
@@ -62,7 +64,7 @@ where
     ) -> UsecaseRequestResult<'d, D, ExtendVerificationTime<'d, D>> {
         input
             .parse()
-            .map_err(|_| Error::ParseInputError)
+            .map_err(|e: <Uuid as FromStr>::Err| Error::ParseInputError(e.to_string()))
             .map(|uuid: Uuid| ExtendVerificationTimeRequest { id: Id::from(uuid) })
     }
 }
@@ -75,7 +77,7 @@ where
     fn ingest(input: Self::InputModel) -> UsecaseRequestResult<'d, D, GetStateChain<'d, D>> {
         input
             .parse()
-            .map_err(|_| Error::ParseInputError)
+            .map_err(|e: <Uuid as FromStr>::Err| Error::ParseInputError(e.to_string()))
             .map(|uuid: Uuid| GetStateChainRequest { id: Id::from(uuid) })
     }
 }
@@ -100,7 +102,7 @@ where
     ) -> UsecaseRequestResult<'d, D, SendVerificationEmail<'d, D>> {
         input
             .parse()
-            .map_err(|_| Error::ParseInputError)
+            .map_err(|e: <Uuid as FromStr>::Err| Error::ParseInputError(e.to_string()))
             .map(|uuid: Uuid| SendVerificationEmailRequest { id: Id::from(uuid) })
     }
 }
@@ -113,7 +115,7 @@ where
     fn ingest(input: Self::InputModel) -> UsecaseRequestResult<'d, D, VerifyEmail<'d, D>> {
         let (id, token) = input;
         id.parse()
-            .map_err(|_| Error::ParseInputError)
+            .map_err(|e: <Uuid as FromStr>::Err| Error::ParseInputError(e.to_string()))
             .map(|uuid: Uuid| VerifyEmailRequest {
                 id: Id::from(uuid),
                 token,
@@ -129,7 +131,7 @@ where
     fn ingest(input: Self::InputModel) -> UsecaseRequestResult<'d, D, Delete<'d, D>> {
         input
             .parse()
-            .map_err(|_| Error::ParseInputError)
+            .map_err(|e: <Uuid as FromStr>::Err| Error::ParseInputError(e.to_string()))
             .map(|uuid: Uuid| DeleteRequest { id: Id::from(uuid) })
     }
 }
