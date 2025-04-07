@@ -21,7 +21,7 @@ where
     type InputModel = Value;
     fn ingest(data: Self::InputModel) -> UsecaseRequestResult<'d, D, U> {
         let data: <U as Usecase<'d, D>>::Request =
-            serde_json::from_value(data).map_err(|_e| Error::ParseInputError)?;
+            serde_json::from_value(data).map_err(|e| Error::ParseInputError(e.to_string()))?;
         Ok(data)
     }
 }
