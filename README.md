@@ -16,7 +16,8 @@ general Rust development.
 - [ ] Authorization
 ### Interfaces
 - [ ] Terminal
-    - [x] CLI server
+    - [x] CLI (string) server
+    - [x] CLI JSON server
     - [ ] TUI/ncurses client
     - [ ] Desktop client
 - [ ] Web
