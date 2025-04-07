@@ -26,6 +26,7 @@ members = [
     "crates/infrastructure/interface/cli-json",
     "crates/infrastructure/persistance/json_file",
     "crates/infrastructure/service/email/file",
+    "crates/infrastructure/service/authentication/jwt",
 ]
 
 [workspace.package]
@@ -34,10 +35,10 @@ version = "0.1.0"
 edition = "2021"
 rust-version = "1.81.0"
 
-
 [dependencies]
 # Workspace dependencies
 ca-infrastructure-service-email-file = { version = "0.1.0", path = "crates/infrastructure/service/email/file" }
+ca-infrastructure-service-authentication-jwt = { version = "0.1.0", path = "crates/infrastructure/service/authentication/jwt" }
 ca-infrastructure-boundary-string = { version = "0.1.0", path = "crates/infrastructure/boundary/string" }
 ca-infrastructure-boundary-json = { version = "0.1.0", path = "crates/infrastructure/boundary/json" }
 ca-infrastructure-interface-cli = { version = "0.1.0", path = "crates/infrastructure/interface/cli" }

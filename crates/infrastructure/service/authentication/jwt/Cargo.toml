@@ -1,0 +1,16 @@
+[package]
+name = "ca-infrastructure-service-authentication-jwt"
+edition.workspace = true
+rust-version.workspace = true
+version.workspace = true
+publish = false
+
+[dependencies]
+
+# Workspace dependencies
+ca-application = { version = "=0.1.0", path = "../../../../application" }
+
+# External dependencies
+jsonwebtoken = "9.3.1"
+
+[dev-dependencies]
