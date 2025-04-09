@@ -1,6 +1,7 @@
 use std::{marker::PhantomData, sync::Arc};
 
 use ca_application::usecase::{Comitable, Usecase};
+use ca_domain::entity::auth_context::{AuthContext, AuthError};
 
 use super::{
     boundary::{Error, Ingester, Presenter},
@@ -26,6 +27,7 @@ where
     pub fn handle_usecase<U>(
         &'d self,
         input: <B as Ingester<'d, D, U>>::InputModel,
+        auth_context: Option<AuthContext>,
     ) -> <B as Presenter<'d, D, U>>::ViewModel
     where
         Result<<U as Usecase<'d, D>>::Response, <U as Usecase<'d, D>>::Error>:
@@ -33,14 +35,18 @@ where
         U: Usecase<'d, D>,
         B: Ingester<'d, D, U> + Presenter<'d, D, U>,
     {
-        let req = <B as Ingester<D, U>>::ingest(input).and_then(|req| {
+        let req = <B as Ingester<D, U>>::ingest(input).and_then(|req_inner| {
+            // Auth check
+            if U::authorize(&req_inner, auth_context).is_err() {
+                return Err(Error::AuthError(AuthError::Unauthorized));
+            }
             if U::is_transactional() {
                 self.dependency_provider
-                    .run_in_transaction(|db| U::new(db).exec(req))
+                    .run_in_transaction(|db| U::new(db).exec(req_inner))
                     .map_err(|err| Error::UsecaseError(err))
             } else {
                 U::new(&self.dependency_provider)
-                    .exec(req)
+                    .exec(req_inner)
                     .map_err(|err| Error::UsecaseError(err))
             }
         });

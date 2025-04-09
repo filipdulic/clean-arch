@@ -121,6 +121,16 @@ dependencies = [
  "chrono",
  "rstest",
  "serde",
+ "thiserror",
+ "uuid",
+]
+
+[[package]]
+name = "ca-infrastructure-auth-extractor-env"
+version = "0.1.0"
+dependencies = [
+ "ca-adapter",
+ "ca-domain",
  "uuid",
 ]
 
@@ -152,6 +162,7 @@ version = "0.1.0"
 dependencies = [
  "ca-adapter",
  "ca-application",
+ "ca-infrastructure-auth-extractor-env",
  "ca-infrastructure-boundary-string",
  "clap",
 ]
@@ -162,6 +173,7 @@ version = "0.1.0"
 dependencies = [
  "ca-adapter",
  "ca-application",
+ "ca-infrastructure-auth-extractor-env",
  "ca-infrastructure-boundary-json",
  "clap",
  "serde_json",
@@ -268,6 +280,7 @@ dependencies = [
  "ca-adapter",
  "ca-application",
  "ca-domain",
+ "ca-infrastructure-auth-extractor-env",
  "ca-infrastructure-boundary-json",
  "ca-infrastructure-boundary-string",
  "ca-infrastructure-interface-cli",

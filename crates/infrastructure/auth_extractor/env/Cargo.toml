@@ -1,0 +1,15 @@
+[package]
+name = "ca-infrastructure-auth-extractor-env"
+edition.workspace = true
+rust-version.workspace = true
+version.workspace = true
+publish = false
+
+[dependencies]
+# Workspace dependencies
+ca-adapter = { version = "=0.1.0", path = "../../../adapter" }
+ca-domain = { version = "=0.1.0", path = "../../../domain" }
+
+# External dependencies
+uuid = { version = "1.2.2", features = ["v4"] }
+[dev-dependencies]

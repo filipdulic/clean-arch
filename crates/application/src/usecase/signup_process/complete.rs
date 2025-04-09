@@ -9,9 +9,13 @@ use crate::{
     usecase::{Comitable, Usecase},
 };
 
-use ca_domain::entity::{
-    signup_process::{EmailVerified, Id, SignupProcess},
-    user::{Password, User, UserName},
+use ca_domain::{
+    entity::{
+        auth_context::{AuthContext, AuthError},
+        signup_process::{EmailVerified, Id, SignupProcess},
+        user::{Password, User, UserName},
+    },
+    value_object::Role,
 };
 
 use chrono::{Duration, Utc};
@@ -90,6 +94,7 @@ where
         let process = process.complete(username, password);
         let user: User = User::new(
             ca_domain::entity::user::Id::new(req.id),
+            Role::User,
             process.email(),
             process.username(),
             process.password(),
@@ -113,6 +118,13 @@ where
         Self {
             dependency_provider: db,
         }
+    }
+    fn is_transactional() -> bool {
+        true
+    }
+    fn authorize(_: &Self::Request, _: Option<AuthContext>) -> Result<(), AuthError> {
+        // public signup endpoint, open/no auth
+        Ok(())
     }
 }
 

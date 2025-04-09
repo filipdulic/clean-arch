@@ -9,6 +9,7 @@ use crate::{
 };
 
 use ca_domain::entity::{
+    auth_context::{AuthContext, AuthError},
     signup_process::{Id, SignupProcess},
     user::Email,
 };
@@ -80,6 +81,10 @@ where
     }
     fn is_transactional() -> bool {
         true
+    }
+    fn authorize(_: &Self::Request, _: Option<AuthContext>) -> Result<(), AuthError> {
+        // public signup endpoint, open/no auth
+        Ok(())
     }
 }
 

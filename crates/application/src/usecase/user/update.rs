@@ -9,7 +9,10 @@ use crate::{
     },
 };
 use ca_domain::{
-    entity::user::{Email, Id, User, UserName},
+    entity::{
+        auth_context::{AuthContext, AuthError},
+        user::{Email, Id, UserName},
+    },
     value_object::Password,
 };
 use serde::{Deserialize, Serialize};
@@ -71,16 +74,17 @@ where
             email: &req.email,
             password: &req.password,
         })?;
-        let username = UserName::new(req.username);
-        let email = Email::new(&req.email);
-        let password = Password::new(req.password);
-        let user = User::new(req.id, email, username, password);
-        let _ = self
+        let mut record = self
             .dependency_provider
             .user_repo()
             .get(req.id)
             .map_err(|err| (err, req.id))?;
-        self.dependency_provider.user_repo().save(user.into())?;
+        record.user.update(
+            Email::new(&req.email),
+            UserName::new(&req.username),
+            Password::new(&req.password),
+        );
+        self.dependency_provider.user_repo().save(record)?;
         Ok(())
     }
 
@@ -91,6 +95,21 @@ where
     }
     fn is_transactional() -> bool {
         true
+    }
+    fn authorize(req: &Self::Request, auth_context: Option<AuthContext>) -> Result<(), AuthError> {
+        // owner and admin only
+        if let Some(auth_context) = auth_context {
+            // admin allowed
+            if auth_context.is_admin() {
+                return Ok(());
+            } else {
+                // if requested id is same as auth_context id
+                if &req.id == auth_context.user_id() {
+                    return Ok(());
+                }
+            }
+        }
+        Err(AuthError::Unauthorized)
     }
 }
 

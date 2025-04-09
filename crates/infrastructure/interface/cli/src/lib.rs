@@ -15,7 +15,9 @@ use std::sync::Arc;
 
 use clap::Subcommand;
 
-use ca_adapter::{controller::Controller, dependency_provider::Transactional};
+use ca_adapter::{
+    auth_extractor::AuthExtractor, controller::Controller, dependency_provider::Transactional,
+};
 use ca_application::usecase::{
     signup_process::{
         complete::Complete, delete::Delete, extend_completion_time::ExtendCompletionTime,
@@ -26,6 +28,7 @@ use ca_application::usecase::{
     user::{delete::Delete as UserDelete, get_all::GetAll, get_one::GetOne, update::Update},
 };
 
+use ca_infrastructure_auth_extractor_env::EnvAuthExtractor;
 use ca_infrastructure_boundary_string as string;
 
 //use crate::boundary::string::
@@ -80,30 +83,32 @@ where
     D: Transactional,
 {
     let app_controller = Controller::<D, string::Boundary>::new(db);
+    let env_auth_extractor = EnvAuthExtractor {};
+    let auth_context = env_auth_extractor.extract_auth(());
 
     match cmd {
         Command::InitializeSignupProcess { email } => {
-            let res = app_controller.handle_usecase::<Initialize<D>>(email);
+            let res = app_controller.handle_usecase::<Initialize<D>>(email, auth_context);
             println!("{res}");
         }
         Command::SendVerificationEmail { id } => {
-            let res = app_controller.handle_usecase::<SendVerificationEmail<D>>(id);
+            let res = app_controller.handle_usecase::<SendVerificationEmail<D>>(id, auth_context);
             println!("{res}");
         }
         Command::ExtendVerificationTimeOfSignupProcess { id } => {
-            let res = app_controller.handle_usecase::<ExtendVerificationTime<D>>(id);
+            let res = app_controller.handle_usecase::<ExtendVerificationTime<D>>(id, auth_context);
             println!("{res}");
         }
         Command::ExtendCompletionTimeOfSignupProcess { id } => {
-            let res = app_controller.handle_usecase::<ExtendCompletionTime<D>>(id);
+            let res = app_controller.handle_usecase::<ExtendCompletionTime<D>>(id, auth_context);
             println!("{res}");
         }
         Command::DeleteSignupProcess { id } => {
-            let res = app_controller.handle_usecase::<Delete<D>>(id);
+            let res = app_controller.handle_usecase::<Delete<D>>(id, auth_context);
             println!("{res}");
         }
         Command::VerifyEmailOfSignupProcess { id, token } => {
-            let res = app_controller.handle_usecase::<VerifyEmail<D>>((id, token));
+            let res = app_controller.handle_usecase::<VerifyEmail<D>>((id, token), auth_context);
             println!("{res}");
         }
         Command::CompleteSignupProcess {
@@ -111,23 +116,24 @@ where
             username,
             password,
         } => {
-            let res = app_controller.handle_usecase::<Complete<D>>((id, username, password));
+            let res = app_controller
+                .handle_usecase::<Complete<D>>((id, username, password), auth_context);
             println!("{res}");
         }
         Command::GetStateChain { id } => {
-            let res = app_controller.handle_usecase::<GetStateChain<D>>(id);
+            let res = app_controller.handle_usecase::<GetStateChain<D>>(id, auth_context);
             println!("{res}");
         }
         Command::ListUsers => {
-            let res = app_controller.handle_usecase::<GetAll<D>>(());
+            let res = app_controller.handle_usecase::<GetAll<D>>((), auth_context);
             println!("{res}");
         }
         Command::DeleteUser { id } => {
-            let res = app_controller.handle_usecase::<UserDelete<D>>(id);
+            let res = app_controller.handle_usecase::<UserDelete<D>>(id, auth_context);
             println!("{res}");
         }
         Command::ReadUser { id } => {
-            let res = app_controller.handle_usecase::<GetOne<D>>(id);
+            let res = app_controller.handle_usecase::<GetOne<D>>(id, auth_context);
             println!("{res}");
         }
         Command::UpdateUser {
@@ -136,7 +142,8 @@ where
             username,
             password,
         } => {
-            let res = app_controller.handle_usecase::<Update<D>>((id, email, username, password));
+            let res = app_controller
+                .handle_usecase::<Update<D>>((id, email, username, password), auth_context);
             println!("{res}");
         }
     }
