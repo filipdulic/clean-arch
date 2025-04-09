@@ -45,10 +45,10 @@ pub enum SignupStateEnum {
         error: SignupStateFailedError,
     },
 }
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct User {
     pub user_id: String,
+    pub role: String,
     pub email: String,
     pub username: String,
     pub password: String,
@@ -208,6 +208,7 @@ impl From<UserRecord> for User {
     fn from(value: UserRecord) -> User {
         User {
             user_id: value.user.id().to_string(),
+            role: value.user.role().to_string(),
             email: value.user.email().to_string(),
             username: value.user.username().to_string(),
             password: value.user.password().to_string(),
@@ -225,8 +226,13 @@ impl TryInto<UserRecord> for &User {
         let username = user::UserName::new(self.username.clone());
         let email = user::Email::new(&self.email);
         let password = Password::new(self.password.clone());
+        // TODO: handle invalid role from db.
+        let role = self
+            .role
+            .parse()
+            .unwrap_or(ca_domain::value_object::Role::User);
         Ok(UserRecord {
-            user: user::User::new(id, email, username, password),
+            user: user::User::new(id, role, email, username, password),
         })
     }
 }

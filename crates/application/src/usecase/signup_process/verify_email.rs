@@ -9,7 +9,10 @@ use crate::{
     usecase::{Comitable, Usecase},
 };
 
-use ca_domain::entity::signup_process::{Id, SignupProcess, VerificationEmailSent};
+use ca_domain::entity::{
+    auth_context::{AuthContext, AuthError},
+    signup_process::{Id, SignupProcess, VerificationEmailSent},
+};
 
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -103,6 +106,10 @@ where
     }
     fn is_transactional() -> bool {
         true
+    }
+    fn authorize(_: &Self::Request, _: Option<AuthContext>) -> Result<(), AuthError> {
+        // public signup endpoint, open/no auth
+        Ok(())
     }
 }
 

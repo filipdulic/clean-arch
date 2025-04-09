@@ -2,7 +2,10 @@ use crate::{
     gateway::{repository::user::GetAllError, UserRepoProvider},
     usecase::{Comitable, Usecase},
 };
-use ca_domain::entity::user::User;
+use ca_domain::entity::{
+    auth_context::{AuthContext, AuthError},
+    user::User,
+};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -57,6 +60,15 @@ where
         Self {
             dependency_provider,
         }
+    }
+    fn authorize(_: &Self::Request, auth_context: Option<AuthContext>) -> Result<(), AuthError> {
+        // admin only
+        if let Some(auth_context) = auth_context {
+            if auth_context.is_admin() {
+                return Ok(());
+            }
+        }
+        Err(AuthError::Unauthorized)
     }
 }
 

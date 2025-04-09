@@ -6,7 +6,10 @@ use crate::{
     usecase::{Comitable, Usecase},
 };
 
-use ca_domain::entity::signup_process::Id;
+use ca_domain::entity::{
+    auth_context::{AuthContext, AuthError},
+    signup_process::Id,
+};
 
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -62,6 +65,15 @@ where
         Self {
             dependency_provider,
         }
+    }
+    fn authorize(_: &Self::Request, auth_context: Option<AuthContext>) -> Result<(), AuthError> {
+        // admin only
+        if let Some(auth_context) = auth_context {
+            if auth_context.is_admin() {
+                return Ok(());
+            }
+        }
+        Err(AuthError::Unauthorized)
     }
 }
 

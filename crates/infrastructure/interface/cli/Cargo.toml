@@ -11,6 +11,7 @@ publish = false
 ca-adapter = { version = "=0.1.0", path = "../../../adapter" }
 ca-application = { version = "=0.1.0", path = "../../../application" }
 ca-infrastructure-boundary-string = { version = "=0.1.0", path = "../../boundary/string" }
+ca-infrastructure-auth-extractor-env = { version = "=0.1.0", path = "../../auth_extractor/env" }
 
 # External dependencies
 clap = { version = "4.5.35", features = ["derive"] }
