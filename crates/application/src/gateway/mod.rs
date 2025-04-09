@@ -1,3 +1,4 @@
+pub mod auth_packer;
 pub mod repository;
 pub mod service;
 
