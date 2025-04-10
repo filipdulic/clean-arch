@@ -1,7 +1,7 @@
 use std::{marker::PhantomData, sync::Arc};
 
 use ca_application::usecase::{Comitable, Usecase};
-use ca_domain::entity::auth_context::{AuthContext, AuthError};
+use ca_domain::entity::auth_context::AuthError;
 
 use super::{
     boundary::{Error, Ingester, Presenter},
@@ -27,7 +27,7 @@ where
     pub fn handle_usecase<U>(
         &'d self,
         input: <B as Ingester<'d, D, U>>::InputModel,
-        auth_context: Option<AuthContext>,
+        token: Option<String>,
     ) -> <B as Presenter<'d, D, U>>::ViewModel
     where
         Result<<U as Usecase<'d, D>>::Response, <U as Usecase<'d, D>>::Error>:
@@ -35,7 +35,14 @@ where
         U: Usecase<'d, D>,
         B: Ingester<'d, D, U> + Presenter<'d, D, U>,
     {
+        // use authextractor to extract the auth from token. optional tokan
         let req = <B as Ingester<D, U>>::ingest(input).and_then(|req_inner| {
+            // Extract auth
+            let auth_context = token.as_ref().and_then(|token| {
+                self.dependency_provider
+                    .auth_extractor()
+                    .extract_auth(token.clone())
+            });
             // Auth check
             if U::authorize(&req_inner, auth_context).is_err() {
                 return Err(Error::AuthError(AuthError::Unauthorized));

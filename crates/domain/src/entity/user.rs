@@ -7,7 +7,7 @@ pub type UserName = value_object::UserName<User>;
 pub type Email = value_object::Email<User>;
 pub type Password = value_object::Password<User>;
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 pub struct User {
     id: Id,
     role: Role,

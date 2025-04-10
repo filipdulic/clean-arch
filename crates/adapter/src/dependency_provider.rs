@@ -1,7 +1,8 @@
 use ca_application::{
     gateway::{
-        EmailVerificationServiceProvider, SignupProcessIdGenProvider, SignupProcessRepoProvider,
-        TokenRepoProvider, UserIdGenProvider, UserRepoProvider,
+        AuthExtractorProvider, AuthPackerProvider, EmailVerificationServiceProvider,
+        SignupProcessIdGenProvider, SignupProcessRepoProvider, TokenRepoProvider,
+        UserIdGenProvider, UserRepoProvider,
     },
     usecase::Comitable,
 };
@@ -14,6 +15,8 @@ pub trait Transactional:
     + UserIdGenProvider
     + EmailVerificationServiceProvider
     + TokenRepoProvider
+    + AuthPackerProvider
+    + AuthExtractorProvider
 {
     fn run_in_transaction<'d, F, R, E>(&'d self, f: F) -> Result<R, E>
     where
