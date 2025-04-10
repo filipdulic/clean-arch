@@ -16,16 +16,22 @@ use std::sync::Arc;
 use clap::Subcommand;
 
 use ca_adapter::{controller::Controller, dependency_provider::Transactional};
-use ca_application::usecase::{
-    signup_process::{
-        complete::Complete, delete::Delete, extend_completion_time::ExtendCompletionTime,
-        extend_verification_time::ExtendVerificationTime, get_state_chain::GetStateChain,
-        initialize::Initialize, send_verification_email::SendVerificationEmail,
-        verify_email::VerifyEmail,
+use ca_application::{
+    gateway::{
+        AuthExtractorProvider, AuthPackerProvider, EmailVerificationServiceProvider,
+        SignupProcessIdGenProvider, SignupProcessRepoProvider, TokenRepoProvider, UserRepoProvider,
     },
-    user::{
-        delete::Delete as UserDelete, get_all::GetAll, get_one::GetOne, login::Login,
-        update::Update,
+    usecase::{
+        signup_process::{
+            complete::Complete, delete::Delete, extend_completion_time::ExtendCompletionTime,
+            extend_verification_time::ExtendVerificationTime, get_state_chain::GetStateChain,
+            initialize::Initialize, send_verification_email::SendVerificationEmail,
+            verify_email::VerifyEmail,
+        },
+        user::{
+            delete::Delete as UserDelete, get_all::GetAll, get_one::GetOne, login::Login,
+            update::Update,
+        },
     },
 };
 
@@ -91,7 +97,14 @@ pub enum Command {
 
 pub fn run<D>(db: Arc<D>, cmd: Command)
 where
-    D: Transactional,
+    D: Transactional
+        + SignupProcessIdGenProvider
+        + SignupProcessRepoProvider
+        + UserRepoProvider
+        + EmailVerificationServiceProvider
+        + TokenRepoProvider
+        + AuthPackerProvider
+        + AuthExtractorProvider,
 {
     let app_controller = Controller::<D, string::Boundary>::new(db);
 
