@@ -2,8 +2,10 @@ use super::super::Boundary;
 
 use ca_adapter::boundary::{Presenter, UsecaseResponseResult};
 use ca_application::{
-    gateway::UserRepoProvider,
-    usecase::user::{delete::Delete, get_all::GetAll, get_one::GetOne, update::Update},
+    gateway::{AuthPackerProvider, UserRepoProvider},
+    usecase::user::{
+        delete::Delete, get_all::GetAll, get_one::GetOne, login::Login, update::Update,
+    },
 };
 
 impl<'d, D> Presenter<'d, D, Update<'d, D>> for Boundary
@@ -63,6 +65,24 @@ where
         match data {
             Ok(_) => "Successfully deleted user".to_string(),
             Err(err) => format!("Unable to delete user {err}"),
+        }
+    }
+}
+
+impl<'d, D> Presenter<'d, D, Login<'d, D>> for Boundary
+where
+    D: UserRepoProvider + AuthPackerProvider,
+{
+    type ViewModel = String;
+
+    fn present(data: UsecaseResponseResult<'d, D, Login<'d, D>>) -> Self::ViewModel {
+        match data {
+            Ok(data) => format!(
+                "TOKEN: {:?}\nUSER_ID: {:?}",
+                data.token,
+                data.user_id.to_string()
+            ),
+            Err(err) => format!("Unable to find user: {err}"),
         }
     }
 }

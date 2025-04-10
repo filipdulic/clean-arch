@@ -1,12 +1,15 @@
 use ca_adapter::dependency_provider::Transactional;
+use ca_application::gateway::service::auth::AuthExtractor;
 use ca_application::gateway::service::email::EmailVerificationService;
 use ca_application::gateway::{
-    EmailVerificationServiceProvider, SignupProcessIdGenProvider, SignupProcessRepoProvider,
-    TokenRepoProvider, UserIdGenProvider, UserRepoProvider,
+    AuthExtractorProvider, AuthPackerProvider, EmailVerificationServiceProvider,
+    SignupProcessIdGenProvider, SignupProcessRepoProvider, TokenRepoProvider, UserIdGenProvider,
+    UserRepoProvider,
 };
 use ca_application::identifier::NewId;
 use ca_application::usecase::Comitable;
 use ca_domain::entity::{signup_process::Id as SignupProcessId, user::Id as UserId};
+use ca_infrastructure_auth_jwt::JwtAuth;
 use ca_infrastructure_interface_cli_json as cli;
 use ca_infrastructure_persistance_json_file::utils::{data_storage, data_storage_directory};
 use ca_infrastructure_persistance_json_file::JsonFile;
@@ -25,13 +28,15 @@ struct Args {
 struct DependancyProvider {
     db: JsonFile,
     email_verification_servuce: FileEmailService,
+    jwt_auth: JwtAuth,
 }
 
 impl DependancyProvider {
-    fn new(db: JsonFile, email_verification_servuce: FileEmailService) -> Self {
+    fn new(db: JsonFile, email_verification_servuce: FileEmailService, jwt_auth: JwtAuth) -> Self {
         Self {
             db,
             email_verification_servuce,
+            jwt_auth,
         }
     }
 }
@@ -73,6 +78,7 @@ impl Clone for DependancyProvider {
         Self {
             db: self.db.clone(),
             email_verification_servuce: self.email_verification_servuce.clone(),
+            jwt_auth: self.jwt_auth.clone(),
         }
     }
 }
@@ -80,6 +86,18 @@ impl Clone for DependancyProvider {
 impl EmailVerificationServiceProvider for DependancyProvider {
     fn email_verification_service(&self) -> &dyn EmailVerificationService {
         &self.email_verification_servuce
+    }
+}
+
+impl AuthExtractorProvider for DependancyProvider {
+    fn auth_extractor(&self) -> &dyn AuthExtractor {
+        &self.jwt_auth
+    }
+}
+
+impl AuthPackerProvider for DependancyProvider {
+    fn auth_packer(&self) -> &dyn ca_application::gateway::service::auth::AuthPacker {
+        &self.jwt_auth
     }
 }
 
@@ -108,9 +126,11 @@ pub fn main() -> Result<(), std::io::Error> {
     let args = Args::parse();
     let email_folder = data_storage_directory(None);
     let email_verification_servuce = FileEmailService::try_new(email_folder)?;
+    let jwt_auth = JwtAuth::new("secret".to_string());
     let dep_provider = Arc::new(DependancyProvider::new(
         data_storage(args.data_dir),
         email_verification_servuce,
+        jwt_auth,
     ));
     cli::run(dep_provider, args.command);
     Ok(())

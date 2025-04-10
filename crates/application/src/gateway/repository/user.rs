@@ -51,6 +51,7 @@ impl From<Record> for User {
 pub trait Repo: Send + Sync {
     fn save(&self, record: Record) -> Result<(), SaveError>;
     fn get(&self, id: Id) -> Result<Record, GetError>;
+    fn get_by_username(&self, username: UserName) -> Result<Record, GetError>;
     fn get_all(&self) -> Result<Vec<Record>, GetAllError>;
     fn delete(&self, id: Id) -> Result<(), DeleteError>;
 }

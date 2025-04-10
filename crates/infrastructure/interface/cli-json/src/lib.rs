@@ -13,12 +13,9 @@
 //!     methods in the application.
 use std::sync::Arc;
 
-use ca_infrastructure_auth_extractor_env::EnvAuthExtractor;
 use clap::Subcommand;
 
-use ca_adapter::{
-    auth_extractor::AuthExtractor, controller::Controller, dependency_provider::Transactional,
-};
+use ca_adapter::{controller::Controller, dependency_provider::Transactional};
 use ca_application::usecase::{
     signup_process::{
         complete::Complete, delete::Delete, extend_completion_time::ExtendCompletionTime,
@@ -26,7 +23,10 @@ use ca_application::usecase::{
         initialize::Initialize, send_verification_email::SendVerificationEmail,
         verify_email::VerifyEmail,
     },
-    user::{delete::Delete as UserDelete, get_all::GetAll, get_one::GetOne, update::Update},
+    user::{
+        delete::Delete as UserDelete, get_all::GetAll, get_one::GetOne, login::Login,
+        update::Update,
+    },
 };
 
 use ca_infrastructure_boundary_json as boundary;
@@ -35,38 +35,79 @@ use ca_infrastructure_boundary_json as boundary;
 #[derive(Subcommand)]
 pub enum Command {
     #[clap(about = "Initialize signup process", alias = "sp-init")]
-    InitializeSignupProcess { request: String },
+    InitializeSignupProcess {
+        request: String,
+        token: Option<String>,
+    },
     #[clap(
         about = "Send verification email for signup process",
         alias = "sp-send-verify"
     )]
-    SendVerificationEmail { request: String },
+    SendVerificationEmail {
+        request: String,
+        token: Option<String>,
+    },
     #[clap(
         about = "Extend verification time of signup process",
         alias = "sp-extend-verify"
     )]
-    ExtendVerificationTimeOfSignupProcess { request: String },
+    ExtendVerificationTimeOfSignupProcess {
+        request: String,
+        token: Option<String>,
+    },
     #[clap(
         about = "Extend completion time of signup process",
         alias = "sp-extend-complete"
     )]
-    ExtendCompletionTimeOfSignupProcess { request: String },
+    ExtendCompletionTimeOfSignupProcess {
+        request: String,
+        token: Option<String>,
+    },
     #[clap(about = "Delete signup process", alias = "sp-delete")]
-    DeleteSignupProcess { request: String },
+    DeleteSignupProcess {
+        request: String,
+        token: Option<String>,
+    },
     #[clap(about = "Verify Email of signup process", alias = "sp-verify")]
-    VerifyEmailOfSignupProcess { request: String },
+    VerifyEmailOfSignupProcess {
+        request: String,
+        token: Option<String>,
+    },
     #[clap(about = "Complete signup process", alias = "sp-complete")]
-    CompleteSignupProcess { request: String },
+    CompleteSignupProcess {
+        request: String,
+        token: Option<String>,
+    },
     #[clap(about = "Get state chain for signup process", alias = "sp-chain")]
-    GetStateChain { request: String },
+    GetStateChain {
+        request: String,
+        token: Option<String>,
+    },
+    #[clap(about = "Login user")]
+    Login {
+        request: String,
+        token: Option<String>,
+    },
     #[clap(about = "List all users")]
-    ListUsers { request: String },
+    ListUsers {
+        request: String,
+        token: Option<String>,
+    },
     #[clap(about = "Read user")]
-    ReadUser { request: String },
+    ReadUser {
+        request: String,
+        token: Option<String>,
+    },
     #[clap(about = "Update user")]
-    UpdateUser { request: String },
+    UpdateUser {
+        request: String,
+        token: Option<String>,
+    },
     #[clap(about = "Delete user")]
-    DeleteUser { request: String },
+    DeleteUser {
+        request: String,
+        token: Option<String>,
+    },
 }
 
 pub fn run<D>(db: Arc<D>, cmd: Command)
@@ -74,71 +115,71 @@ where
     D: Transactional,
 {
     let app_controller = Controller::<D, boundary::Boundary>::new(db);
-    let env_auth_extractor = EnvAuthExtractor {};
-    let auth_context = env_auth_extractor.extract_auth(());
 
     match cmd {
-        Command::InitializeSignupProcess { request } => {
+        Command::InitializeSignupProcess { request, token } => {
             let request = serde_json::from_str(&request).expect("Failed to parse request");
-            let res = app_controller.handle_usecase::<Initialize<D>>(request, auth_context);
+            let res = app_controller.handle_usecase::<Initialize<D>>(request, token);
             println!("{res}");
         }
-        Command::SendVerificationEmail { request } => {
+        Command::SendVerificationEmail { request, token } => {
             let request = serde_json::from_str(&request).expect("Failed to parse request");
-            let res =
-                app_controller.handle_usecase::<SendVerificationEmail<D>>(request, auth_context);
+            let res = app_controller.handle_usecase::<SendVerificationEmail<D>>(request, token);
             println!("{res}");
         }
-        Command::ExtendVerificationTimeOfSignupProcess { request } => {
+        Command::ExtendVerificationTimeOfSignupProcess { request, token } => {
             let request = serde_json::from_str(&request).expect("Failed to parse request");
-            let res =
-                app_controller.handle_usecase::<ExtendVerificationTime<D>>(request, auth_context);
+            let res = app_controller.handle_usecase::<ExtendVerificationTime<D>>(request, token);
             println!("{res}");
         }
-        Command::ExtendCompletionTimeOfSignupProcess { request } => {
+        Command::ExtendCompletionTimeOfSignupProcess { request, token } => {
             let request = serde_json::from_str(&request).expect("Failed to parse request");
-            let res =
-                app_controller.handle_usecase::<ExtendCompletionTime<D>>(request, auth_context);
+            let res = app_controller.handle_usecase::<ExtendCompletionTime<D>>(request, token);
             println!("{res}");
         }
-        Command::DeleteSignupProcess { request } => {
+        Command::DeleteSignupProcess { request, token } => {
             let request = serde_json::from_str(&request).expect("Failed to parse request");
-            let res = app_controller.handle_usecase::<Delete<D>>(request, auth_context);
+            let res = app_controller.handle_usecase::<Delete<D>>(request, token);
             println!("{res}");
         }
-        Command::VerifyEmailOfSignupProcess { request } => {
+        Command::VerifyEmailOfSignupProcess { request, token } => {
             let request = serde_json::from_str(&request).expect("Failed to parse request");
-            let res = app_controller.handle_usecase::<VerifyEmail<D>>(request, auth_context);
+            let res = app_controller.handle_usecase::<VerifyEmail<D>>(request, token);
             println!("{res}");
         }
-        Command::CompleteSignupProcess { request } => {
+        Command::CompleteSignupProcess { request, token } => {
             let request = serde_json::from_str(&request).expect("Failed to parse request");
-            let res = app_controller.handle_usecase::<Complete<D>>(request, auth_context);
+            let res = app_controller.handle_usecase::<Complete<D>>(request, token);
             println!("{res}");
         }
-        Command::GetStateChain { request } => {
+        Command::GetStateChain { request, token } => {
             let request = serde_json::from_str(&request).expect("Failed to parse request");
-            let res = app_controller.handle_usecase::<GetStateChain<D>>(request, auth_context);
+            let res = app_controller.handle_usecase::<GetStateChain<D>>(request, token);
             println!("{res}");
         }
-        Command::ListUsers { request } => {
+        Command::Login { request, token: _ } => {
             let request = serde_json::from_str(&request).expect("Failed to parse request");
-            let res = app_controller.handle_usecase::<GetAll<D>>(request, auth_context);
+            let res = app_controller.handle_usecase::<Login<D>>(request, None);
             println!("{res}");
         }
-        Command::DeleteUser { request } => {
+        Command::ListUsers { request, token } => {
             let request = serde_json::from_str(&request).expect("Failed to parse request");
-            let res = app_controller.handle_usecase::<UserDelete<D>>(request, auth_context);
+            let res = app_controller.handle_usecase::<GetAll<D>>(request, token);
             println!("{res}");
         }
-        Command::ReadUser { request } => {
+        Command::DeleteUser { request, token } => {
             let request = serde_json::from_str(&request).expect("Failed to parse request");
-            let res = app_controller.handle_usecase::<GetOne<D>>(request, auth_context);
+            let res = app_controller.handle_usecase::<UserDelete<D>>(request, token);
             println!("{res}");
         }
-        Command::UpdateUser { request } => {
+        Command::ReadUser { request, token } => {
             let request = serde_json::from_str(&request).expect("Failed to parse request");
-            let res = app_controller.handle_usecase::<Update<D>>(request, auth_context);
+            let res = app_controller.handle_usecase::<GetOne<D>>(request, token);
+            println!("{res}");
+        }
+        Command::UpdateUser { request, token } => {
+            let request = serde_json::from_str(&request).expect("Failed to parse request");
+            let res = app_controller.handle_usecase::<Update<D>>(request, token);
             println!("{res}");
         }
     }

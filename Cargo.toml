@@ -26,7 +26,7 @@ members = [
     "crates/infrastructure/interface/cli-json",
     "crates/infrastructure/persistance/json_file",
     "crates/infrastructure/service/email/file",
-    "crates/infrastructure/auth_extractor/env",
+    "crates/infrastructure/auth/jwt",
 ]
 
 [workspace.package]
@@ -44,7 +44,7 @@ ca-infrastructure-boundary-json = { version = "0.1.0", path = "crates/infrastruc
 ca-infrastructure-interface-cli = { version = "0.1.0", path = "crates/infrastructure/interface/cli" }
 ca-infrastructure-interface-cli-json = { version = "0.1.0", path = "crates/infrastructure/interface/cli-json" }
 ca-infrastructure-persistance-json_file = { version = "0.1.0", path = "crates/infrastructure/persistance/json_file" }
-ca-infrastructure-auth-extractor-env = { version = "0.1.0", path = "crates/infrastructure/auth_extractor/env" }
+ca-infrastructure-auth-jwt = { version = "0.1.0", path = "crates/infrastructure/auth/jwt" }
 ca-domain = { version = "0.1.0", path = "crates/domain" }
 ca-application = { version = "0.1.0", path = "crates/application" }
 ca-adapter = { version = "0.1.0", path = "crates/adapter" }

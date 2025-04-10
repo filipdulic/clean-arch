@@ -1,5 +1,5 @@
 [package]
-name = "ca-infrastructure-auth-extractor-env"
+name = "ca-infrastructure-auth-jwt"
 edition.workspace = true
 rust-version.workspace = true
 version.workspace = true
@@ -9,7 +9,11 @@ publish = false
 # Workspace dependencies
 ca-adapter = { version = "=0.1.0", path = "../../../adapter" }
 ca-domain = { version = "=0.1.0", path = "../../../domain" }
+ca-application = { version = "=0.1.0", path = "../../../application" }
 
 # External dependencies
 uuid = { version = "1.2.2", features = ["v4"] }
+jsonwebtoken = { version = "9.3.1" }
+serde = { version = "1.0.140", features = ["derive"] }
+chrono = { version = "0.4.26" }
 [dev-dependencies]

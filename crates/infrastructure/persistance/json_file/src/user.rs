@@ -61,6 +61,27 @@ impl Repo for JsonFile {
             .collect();
         Ok(records)
     }
+    // TODO: fix hack of iterating through all users to find matching username.
+    fn get_by_username(
+        &self,
+        username: ca_domain::entity::user::UserName,
+    ) -> Result<Record, GetError> {
+        log::debug!("Get user by username {:?} from JSON file", username);
+        for (_, model) in self
+            .users
+            .all::<models::User>()
+            .map_err(|_| GetError::NotFound)?
+        {
+            if model.username == username.to_string() {
+                match model.try_into() {
+                    Ok(record) => return Ok(record),
+                    Err(_) => unreachable!(), // stored user should be valid
+                }
+            }
+        }
+        Err(GetError::NotFound)
+    }
+
     fn delete(&self, id: Id) -> Result<(), DeleteError> {
         log::debug!("Delete user {:?} from JSON file", &id);
         let string_id = id.to_string();

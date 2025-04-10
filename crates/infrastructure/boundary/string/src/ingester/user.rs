@@ -4,11 +4,12 @@ use uuid::Uuid;
 
 use ca_adapter::boundary::{Error, Ingester, UsecaseRequestResult};
 use ca_application::{
-    gateway::UserRepoProvider,
+    gateway::{AuthPackerProvider, UserRepoProvider},
     usecase::user::{
         delete::{Delete, Request as DeleteRequest},
         get_all::{GetAll, Request as GetAllRequest},
         get_one::{GetOne, Request as GetOneRequest},
+        login::{Login, Request as LoginRequest},
         update::{Request as UpdateRequest, Update},
     },
 };
@@ -67,5 +68,16 @@ where
     type InputModel = ();
     fn ingest(_: Self::InputModel) -> UsecaseRequestResult<'d, D, GetAll<'d, D>> {
         Ok(GetAllRequest {})
+    }
+}
+
+impl<'d, D> Ingester<'d, D, Login<'d, D>> for Boundary
+where
+    D: UserRepoProvider + AuthPackerProvider,
+{
+    type InputModel = (String, String);
+    fn ingest(input: Self::InputModel) -> UsecaseRequestResult<'d, D, Login<'d, D>> {
+        let (username, password) = input;
+        Ok(LoginRequest { username, password })
     }
 }

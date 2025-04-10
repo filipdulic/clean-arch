@@ -15,9 +15,7 @@ use std::sync::Arc;
 
 use clap::Subcommand;
 
-use ca_adapter::{
-    auth_extractor::AuthExtractor, controller::Controller, dependency_provider::Transactional,
-};
+use ca_adapter::{controller::Controller, dependency_provider::Transactional};
 use ca_application::usecase::{
     signup_process::{
         complete::Complete, delete::Delete, extend_completion_time::ExtendCompletionTime,
@@ -25,57 +23,70 @@ use ca_application::usecase::{
         initialize::Initialize, send_verification_email::SendVerificationEmail,
         verify_email::VerifyEmail,
     },
-    user::{delete::Delete as UserDelete, get_all::GetAll, get_one::GetOne, update::Update},
+    user::{
+        delete::Delete as UserDelete, get_all::GetAll, get_one::GetOne, login::Login,
+        update::Update,
+    },
 };
 
-use ca_infrastructure_auth_extractor_env::EnvAuthExtractor;
 use ca_infrastructure_boundary_string as string;
 
 //use crate::boundary::string::
 #[derive(Subcommand)]
 pub enum Command {
     #[clap(about = "Initialize signup process", alias = "sp-init")]
-    InitializeSignupProcess { email: String },
+    InitializeSignupProcess {
+        email: String,
+        token: Option<String>,
+    },
     #[clap(
         about = "Send verification email for signup process",
         alias = "sp-send-verify"
     )]
-    SendVerificationEmail { id: String },
+    SendVerificationEmail { id: String, token: Option<String> },
     #[clap(
         about = "Extend verification time of signup process",
         alias = "sp-extend-verify"
     )]
-    ExtendVerificationTimeOfSignupProcess { id: String },
+    ExtendVerificationTimeOfSignupProcess { id: String, token: Option<String> },
     #[clap(
         about = "Extend completion time of signup process",
         alias = "sp-extend-complete"
     )]
-    ExtendCompletionTimeOfSignupProcess { id: String },
+    ExtendCompletionTimeOfSignupProcess { id: String, token: Option<String> },
     #[clap(about = "Delete signup process", alias = "sp-delete")]
-    DeleteSignupProcess { id: String },
+    DeleteSignupProcess { id: String, token: Option<String> },
     #[clap(about = "Verify Email of signup process", alias = "sp-verify")]
-    VerifyEmailOfSignupProcess { id: String, token: String },
+    VerifyEmailOfSignupProcess {
+        id: String,
+        signup_token: String,
+        token: Option<String>,
+    },
     #[clap(about = "Complete signup process", alias = "sp-complete")]
     CompleteSignupProcess {
         id: String,
         username: String,
         password: String,
+        token: Option<String>,
     },
     #[clap(about = "Get state chain for signup process", alias = "sp-chain")]
-    GetStateChain { id: String },
+    GetStateChain { id: String, token: Option<String> },
+    #[clap(about = "Login user")]
+    Login { username: String, password: String },
     #[clap(about = "List all users")]
-    ListUsers,
+    ListUsers { token: Option<String> },
     #[clap(about = "Read user")]
-    ReadUser { id: String },
+    ReadUser { id: String, token: Option<String> },
     #[clap(about = "Update user")]
     UpdateUser {
         id: String,
         email: String,
         username: String,
         password: String,
+        token: Option<String>,
     },
     #[clap(about = "Delete user")]
-    DeleteUser { id: String },
+    DeleteUser { id: String, token: Option<String> },
 }
 
 pub fn run<D>(db: Arc<D>, cmd: Command)
@@ -83,57 +94,63 @@ where
     D: Transactional,
 {
     let app_controller = Controller::<D, string::Boundary>::new(db);
-    let env_auth_extractor = EnvAuthExtractor {};
-    let auth_context = env_auth_extractor.extract_auth(());
 
     match cmd {
-        Command::InitializeSignupProcess { email } => {
-            let res = app_controller.handle_usecase::<Initialize<D>>(email, auth_context);
+        Command::InitializeSignupProcess { email, token } => {
+            let res = app_controller.handle_usecase::<Initialize<D>>(email, token);
             println!("{res}");
         }
-        Command::SendVerificationEmail { id } => {
-            let res = app_controller.handle_usecase::<SendVerificationEmail<D>>(id, auth_context);
+        Command::SendVerificationEmail { id, token } => {
+            let res = app_controller.handle_usecase::<SendVerificationEmail<D>>(id, token);
             println!("{res}");
         }
-        Command::ExtendVerificationTimeOfSignupProcess { id } => {
-            let res = app_controller.handle_usecase::<ExtendVerificationTime<D>>(id, auth_context);
+        Command::ExtendVerificationTimeOfSignupProcess { id, token } => {
+            let res = app_controller.handle_usecase::<ExtendVerificationTime<D>>(id, token);
             println!("{res}");
         }
-        Command::ExtendCompletionTimeOfSignupProcess { id } => {
-            let res = app_controller.handle_usecase::<ExtendCompletionTime<D>>(id, auth_context);
+        Command::ExtendCompletionTimeOfSignupProcess { id, token } => {
+            let res = app_controller.handle_usecase::<ExtendCompletionTime<D>>(id, token);
             println!("{res}");
         }
-        Command::DeleteSignupProcess { id } => {
-            let res = app_controller.handle_usecase::<Delete<D>>(id, auth_context);
+        Command::DeleteSignupProcess { id, token } => {
+            let res = app_controller.handle_usecase::<Delete<D>>(id, token);
             println!("{res}");
         }
-        Command::VerifyEmailOfSignupProcess { id, token } => {
-            let res = app_controller.handle_usecase::<VerifyEmail<D>>((id, token), auth_context);
+        Command::VerifyEmailOfSignupProcess {
+            id,
+            signup_token,
+            token,
+        } => {
+            let res = app_controller.handle_usecase::<VerifyEmail<D>>((id, signup_token), token);
             println!("{res}");
         }
         Command::CompleteSignupProcess {
             id,
             username,
             password,
+            token,
         } => {
-            let res = app_controller
-                .handle_usecase::<Complete<D>>((id, username, password), auth_context);
+            let res = app_controller.handle_usecase::<Complete<D>>((id, username, password), token);
             println!("{res}");
         }
-        Command::GetStateChain { id } => {
-            let res = app_controller.handle_usecase::<GetStateChain<D>>(id, auth_context);
+        Command::GetStateChain { id, token } => {
+            let res = app_controller.handle_usecase::<GetStateChain<D>>(id, token);
             println!("{res}");
         }
-        Command::ListUsers => {
-            let res = app_controller.handle_usecase::<GetAll<D>>((), auth_context);
+        Command::Login { username, password } => {
+            let res = app_controller.handle_usecase::<Login<D>>((username, password), None);
             println!("{res}");
         }
-        Command::DeleteUser { id } => {
-            let res = app_controller.handle_usecase::<UserDelete<D>>(id, auth_context);
+        Command::ListUsers { token } => {
+            let res = app_controller.handle_usecase::<GetAll<D>>((), token);
             println!("{res}");
         }
-        Command::ReadUser { id } => {
-            let res = app_controller.handle_usecase::<GetOne<D>>(id, auth_context);
+        Command::DeleteUser { id, token } => {
+            let res = app_controller.handle_usecase::<UserDelete<D>>(id, token);
+            println!("{res}");
+        }
+        Command::ReadUser { id, token } => {
+            let res = app_controller.handle_usecase::<GetOne<D>>(id, token);
             println!("{res}");
         }
         Command::UpdateUser {
@@ -141,9 +158,10 @@ where
             email,
             username,
             password,
+            token,
         } => {
-            let res = app_controller
-                .handle_usecase::<Update<D>>((id, email, username, password), auth_context);
+            let res =
+                app_controller.handle_usecase::<Update<D>>((id, email, username, password), token);
             println!("{res}");
         }
     }

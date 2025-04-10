@@ -1,4 +1,3 @@
-pub mod auth_packer;
 pub mod repository;
 pub mod service;
 
@@ -26,4 +25,12 @@ pub trait EmailVerificationServiceProvider {
 
 pub trait TokenRepoProvider {
     fn token_repo(&self) -> &dyn repository::token::Repo;
+}
+
+pub trait AuthPackerProvider {
+    fn auth_packer(&self) -> &dyn service::auth::AuthPacker;
+}
+
+pub trait AuthExtractorProvider {
+    fn auth_extractor(&self) -> &dyn service::auth::AuthExtractor;
 }
