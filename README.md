@@ -31,9 +31,8 @@ general Rust development.
 ### Databases
 - [x] JSON file storage
 - [ ] InMemory (HashMap)
-- [ ] PostgreSQL
-    - [ ] SQLx
-    - [ ] Diesel
+- [ ] PostgreSQL/Diesel
+- [ ] SQLite/SQLX
 - [ ] LMDB/Heed
 - [ ] Wide-column DB/DynamoDB
 ### Message Brokers/Queues
