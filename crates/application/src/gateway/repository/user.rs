@@ -48,8 +48,6 @@ impl From<Record> for User {
         record.user
     }
 }
-
-// TODO: make it async
 pub trait Repo: Send + Sync {
     fn save(&self, record: Record) -> impl Future<Output = Result<(), SaveError>>;
     fn get(&self, id: Id) -> impl Future<Output = Result<Record, GetError>>;

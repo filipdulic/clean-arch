@@ -50,7 +50,7 @@ impl Repo for &JsonFile {
         Ok(records)
     }
     async fn delete(&self, id: Id) -> Result<(), DeleteError> {
-        log::debug!("Delete area of life {:?} from JSON file", id);
+        log::debug!("Delete signup process {:?} from JSON file", id);
         todo!()
     }
 

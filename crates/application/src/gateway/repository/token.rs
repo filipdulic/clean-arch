@@ -34,7 +34,6 @@ pub struct Record {
     pub token: String,
 }
 
-// TODO: make it async
 pub trait Repo: Send + Sync {
     fn gen(&self, email: &str) -> impl Future<Output = Result<Record, GenError>>;
     fn verify(&self, email: &str, token: &str) -> impl Future<Output = Result<(), VerifyError>>;
