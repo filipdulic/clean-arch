@@ -1,5 +1,8 @@
 use crate::{
-    gateway::{repository::user::DeleteError, UserRepoProvider},
+    gateway::{
+        repository::user::{DeleteError, Repo},
+        UserRepoProvider,
+    },
     usecase::{Comitable, Usecase},
 };
 
@@ -48,9 +51,9 @@ where
     type Response = Response;
     type Error = Error;
 
-    fn exec(&self, req: Self::Request) -> Result<Self::Response, Self::Error> {
+    async fn exec(&self, req: Self::Request) -> Result<Self::Response, Self::Error> {
         log::debug!("Delete User by ID: {:?}", req);
-        self.dependency_provider.user_repo().delete(req.id)?;
+        self.dependency_provider.user_repo().delete(req.id).await?;
         Ok(Self::Response {})
     }
 

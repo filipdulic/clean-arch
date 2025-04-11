@@ -4,8 +4,8 @@ use std::io;
 
 use chrono::{Duration, Utc};
 
-impl Repo for JsonFile {
-    fn gen(&self, email: &str) -> Result<Record, GenError> {
+impl Repo for &JsonFile {
+    async fn gen(&self, email: &str) -> Result<Record, GenError> {
         log::debug!("Generate token for email: {}", email);
         let token = VerificationToken {
             token: uuid::Uuid::new_v4(),
@@ -19,7 +19,7 @@ impl Repo for JsonFile {
             token: token.token.to_string(),
         })
     }
-    fn verify(&self, email: &str, token: &str) -> Result<(), VerifyError> {
+    async fn verify(&self, email: &str, token: &str) -> Result<(), VerifyError> {
         log::debug!("Verify token for email: {} and token: {}", email, token);
         let stored_token = self.tokens.get::<VerificationToken>(email).map_err(|err| {
             log::warn!("Unable to fetch token: {}", err);
@@ -39,7 +39,7 @@ impl Repo for JsonFile {
         }
         Ok(())
     }
-    fn extend(&self, email: &str) -> Result<(), ExtendError> {
+    async fn extend(&self, email: &str) -> Result<(), ExtendError> {
         log::debug!("Extend token for email: {}", email);
         let mut stored_token = self.tokens.get::<VerificationToken>(email).map_err(|err| {
             log::warn!("Unable to fetch token: {}", err);

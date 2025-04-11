@@ -1,6 +1,6 @@
 use crate::{
     gateway::{
-        repository::signup_process::{GetError, SaveError},
+        repository::signup_process::{GetError, Repo, SaveError},
         SignupProcessRepoProvider,
     },
     usecase::{Comitable, Usecase},
@@ -60,12 +60,13 @@ where
     type Response = Response;
     type Error = Error;
 
-    fn exec(&self, req: Self::Request) -> Result<Self::Response, Self::Error> {
+    async fn exec(&self, req: Self::Request) -> Result<Self::Response, Self::Error> {
         log::debug!("SignupProcess Completion extended: {:?}", req);
         let record = self
             .dependency_provider
             .signup_process_repo()
             .get_latest_state(req.id)
+            .await
             .map_err(|err| (err, req.id))?;
         let process: SignupProcess<Failed<EmailVerified>> =
             record.try_into().map_err(|err| (err, req.id))?;
@@ -73,6 +74,7 @@ where
         self.dependency_provider
             .signup_process_repo()
             .save_latest_state(process.into())
+            .await
             .map_err(|_| Self::Error::NotFound(req.id))?;
         Ok(Self::Response { id: req.id })
     }

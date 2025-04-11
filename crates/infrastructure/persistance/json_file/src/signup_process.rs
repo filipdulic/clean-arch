@@ -9,15 +9,15 @@ use ca_application::{
 use ca_domain::entity::signup_process::Id;
 use std::io;
 
-impl NewId<Id> for JsonFile {
-    fn new_id(&self) -> Result<Id, NewIdError> {
-        let id = self.new_id()?;
+impl NewId<Id> for &JsonFile {
+    async fn new_id(&self) -> Result<Id, NewIdError> {
+        let id = self.new_id_inner()?;
         Ok(id)
     }
 }
 
-impl Repo for JsonFile {
-    fn save_latest_state(&self, record: Record) -> Result<(), SaveError> {
+impl Repo for &JsonFile {
+    async fn save_latest_state(&self, record: Record) -> Result<(), SaveError> {
         log::debug!("Save area of life {:?} to JSON file", record);
 
         let model: models::SignupProcess = record.into();
@@ -33,7 +33,7 @@ impl Repo for JsonFile {
             })?;
         Ok(())
     }
-    fn get_state_chain(&self, id: Id) -> Result<Vec<Record>, GetError> {
+    async fn get_state_chain(&self, id: Id) -> Result<Vec<Record>, GetError> {
         log::debug!("Get signup process{:?} from JSON file", id);
         let models = self
             .signup_processes
@@ -49,14 +49,14 @@ impl Repo for JsonFile {
         let records = models.into_iter().map(|m| m.into()).collect();
         Ok(records)
     }
-    fn delete(&self, id: Id) -> Result<(), DeleteError> {
+    async fn delete(&self, id: Id) -> Result<(), DeleteError> {
         log::debug!("Delete area of life {:?} from JSON file", id);
         todo!()
     }
 
-    fn get_latest_state(&self, id: Id) -> Result<Record, GetError> {
+    async fn get_latest_state(&self, id: Id) -> Result<Record, GetError> {
         log::debug!("Get signup process {:?} from JSON file", id);
-        let models = self.get_state_chain(id)?;
+        let models = self.get_state_chain(id).await?;
         let model = models
             .last()
             .ok_or_else(|| {

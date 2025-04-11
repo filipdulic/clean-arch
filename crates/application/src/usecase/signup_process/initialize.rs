@@ -1,10 +1,13 @@
 use crate::{
     gateway::{
-        repository::{signup_process::SaveError, token::GenError as TokenRepoError},
+        repository::{
+            signup_process::{Repo, SaveError},
+            token::GenError as TokenRepoError,
+        },
         service::email::EmailServiceError,
         SignupProcessIdGenProvider, SignupProcessRepoProvider,
     },
-    identifier::NewIdError,
+    identifier::{NewId, NewIdError},
     usecase::{Comitable, Usecase},
 };
 
@@ -60,18 +63,20 @@ where
     /// TODO: add transaction, outbox pattern to send email.
     /// when the user is created, send an email to the user.
     /// with generated token.
-    fn exec(&self, req: Request) -> Result<Response, Error> {
+    async fn exec(&self, req: Request) -> Result<Response, Error> {
         log::debug!("SignupProcess Initialized: {:?}", req);
         let id = self
             .dependency_provider
             .signup_process_id_gen()
             .new_id()
+            .await
             .map_err(|_| Error::NewId)?;
         let email = Email::new(&req.email);
         let signup_process = SignupProcess::new(id, email);
         self.dependency_provider
             .signup_process_repo()
-            .save_latest_state(signup_process.into())?;
+            .save_latest_state(signup_process.into())
+            .await?;
         Ok(Response { id })
     }
     fn new(dependency_provider: &'d D) -> Self {

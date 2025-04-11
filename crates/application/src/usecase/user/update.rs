@@ -1,6 +1,6 @@
 use crate::{
     gateway::{
-        repository::user::{GetError, SaveError},
+        repository::user::{GetError, Repo, SaveError},
         UserRepoProvider,
     },
     usecase::{
@@ -67,7 +67,7 @@ where
     type Response = Response;
     type Error = Error;
 
-    fn exec(&self, req: Self::Request) -> Result<Self::Response, Self::Error> {
+    async fn exec(&self, req: Self::Request) -> Result<Self::Response, Self::Error> {
         log::debug!("Update User: {:?}", req);
         validate_user_properties(&validate::Request {
             username: &req.username,
@@ -78,13 +78,14 @@ where
             .dependency_provider
             .user_repo()
             .get(req.id)
+            .await
             .map_err(|err| (err, req.id))?;
         record.user.update(
             Email::new(&req.email),
             UserName::new(&req.username),
             Password::new(&req.password),
         );
-        self.dependency_provider.user_repo().save(record)?;
+        self.dependency_provider.user_repo().save(record).await?;
         Ok(())
     }
 

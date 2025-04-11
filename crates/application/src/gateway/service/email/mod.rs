@@ -1,3 +1,5 @@
+use std::future::Future;
+
 use serde::Serialize;
 use thiserror::Error;
 pub struct EmailAddress(String);
@@ -22,7 +24,7 @@ pub trait EmailService {
         to: EmailAddress,
         subject: &str,
         body: &str,
-    ) -> Result<(), EmailServiceError>;
+    ) -> impl Future<Output = Result<(), EmailServiceError>>;
 }
 
 pub trait EmailVerificationService {
@@ -30,5 +32,5 @@ pub trait EmailVerificationService {
         &self,
         to: EmailAddress,
         token: &str,
-    ) -> Result<(), EmailServiceError>;
+    ) -> impl Future<Output = Result<(), EmailServiceError>>;
 }

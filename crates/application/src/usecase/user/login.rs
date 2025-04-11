@@ -1,6 +1,7 @@
 use crate::{
     gateway::{
-        repository::user::{GetError, SaveError},
+        repository::user::{GetError, Repo, SaveError},
+        service::auth::AuthPacker,
         AuthPackerProvider, UserRepoProvider,
     },
     usecase::{Comitable, Usecase},
@@ -63,7 +64,7 @@ where
     type Response = Response;
     type Error = Error;
 
-    fn exec(&self, req: Self::Request) -> Result<Self::Response, Self::Error> {
+    async fn exec(&self, req: Self::Request) -> Result<Self::Response, Self::Error> {
         log::debug!("Login User: {:?}", req.username);
         let user_name = UserName::new(&req.username);
         let password = Password::new(&req.password);
@@ -71,6 +72,7 @@ where
             .dependency_provider
             .user_repo()
             .get_by_username(user_name.clone())
+            .await
             .map_err(|err| (err, user_name))?;
         // check password
         if password.ne(record.user.password()) {
@@ -80,7 +82,8 @@ where
         let token = self
             .dependency_provider
             .auth_packer()
-            .pack_auth(auth_context);
+            .pack_auth(auth_context)
+            .await;
         Ok(Response {
             user_id: record.user.id(),
             token,

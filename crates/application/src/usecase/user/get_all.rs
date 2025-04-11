@@ -1,5 +1,8 @@
 use crate::{
-    gateway::{repository::user::GetAllError, UserRepoProvider},
+    gateway::{
+        repository::user::{GetAllError, Repo},
+        UserRepoProvider,
+    },
     usecase::{Comitable, Usecase},
 };
 use ca_domain::entity::{
@@ -44,12 +47,13 @@ where
     type Response = Response;
     type Error = Error;
 
-    fn exec(&self, _req: Self::Request) -> Result<Self::Response, Self::Error> {
+    async fn exec(&self, _req: Self::Request) -> Result<Self::Response, Self::Error> {
         log::debug!("Get all users");
         let users = self
             .dependency_provider
             .user_repo()
-            .get_all()?
+            .get_all()
+            .await?
             .into_iter()
             .map(User::from)
             .collect();

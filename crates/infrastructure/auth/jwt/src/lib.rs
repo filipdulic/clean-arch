@@ -35,8 +35,8 @@ impl Claims {
         }
     }
 }
-impl AuthPacker for JwtAuth {
-    fn pack_auth(&self, auth: AuthContext) -> String {
+impl AuthPacker for &JwtAuth {
+    async fn pack_auth(&self, auth: AuthContext) -> String {
         let claims = Claims::new(auth);
         let header = jsonwebtoken::Header::default();
         let encoding_key = jsonwebtoken::EncodingKey::from_secret(self.secret.as_ref());
@@ -44,8 +44,8 @@ impl AuthPacker for JwtAuth {
     }
 }
 
-impl AuthExtractor for JwtAuth {
-    fn extract_auth(&self, input: String) -> Option<AuthContext> {
+impl AuthExtractor for &JwtAuth {
+    async fn extract_auth(&self, input: String) -> Option<AuthContext> {
         let decoding_key = jsonwebtoken::DecodingKey::from_secret(self.secret.as_ref());
         let token_data = jsonwebtoken::decode::<Claims>(
             &input,
@@ -66,27 +66,27 @@ impl AuthExtractor for JwtAuth {
 mod tests {
     use super::*;
 
-    #[test]
+    #[tokio::test]
     #[ignore]
     /// This test is ignored because it requires a secret key to run.
-    fn generate_admin() {
+    async fn generate_admin() {
         let jwt_auth = JwtAuth::new("secret".to_string());
         let auth_context = AuthContext {
             user_id: ca_domain::entity::user::Id::new(uuid::Uuid::from_u128(0)),
             role: Role::Admin,
         };
-        let token = jwt_auth.pack_auth(auth_context);
+        let token = (&jwt_auth).pack_auth(auth_context).await;
         println!("token: {}", token);
     }
-    #[test]
-    fn test_exp() {
+    #[tokio::test]
+    async fn test_exp() {
         let jwt_auth = JwtAuth::new("secret".to_string());
         let auth_context = AuthContext {
             user_id: ca_domain::entity::user::Id::new(uuid::Uuid::from_u128(0)),
             role: Role::Admin,
         };
-        let token = jwt_auth.pack_auth(auth_context);
-        let decoded = jwt_auth.extract_auth(token.clone());
+        let token = (&jwt_auth).pack_auth(auth_context).await;
+        let decoded = (&jwt_auth).extract_auth(token.clone()).await;
         assert!(decoded.is_some());
     }
 }

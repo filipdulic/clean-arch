@@ -1,8 +1,8 @@
 use crate::{
     gateway::{
         repository::{
-            signup_process::{GetError, SaveError},
-            token::VerifyError as TokenRepoError,
+            signup_process::{GetError, Repo, SaveError},
+            token::{Repo as TokenRepo, VerifyError as TokenRepoError},
         },
         SignupProcessRepoProvider, TokenRepoProvider,
     },
@@ -66,13 +66,14 @@ where
     type Response = Response;
     type Error = Error;
     /// Create a new user with the given name.
-    fn exec(&self, req: Request) -> Result<Response, Error> {
+    async fn exec(&self, req: Request) -> Result<Response, Error> {
         log::debug!("SignupProcess Email Verification: {:?}", req);
         // Load record
         let record = self
             .dependency_provider
             .signup_process_repo()
             .get_latest_state(req.id)
+            .await
             .map_err(|err| (err, req.id))?;
         let process: SignupProcess<VerificationEmailSent> =
             record.try_into().map_err(|err| (err, req.id))?;
@@ -81,6 +82,7 @@ where
             .dependency_provider
             .token_repo()
             .verify(process.state().email.as_ref(), &req.token)
+            .await
         {
             log::error!("Token Repo error: {:?}", err);
             if let TokenRepoError::TokenExpired = err {
@@ -88,7 +90,8 @@ where
                     process.fail(ca_domain::entity::signup_process::Error::VerificationTimedOut);
                 self.dependency_provider
                     .signup_process_repo()
-                    .save_latest_state(process.into())?;
+                    .save_latest_state(process.into())
+                    .await?;
             }
             return Err(err.into());
         };
@@ -96,7 +99,8 @@ where
         let process = process.verify_email();
         self.dependency_provider
             .signup_process_repo()
-            .save_latest_state(process.into())?;
+            .save_latest_state(process.into())
+            .await?;
         Ok(Self::Response { id: req.id })
     }
     fn new(dependency_provider: &'d D) -> Self {

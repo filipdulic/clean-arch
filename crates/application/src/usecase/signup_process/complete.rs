@@ -1,8 +1,8 @@
 use crate::{
     gateway::{
         repository::{
-            signup_process::{GetError, SaveError},
-            user,
+            signup_process::{GetError, Repo, SaveError},
+            user::{self, Repo as UserRepo},
         },
         SignupProcessRepoProvider, UserRepoProvider,
     },
@@ -17,7 +17,6 @@ use ca_domain::{
     },
     value_object::Role,
 };
-
 use chrono::{Duration, Utc};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -72,12 +71,13 @@ where
     type Response = Response;
     type Error = Error;
 
-    fn exec(&self, req: Self::Request) -> Result<Self::Response, Self::Error> {
+    async fn exec(&self, req: Self::Request) -> Result<Self::Response, Self::Error> {
         log::debug!("SignupProcess Completed: {:?}", req);
         let record = self
             .dependency_provider
             .signup_process_repo()
             .get_latest_state(req.id)
+            .await
             .map_err(|_| Self::Error::Repo)?;
         let process: SignupProcess<EmailVerified> =
             record.try_into().map_err(|_| Self::Error::Repo)?;
@@ -86,7 +86,8 @@ where
                 process.fail(ca_domain::entity::signup_process::Error::CompletionTimedOut);
             self.dependency_provider
                 .signup_process_repo()
-                .save_latest_state(process.into())?;
+                .save_latest_state(process.into())
+                .await?;
             return Err(Self::Error::CompletionTimedOut);
         }
         let username = UserName::new(req.username);
@@ -103,11 +104,13 @@ where
         self.dependency_provider
             .user_repo()
             .save(user.clone().into())
+            .await
             .map_err(|_| Error::Repo)?;
         // if save user fails, we should not save the signup process
         self.dependency_provider
             .signup_process_repo()
             .save_latest_state(process.clone().into())
+            .await
             .map_err(|_| Self::Error::NotFound(req.id))?;
         Ok(Self::Response {
             record: user.into(),

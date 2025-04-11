@@ -95,7 +95,7 @@ pub enum Command {
     DeleteUser { id: String, token: Option<String> },
 }
 
-pub fn run<D>(db: Arc<D>, cmd: Command)
+pub async fn run<D>(db: Arc<D>, cmd: Command)
 where
     D: Transactional
         + SignupProcessIdGenProvider
@@ -110,23 +110,31 @@ where
 
     match cmd {
         Command::InitializeSignupProcess { email, token } => {
-            let res = app_controller.handle_usecase::<Initialize<D>>(email, token);
+            let res = app_controller
+                .handle_usecase::<Initialize<D>>(email, token)
+                .await;
             println!("{res}");
         }
         Command::SendVerificationEmail { id, token } => {
-            let res = app_controller.handle_usecase::<SendVerificationEmail<D>>(id, token);
+            let res = app_controller
+                .handle_usecase::<SendVerificationEmail<D>>(id, token)
+                .await;
             println!("{res}");
         }
         Command::ExtendVerificationTimeOfSignupProcess { id, token } => {
-            let res = app_controller.handle_usecase::<ExtendVerificationTime<D>>(id, token);
+            let res = app_controller
+                .handle_usecase::<ExtendVerificationTime<D>>(id, token)
+                .await;
             println!("{res}");
         }
         Command::ExtendCompletionTimeOfSignupProcess { id, token } => {
-            let res = app_controller.handle_usecase::<ExtendCompletionTime<D>>(id, token);
+            let res = app_controller
+                .handle_usecase::<ExtendCompletionTime<D>>(id, token)
+                .await;
             println!("{res}");
         }
         Command::DeleteSignupProcess { id, token } => {
-            let res = app_controller.handle_usecase::<Delete<D>>(id, token);
+            let res = app_controller.handle_usecase::<Delete<D>>(id, token).await;
             println!("{res}");
         }
         Command::VerifyEmailOfSignupProcess {
@@ -134,7 +142,9 @@ where
             signup_token,
             token,
         } => {
-            let res = app_controller.handle_usecase::<VerifyEmail<D>>((id, signup_token), token);
+            let res = app_controller
+                .handle_usecase::<VerifyEmail<D>>((id, signup_token), token)
+                .await;
             println!("{res}");
         }
         Command::CompleteSignupProcess {
@@ -143,27 +153,35 @@ where
             password,
             token,
         } => {
-            let res = app_controller.handle_usecase::<Complete<D>>((id, username, password), token);
+            let res = app_controller
+                .handle_usecase::<Complete<D>>((id, username, password), token)
+                .await;
             println!("{res}");
         }
         Command::GetStateChain { id, token } => {
-            let res = app_controller.handle_usecase::<GetStateChain<D>>(id, token);
+            let res = app_controller
+                .handle_usecase::<GetStateChain<D>>(id, token)
+                .await;
             println!("{res}");
         }
         Command::Login { username, password } => {
-            let res = app_controller.handle_usecase::<Login<D>>((username, password), None);
+            let res = app_controller
+                .handle_usecase::<Login<D>>((username, password), None)
+                .await;
             println!("{res}");
         }
         Command::ListUsers { token } => {
-            let res = app_controller.handle_usecase::<GetAll<D>>((), token);
+            let res = app_controller.handle_usecase::<GetAll<D>>((), token).await;
             println!("{res}");
         }
         Command::DeleteUser { id, token } => {
-            let res = app_controller.handle_usecase::<UserDelete<D>>(id, token);
+            let res = app_controller
+                .handle_usecase::<UserDelete<D>>(id, token)
+                .await;
             println!("{res}");
         }
         Command::ReadUser { id, token } => {
-            let res = app_controller.handle_usecase::<GetOne<D>>(id, token);
+            let res = app_controller.handle_usecase::<GetOne<D>>(id, token).await;
             println!("{res}");
         }
         Command::UpdateUser {
@@ -173,8 +191,9 @@ where
             password,
             token,
         } => {
-            let res =
-                app_controller.handle_usecase::<Update<D>>((id, email, username, password), token);
+            let res = app_controller
+                .handle_usecase::<Update<D>>((id, email, username, password), token)
+                .await;
             println!("{res}");
         }
     }

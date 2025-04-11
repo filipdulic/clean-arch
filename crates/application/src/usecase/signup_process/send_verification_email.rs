@@ -1,10 +1,10 @@
 use crate::{
     gateway::{
         repository::{
-            signup_process::{GetError, SaveError},
-            token::GenError as TokenRepoError,
+            signup_process::{GetError, Repo, SaveError},
+            token::{GenError as TokenRepoError, Repo as TokenRepo},
         },
-        service::email::{EmailAddress, EmailServiceError},
+        service::email::{EmailAddress, EmailServiceError, EmailVerificationService},
         EmailVerificationServiceProvider, SignupProcessRepoProvider, TokenRepoProvider,
     },
     usecase::{Comitable, Usecase},
@@ -65,18 +65,20 @@ where
     type Response = Response;
     type Error = Error;
 
-    fn exec(&self, req: Request) -> Result<Response, Error> {
+    async fn exec(&self, req: Request) -> Result<Response, Error> {
         log::debug!("SignupProcess SendVerificationEmail ID: {:?}", req);
         let record = self
             .dependency_provider
             .signup_process_repo()
             .get_latest_state(req.id)
+            .await
             .map_err(|err| (err, req.id))?;
         let process: SignupProcess<Initialized> = record.try_into().map_err(|err| (err, req.id))?;
         let token = match self
             .dependency_provider
             .token_repo()
             .gen(process.state().email.as_ref())
+            .await
         {
             Ok(record) => record.token,
             Err(err) => {
@@ -84,7 +86,8 @@ where
                 let process = process.fail(SignupProcessError::TokenGenrationFailed);
                 self.dependency_provider
                     .signup_process_repo()
-                    .save_latest_state(process.into())?;
+                    .save_latest_state(process.into())
+                    .await?;
                 return Err(err.into());
             }
         };
@@ -95,18 +98,21 @@ where
                 EmailAddress::new(process.state().email.as_ref()),
                 token.as_str(),
             )
+            .await
         {
             log::error!("Email Service error: {:?}", err);
             let process = process.fail(SignupProcessError::VerificationEmailSendError);
             self.dependency_provider
                 .signup_process_repo()
-                .save_latest_state(process.into())?;
+                .save_latest_state(process.into())
+                .await?;
             return Err(err.into());
         }
         let process = process.send_verification_email();
         self.dependency_provider
             .signup_process_repo()
-            .save_latest_state(process.into())?;
+            .save_latest_state(process.into())
+            .await?;
         Ok(Response { id: req.id })
     }
     fn new(dependency_provider: &'d D) -> Self {
