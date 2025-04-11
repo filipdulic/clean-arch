@@ -1,6 +1,9 @@
 use crate::{
     gateway::{
-        repository::signup_process::{GetError, SaveError},
+        repository::{
+            signup_process::{GetError, Repo, SaveError},
+            token::Repo as TokenRepo,
+        },
         SignupProcessRepoProvider, TokenRepoProvider,
     },
     usecase::{Comitable, Usecase},
@@ -61,12 +64,13 @@ where
     type Request = Request;
     type Response = Response;
     type Error = Error;
-    fn exec(&self, req: Request) -> Result<Response, Error> {
+    async fn exec(&self, req: Request) -> Result<Response, Error> {
         log::debug!("SignupProcess Verification extended: {:?}", req);
         let record = self
             .dependency_provider
             .signup_process_repo()
             .get_latest_state(req.id)
+            .await
             .map_err(|err| (err, req.id))?;
         let process: SignupProcess<Failed<VerificationEmailSent>> =
             record.try_into().map_err(|err| (err, req.id))?;
@@ -74,10 +78,12 @@ where
         let process = process.recover();
         self.dependency_provider
             .token_repo()
-            .extend(process.state().email.as_ref())?;
+            .extend(process.state().email.as_ref())
+            .await?;
         self.dependency_provider
             .signup_process_repo()
             .save_latest_state(process.into())
+            .await
             .map_err(|_| Self::Error::NotFound(req.id))?;
         Ok(Self::Response { id: req.id })
     }

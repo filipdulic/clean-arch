@@ -1,3 +1,5 @@
+use std::future::Future;
+
 use serde::Serialize;
 use thiserror::Error;
 
@@ -34,7 +36,7 @@ pub struct Record {
 
 // TODO: make it async
 pub trait Repo: Send + Sync {
-    fn gen(&self, email: &str) -> Result<Record, GenError>;
-    fn verify(&self, email: &str, token: &str) -> Result<(), VerifyError>;
-    fn extend(&self, email: &str) -> Result<(), ExtendError>;
+    fn gen(&self, email: &str) -> impl Future<Output = Result<Record, GenError>>;
+    fn verify(&self, email: &str, token: &str) -> impl Future<Output = Result<(), VerifyError>>;
+    fn extend(&self, email: &str) -> impl Future<Output = Result<(), ExtendError>>;
 }

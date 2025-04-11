@@ -1,6 +1,6 @@
 use crate::{
     gateway::{
-        repository::signup_process::{GetError, Record},
+        repository::signup_process::{GetError, Record, Repo},
         SignupProcessRepoProvider,
     },
     usecase::{Comitable, Usecase},
@@ -52,12 +52,13 @@ where
     type Request = Request;
     type Response = Response;
     type Error = Error;
-    fn exec(&self, req: Request) -> Result<Response, Error> {
+    async fn exec(&self, req: Request) -> Result<Response, Error> {
         log::debug!("Get signup process state chain");
         let state_chain = self
             .dependency_provider
             .signup_process_repo()
             .get_state_chain(req.id)
+            .await
             .map_err(|err| (err, req.id))?;
         Ok(Self::Response { state_chain })
     }

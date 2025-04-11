@@ -1,3 +1,5 @@
+use std::future::Future;
+
 use ca_domain::entity::signup_process::*;
 use chrono::{DateTime, Utc};
 use serde::Serialize;
@@ -59,10 +61,9 @@ impl<S: SignupStateTrait + Clone> TryFrom<Record> for SignupProcess<S> {
     }
 }
 
-// TODO: make it async
 pub trait Repo: Send + Sync {
-    fn save_latest_state(&self, record: Record) -> Result<(), SaveError>;
-    fn get_latest_state(&self, id: Id) -> Result<Record, GetError>;
-    fn get_state_chain(&self, id: Id) -> Result<Vec<Record>, GetError>;
-    fn delete(&self, id: Id) -> Result<(), DeleteError>;
+    fn save_latest_state(&self, record: Record) -> impl Future<Output = Result<(), SaveError>>;
+    fn get_latest_state(&self, id: Id) -> impl Future<Output = Result<Record, GetError>>;
+    fn get_state_chain(&self, id: Id) -> impl Future<Output = Result<Vec<Record>, GetError>>;
+    fn delete(&self, id: Id) -> impl Future<Output = Result<(), DeleteError>>;
 }

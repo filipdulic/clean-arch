@@ -1,3 +1,5 @@
+use std::future::Future;
+
 use serde::Serialize;
 use thiserror::Error;
 
@@ -7,7 +9,7 @@ use thiserror::Error;
 // service that can be injected e.g. into a specific usecase.
 // See: https://matthiasnoback.nl/2018/05/when-and-where-to-determine-the-id-of-an-entity/
 pub trait NewId<Id> {
-    fn new_id(&self) -> Result<Id, NewIdError>;
+    fn new_id(&self) -> impl Future<Output = Result<Id, NewIdError>>;
 }
 
 #[derive(Debug, Error, Serialize)]

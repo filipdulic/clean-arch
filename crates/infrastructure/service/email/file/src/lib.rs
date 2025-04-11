@@ -17,8 +17,8 @@ impl FileEmailService {
     }
 }
 
-impl EmailService for FileEmailService {
-    fn send_email(
+impl EmailService for &FileEmailService {
+    async fn send_email(
         &self,
         to: EmailAddress,
         subject: &str,
@@ -40,8 +40,8 @@ impl EmailService for FileEmailService {
     }
 }
 
-impl EmailVerificationService for FileEmailService {
-    fn send_verification_email(
+impl EmailVerificationService for &FileEmailService {
+    async fn send_verification_email(
         &self,
         to: EmailAddress,
         verification_code: &str,
@@ -49,6 +49,6 @@ impl EmailVerificationService for FileEmailService {
         let subject = "Please verify your email address";
         let body = format!("Your verification code is: `{}`", verification_code);
 
-        self.send_email(to, subject, &body)
+        self.send_email(to, subject, &body).await
     }
 }
