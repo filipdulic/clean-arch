@@ -11,6 +11,8 @@ pub enum GetError {
     NotFound,
     #[error("SignupProcess repository connection problem")]
     Connection,
+    #[error("SignupProcess in incorrect state")]
+    IncorrectState,
 }
 
 #[derive(Debug, Error, Serialize)]
@@ -57,7 +59,7 @@ impl<S: SignupStateTrait + Clone> TryFrom<Record> for SignupProcess<S> {
     fn try_from(value: Record) -> Result<Self, Self::Error> {
         (value.id, value.state, value.entered_at)
             .try_into()
-            .map_err(|_| GetError::NotFound)
+            .map_err(|_| GetError::IncorrectState)
     }
 }
 

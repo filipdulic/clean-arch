@@ -8,12 +8,12 @@ publish = false
 
 
 [[bin]]
-name = "clean-arch-cli-json-file"
-path = "src/bin/cli-json-file.rs"
+name = "clean-arch-cli-sqlx-sqlite"
+path = "src/bin/cli-sqlx-sqlite.rs"
 
 [[bin]]
-name = "clean-arch-cli-json-json-file"
-path = "src/bin/cli-json-json-file.rs"
+name = "clean-arch-cli-json-sqlx-sqlite"
+path = "src/bin/cli-json-sqlx-sqlite.rs"
 
 [workspace]
 members = [
@@ -24,7 +24,7 @@ members = [
     "crates/infrastructure/boundary/json",
     "crates/infrastructure/interface/cli",
     "crates/infrastructure/interface/cli-json",
-    "crates/infrastructure/persistance/json_file",
+    "crates/infrastructure/persistance/sqlx_sqlite",
     "crates/infrastructure/service/email/file",
     "crates/infrastructure/auth/jwt",
 ]
@@ -43,11 +43,14 @@ ca-infrastructure-boundary-string = { version = "0.1.0", path = "crates/infrastr
 ca-infrastructure-boundary-json = { version = "0.1.0", path = "crates/infrastructure/boundary/json" }
 ca-infrastructure-interface-cli = { version = "0.1.0", path = "crates/infrastructure/interface/cli" }
 ca-infrastructure-interface-cli-json = { version = "0.1.0", path = "crates/infrastructure/interface/cli-json" }
-ca-infrastructure-persistance-json_file = { version = "0.1.0", path = "crates/infrastructure/persistance/json_file" }
+ca-infrastructure-persistance-sqlx-sqlite = { version = "0.1.0", path = "crates/infrastructure/persistance/sqlx_sqlite" }
 ca-infrastructure-auth-jwt = { version = "0.1.0", path = "crates/infrastructure/auth/jwt" }
 ca-domain = { version = "0.1.0", path = "crates/domain" }
 ca-application = { version = "0.1.0", path = "crates/application" }
 ca-adapter = { version = "0.1.0", path = "crates/adapter" }
 # External dependencies
-clap = { version = "4.5.35", features = ["derive"] }
+clap = { version = "4.5.36", features = ["derive"] }
 tokio = { version = "1.34.0", features = ["full"] }
+
+[dev-dependencies]
+uuid = { version = "1.16.0", features = ["v4"] }

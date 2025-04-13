@@ -42,6 +42,8 @@ pub enum Error {
     Repo,
     #[error("SignupProcess {0} not found")]
     NotFound(Id),
+    #[error("SignupProcess {0} in incorrect state")]
+    IncorrectState(Id),
     #[error("SignupProcess completion timed out")]
     CompletionTimedOut,
 }
@@ -58,6 +60,7 @@ impl From<(GetError, Id)> for Error {
     fn from((err, id): (GetError, Id)) -> Self {
         match err {
             GetError::NotFound => Self::NotFound(id),
+            GetError::IncorrectState => Self::IncorrectState(id),
             GetError::Connection => Self::Repo,
         }
     }

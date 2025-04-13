@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{str::FromStr, sync::Arc};
 
 use crate::{
     entity::user::{Email, Password, UserName},
@@ -7,6 +7,7 @@ use crate::{
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SignupProcessValue;
@@ -58,12 +59,29 @@ pub struct Completed {
 #[derive(Debug, Clone)]
 pub struct ForDeletion {}
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Error)]
 pub enum Error {
+    #[error("Token generation failed")]
     TokenGenrationFailed,
+    #[error("Verification Email send failed")]
     VerificationEmailSendError,
+    #[error("Token expired")]
     VerificationTimedOut,
+    #[error("Completion timed out")]
     CompletionTimedOut,
+}
+
+impl FromStr for Error {
+    type Err = ();
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "Token generation failed" => Ok(Error::TokenGenrationFailed),
+            "Verification Email send failed" => Ok(Error::VerificationEmailSendError),
+            "Token expired" => Ok(Error::VerificationTimedOut),
+            "Completion timed out" => Ok(Error::CompletionTimedOut),
+            _ => Err(()),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
