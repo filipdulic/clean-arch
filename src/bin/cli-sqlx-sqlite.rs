@@ -129,12 +129,12 @@ pub async fn main() -> Result<(), std::io::Error> {
     let args = Args::parse();
     let data_folder_path = data_storage_directory(None);
     let data_folder_str = data_folder_path.to_str().unwrap();
-    let email_verification_servuce = FileEmailService::try_new(data_folder_path.clone())?;
+    let email_verification_service = FileEmailService::try_new(data_folder_path.clone())?;
     let jwt_auth = JwtAuth::new("secret".to_string());
     let sqlx_sqlite = SqlxSqlite::try_new(data_folder_str).await.unwrap();
     let dep_provider = Arc::new(DependancyProvider::new(
         sqlx_sqlite,
-        email_verification_servuce,
+        email_verification_service,
         jwt_auth,
     ));
     cli::run(dep_provider, args.command).await;
@@ -151,8 +151,10 @@ mod tests {
     };
     #[tokio::test]
     async fn test_extend_token_verfification() {
-        let email_folder = data_storage_directory(None);
-        let email_verification_servuce = FileEmailService::try_new(email_folder).unwrap();
+        let data_folder_path = data_storage_directory(None);
+        let data_folder_str = data_folder_path.to_str().unwrap();
+        let email_verification_service =
+            FileEmailService::try_new(data_folder_path.clone()).unwrap();
         let jwt_auth = JwtAuth::new("secret".to_string());
         let token = (&jwt_auth)
             .pack_auth(AuthContext {
@@ -167,10 +169,10 @@ mod tests {
             },
             data_dir: None,
         };
-        let sqlx_sqlite = SqlxSqlite::try_new().await.unwrap();
+        let sqlx_sqlite = SqlxSqlite::try_new(data_folder_str).await.unwrap();
         let dep_provider = Arc::new(DependancyProvider::new(
             sqlx_sqlite,
-            email_verification_servuce,
+            email_verification_service,
             jwt_auth,
         ));
         cli::run(dep_provider, args.command).await;
@@ -178,8 +180,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_login() {
-        let email_folder = data_storage_directory(None);
-        let email_verification_servuce = FileEmailService::try_new(email_folder).unwrap();
+        let data_folder_path = data_storage_directory(None);
+        let data_folder_str = data_folder_path.to_str().unwrap();
+        let email_verification_service =
+            FileEmailService::try_new(data_folder_path.clone()).unwrap();
         let jwt_auth = JwtAuth::new("secret".to_string());
         // let token = (&jwt_auth)
         //     .pack_auth(AuthContext {
@@ -194,10 +198,10 @@ mod tests {
             },
             data_dir: None,
         };
-        let sqlx_sqlite = SqlxSqlite::try_new().await.unwrap();
+        let sqlx_sqlite = SqlxSqlite::try_new(data_folder_str).await.unwrap();
         let dep_provider = Arc::new(DependancyProvider::new(
             sqlx_sqlite,
-            email_verification_servuce,
+            email_verification_service,
             jwt_auth,
         ));
         cli::run(dep_provider, args.command).await;
@@ -205,8 +209,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_list_users() {
-        let email_folder = data_storage_directory(None);
-        let email_verification_servuce = FileEmailService::try_new(email_folder).unwrap();
+        let data_folder_path = data_storage_directory(None);
+        let data_folder_str = data_folder_path.to_str().unwrap();
+        let email_verification_service =
+            FileEmailService::try_new(data_folder_path.clone()).unwrap();
         let jwt_auth = JwtAuth::new("secret".to_string());
         let token = (&jwt_auth)
             .pack_auth(AuthContext {
@@ -218,10 +224,10 @@ mod tests {
             command: cli::Command::ListUsers { token: Some(token) },
             data_dir: None,
         };
-        let sqlx_sqlite = SqlxSqlite::try_new().await.unwrap();
+        let sqlx_sqlite = SqlxSqlite::try_new(data_folder_str).await.unwrap();
         let dep_provider = Arc::new(DependancyProvider::new(
             sqlx_sqlite,
-            email_verification_servuce,
+            email_verification_service,
             jwt_auth,
         ));
         cli::run(dep_provider, args.command).await;
