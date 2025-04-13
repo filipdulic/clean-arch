@@ -5,7 +5,7 @@ use crate::{
     },
     usecase::{
         user::validate::{self, validate_user_properties, UserInvalidity},
-        Comitable, Usecase,
+        Usecase,
     },
 };
 use ca_domain::{
@@ -94,9 +94,6 @@ where
             dependency_provider,
         }
     }
-    fn is_transactional() -> bool {
-        true
-    }
     fn authorize(req: &Self::Request, auth_context: Option<AuthContext>) -> Result<(), AuthError> {
         // owner and admin only
         if let Some(auth_context) = auth_context {
@@ -111,14 +108,5 @@ where
             }
         }
         Err(AuthError::Unauthorized)
-    }
-}
-
-impl From<Result<Response, Error>> for Comitable<Response, Error> {
-    fn from(res: Result<Response, Error>) -> Self {
-        match res {
-            Ok(res) => Comitable::Commit(Ok(res)),
-            Err(err) => Comitable::Rollback(Err(err)),
-        }
     }
 }

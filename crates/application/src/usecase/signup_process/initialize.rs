@@ -8,7 +8,7 @@ use crate::{
         SignupProcessIdGenProvider, SignupProcessRepoProvider,
     },
     identifier::{NewId, NewIdError},
-    usecase::{Comitable, Usecase},
+    usecase::Usecase,
 };
 
 use ca_domain::entity::{
@@ -84,20 +84,8 @@ where
             dependency_provider,
         }
     }
-    fn is_transactional() -> bool {
-        true
-    }
     fn authorize(_: &Self::Request, _: Option<AuthContext>) -> Result<(), AuthError> {
         // public signup endpoint, open/no auth
         Ok(())
-    }
-}
-
-impl From<Result<Response, Error>> for Comitable<Response, Error> {
-    fn from(res: Result<Response, Error>) -> Self {
-        match res {
-            Ok(res) => Comitable::Commit(Ok(res)),
-            Err(err) => Comitable::Rollback(Err(err)),
-        }
     }
 }

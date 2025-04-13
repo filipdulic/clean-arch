@@ -2,14 +2,12 @@ use std::{marker::PhantomData, sync::Arc};
 
 use ca_application::{
     gateway::{service::auth::AuthExtractor, AuthExtractorProvider},
-    usecase::{Comitable, Usecase},
+    transactional::Transactional,
+    usecase::Usecase,
 };
 use ca_domain::entity::auth_context::AuthError;
 
-use super::{
-    boundary::{Error, Ingester, Presenter},
-    dependency_provider::Transactional,
-};
+use super::boundary::{Error, Ingester, Presenter};
 
 #[derive(Clone)]
 pub struct Controller<D, B> {
@@ -33,8 +31,6 @@ where
         token: Option<String>,
     ) -> <B as Presenter<'d, D, U>>::ViewModel
     where
-        Result<<U as Usecase<'d, D>>::Response, <U as Usecase<'d, D>>::Error>:
-            Into<Comitable<<U as Usecase<'d, D>>::Response, <U as Usecase<'d, D>>::Error>>,
         U: Usecase<'d, D>,
         B: Ingester<'d, D, U> + Presenter<'d, D, U>,
     {
@@ -59,17 +55,10 @@ where
             return <B as Presenter<D, U>>::present(Err(Error::AuthError(AuthError::Unauthorized)));
         }
         // Execute use case in transaction if it is transactional
-        let req = if U::is_transactional() {
-            self.dependency_provider
-                .run_in_transaction(async |db| U::new(db).exec(processed_req).await)
-                .await
-                .map_err(|err| Error::UsecaseError(err))
-        } else {
-            U::new(&self.dependency_provider)
-                .exec(processed_req)
-                .await
-                .map_err(|err| Error::UsecaseError(err))
-        };
+        let req = U::new(&self.dependency_provider)
+            .exec(processed_req)
+            .await
+            .map_err(|err| Error::UsecaseError(err));
         <B as Presenter<D, U>>::present(req)
     }
 }

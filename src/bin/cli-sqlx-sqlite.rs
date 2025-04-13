@@ -1,4 +1,3 @@
-use ca_adapter::dependency_provider::Transactional;
 use ca_application::gateway::service::auth::{AuthExtractor, AuthPacker};
 use ca_application::gateway::service::email::EmailVerificationService;
 use ca_application::gateway::{
@@ -7,11 +6,11 @@ use ca_application::gateway::{
     UserRepoProvider,
 };
 use ca_application::identifier::NewId;
-use ca_application::usecase::Comitable;
+use ca_application::transactional::Transactional;
 use ca_domain::entity::{signup_process::Id as SignupProcessId, user::Id as UserId};
 use ca_infrastructure_auth_jwt::JwtAuth;
 use ca_infrastructure_interface_cli as cli;
-use ca_infrastructure_persistance_sqlx_sqlite::SqlxSqlite;
+use ca_infrastructure_persistance_sqlx_sqlite::{SqlxSqlite, SqlxSqliteTransaction};
 use ca_infrastructure_service_email_file::{data_storage_directory, FileEmailService};
 use clap::Parser;
 use std::{path::PathBuf, sync::Arc};
@@ -105,23 +104,30 @@ impl AuthPackerProvider for DependancyProvider {
 }
 
 impl Transactional for DependancyProvider {
-    // TODO: implement a proper transaction
-    async fn run_in_transaction<'d, F, R, E>(&'d self, f: F) -> Result<R, E>
-    where
-        Result<R, E>: Into<Comitable<R, E>>,
-        F: AsyncFnOnce(&'d Self) -> Result<R, E>,
-    {
-        let res = f(self).await;
-        match res.into() {
-            Comitable::Commit(inner) => {
-                println!("Commiting");
-                inner
-            }
-            Comitable::Rollback(inner) => {
-                println!("Rolling Back");
-                inner
-            }
-        }
+    type Error = ();
+    type Transaction = SqlxSqliteTransaction;
+
+    async fn begin_transaction(&self) -> Self::Transaction {
+        self.db
+            .pool()
+            .begin()
+            .await
+            .expect("Failed to begin transaction")
+    }
+
+    async fn commit_transaction(&self, transaction: Self::Transaction) -> Result<(), Self::Error> {
+        transaction.commit().await.map_err(|err| {
+            println!("Transaction commit error: {:?}", err);
+        })
+    }
+
+    async fn rollback_transaction(
+        &self,
+        transaction: Self::Transaction,
+    ) -> Result<(), Self::Error> {
+        transaction.rollback().await.map_err(|err| {
+            println!("Transaction rollback error: {:?}", err);
+        })
     }
 }
 #[tokio::main]

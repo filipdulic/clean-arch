@@ -15,12 +15,13 @@ use std::sync::Arc;
 
 use clap::Subcommand;
 
-use ca_adapter::{controller::Controller, dependency_provider::Transactional};
+use ca_adapter::controller::Controller;
 use ca_application::{
     gateway::{
         AuthExtractorProvider, AuthPackerProvider, EmailVerificationServiceProvider,
         SignupProcessIdGenProvider, SignupProcessRepoProvider, TokenRepoProvider, UserRepoProvider,
     },
+    transactional::Transactional,
     usecase::{
         signup_process::{
             complete::Complete, delete::Delete, extend_completion_time::ExtendCompletionTime,

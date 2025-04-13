@@ -6,7 +6,7 @@ use crate::{
         },
         SignupProcessRepoProvider, UserRepoProvider,
     },
-    usecase::{Comitable, Usecase},
+    usecase::Usecase,
 };
 
 use ca_domain::{
@@ -125,23 +125,8 @@ where
             dependency_provider: db,
         }
     }
-    fn is_transactional() -> bool {
-        true
-    }
     fn authorize(_: &Self::Request, _: Option<AuthContext>) -> Result<(), AuthError> {
         // public signup endpoint, open/no auth
         Ok(())
-    }
-}
-
-impl From<Result<Response, Error>> for Comitable<Response, Error> {
-    fn from(res: Result<Response, Error>) -> Self {
-        match res {
-            Ok(res) => Comitable::Commit(Ok(res)),
-            Err(err) => match err {
-                Error::CompletionTimedOut => Comitable::Commit(Err(Error::CompletionTimedOut)),
-                _ => Comitable::Rollback(Err(err)),
-            },
-        }
     }
 }

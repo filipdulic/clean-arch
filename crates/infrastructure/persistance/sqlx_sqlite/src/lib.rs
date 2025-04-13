@@ -9,6 +9,8 @@ pub struct SqlxSqlite {
     pool: Pool<Sqlite>,
 }
 
+pub type SqlxSqliteTransaction = sqlx::Transaction<'static, Sqlite>;
+
 impl SqlxSqlite {
     pub async fn try_new(folder: &str) -> Result<Self, sqlx::Error> {
         let db_url = format!("sqlite://{}/sqlite.db", folder);

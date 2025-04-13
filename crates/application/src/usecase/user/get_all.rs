@@ -3,7 +3,7 @@ use crate::{
         repository::user::{GetAllError, Repo},
         UserRepoProvider,
     },
-    usecase::{Comitable, Usecase},
+    usecase::Usecase,
 };
 use ca_domain::entity::{
     auth_context::{AuthContext, AuthError},
@@ -73,14 +73,5 @@ where
             }
         }
         Err(AuthError::Unauthorized)
-    }
-}
-
-impl From<Result<Response, Error>> for Comitable<Response, Error> {
-    fn from(res: Result<Response, Error>) -> Self {
-        match res {
-            Ok(res) => Comitable::Commit(Ok(res)),
-            Err(err) => Comitable::Rollback(Err(err)),
-        }
     }
 }
