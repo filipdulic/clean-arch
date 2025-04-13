@@ -34,6 +34,8 @@ pub struct SendVerificationEmail<'d, D> {
 pub enum Error {
     #[error("SignupProcess {0} not found")]
     NotFound(Id),
+    #[error("SignupProcess {0} in incorrect state")]
+    IncorrectState(Id),
     #[error("SignupProcess Repo error")]
     Repo,
     #[error("Token Repo error: {0}")]
@@ -46,6 +48,7 @@ impl From<(GetError, Id)> for Error {
     fn from((err, id): (GetError, Id)) -> Self {
         match err {
             GetError::NotFound => Self::NotFound(id),
+            GetError::IncorrectState => Self::IncorrectState(id),
             GetError::Connection => Self::Repo,
         }
     }

@@ -9,6 +9,7 @@ publish = false
 
 # Workspace dependencies
 ca-application = { version = "=0.1.0", path = "../../../../application" }
+directories = "6.0.0"
 
 # External dependencies
 

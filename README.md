@@ -29,10 +29,9 @@ general Rust development.
 - [ ] WebSocket
 - [ ] gRPC
 ### Databases
-- [x] JSON file storage
+- [x] SQLite/SQLX
 - [ ] InMemory (HashMap)
 - [ ] PostgreSQL/Diesel
-- [ ] SQLite/SQLX
 - [ ] LMDB/Heed
 - [ ] Wide-column DB/DynamoDB
 ### Message Brokers/Queues

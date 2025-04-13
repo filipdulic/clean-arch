@@ -2,7 +2,7 @@ use crate::{
     gateway::{
         repository::{
             signup_process::{GetError, Repo, SaveError},
-            token::Repo as TokenRepo,
+            token::{ExtendError, Repo as TokenRepo},
         },
         SignupProcessRepoProvider, TokenRepoProvider,
     },
@@ -34,10 +34,12 @@ pub struct ExtendVerificationTime<'d, D> {
 pub enum Error {
     #[error("SignupProcess {0} not found")]
     NotFound(Id),
+    #[error("SignupProcess {0} in incorrect state")]
+    IncorrectState(Id),
     #[error("{}", SaveError::Connection)]
     Repo,
     #[error("Token Extension Error {0}")]
-    TokenRepoError(#[from] super::super::super::gateway::repository::token::ExtendError),
+    TokenRepoError(#[from] ExtendError),
 }
 
 impl From<SaveError> for Error {
@@ -51,8 +53,9 @@ impl From<SaveError> for Error {
 impl From<(GetError, Id)> for Error {
     fn from((err, id): (GetError, Id)) -> Self {
         match err {
-            GetError::NotFound => Self::NotFound(id),
+            GetError::IncorrectState => Self::IncorrectState(id),
             GetError::Connection => Self::Repo,
+            GetError::NotFound => Self::NotFound(id),
         }
     }
 }
@@ -72,6 +75,7 @@ where
             .get_latest_state(req.id)
             .await
             .map_err(|err| (err, req.id))?;
+        // check if the process is in the right state
         let process: SignupProcess<Failed<VerificationEmailSent>> =
             record.try_into().map_err(|err| (err, req.id))?;
         // update token

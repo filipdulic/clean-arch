@@ -8,9 +8,9 @@
 //! Key Responsibilities:
 //! * Command Definition: Define the various commands that the CLI can handle.
 //! * Command Parsing: Use a library like clap to parse the command-line arguments
-//!     and match them to the defined commands.
+//!   and match them to the defined commands.
 //! * Command Execution: Map the parsed commands to the appropriate functions or
-//!     methods in the application.
+//!   methods in the application.
 use std::sync::Arc;
 
 use clap::Subcommand;

@@ -11,9 +11,8 @@ use ca_application::usecase::Comitable;
 use ca_domain::entity::{signup_process::Id as SignupProcessId, user::Id as UserId};
 use ca_infrastructure_auth_jwt::JwtAuth;
 use ca_infrastructure_interface_cli_json as cli;
-use ca_infrastructure_persistance_json_file::utils::{data_storage, data_storage_directory};
-use ca_infrastructure_persistance_json_file::JsonFile;
-use ca_infrastructure_service_email_file::FileEmailService;
+use ca_infrastructure_persistance_sqlx_sqlite::SqlxSqlite;
+use ca_infrastructure_service_email_file::{data_storage_directory, FileEmailService};
 use clap::Parser;
 use std::{path::PathBuf, sync::Arc};
 
@@ -26,13 +25,17 @@ struct Args {
 }
 
 struct DependancyProvider {
-    db: JsonFile,
+    db: SqlxSqlite,
     email_verification_servuce: FileEmailService,
     jwt_auth: JwtAuth,
 }
 
 impl DependancyProvider {
-    fn new(db: JsonFile, email_verification_servuce: FileEmailService, jwt_auth: JwtAuth) -> Self {
+    fn new(
+        db: SqlxSqlite,
+        email_verification_servuce: FileEmailService,
+        jwt_auth: JwtAuth,
+    ) -> Self {
         Self {
             db,
             email_verification_servuce,
@@ -124,11 +127,13 @@ impl Transactional for DependancyProvider {
 #[tokio::main]
 pub async fn main() -> Result<(), std::io::Error> {
     let args = Args::parse();
-    let email_folder = data_storage_directory(None);
-    let email_verification_servuce = FileEmailService::try_new(email_folder)?;
+    let data_folder_path = data_storage_directory(None);
+    let data_folder_str = data_folder_path.to_str().unwrap();
+    let email_verification_servuce = FileEmailService::try_new(data_folder_path.clone())?;
     let jwt_auth = JwtAuth::new("secret".to_string());
+    let sqlx_sqlite = SqlxSqlite::try_new(data_folder_str).await.unwrap();
     let dep_provider = Arc::new(DependancyProvider::new(
-        data_storage(args.data_dir),
+        sqlx_sqlite,
         email_verification_servuce,
         jwt_auth,
     ));
