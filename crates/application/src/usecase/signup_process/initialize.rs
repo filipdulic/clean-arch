@@ -75,7 +75,7 @@ where
         let signup_process = SignupProcess::new(id, email);
         self.dependency_provider
             .signup_process_repo()
-            .save_latest_state(signup_process.into())
+            .save_latest_state(None, signup_process.into())
             .await?;
         Ok(Response { id })
     }

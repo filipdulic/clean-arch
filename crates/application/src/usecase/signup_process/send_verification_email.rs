@@ -73,14 +73,14 @@ where
         let record = self
             .dependency_provider
             .signup_process_repo()
-            .get_latest_state(req.id)
+            .get_latest_state(None, req.id)
             .await
             .map_err(|err| (err, req.id))?;
         let process: SignupProcess<Initialized> = record.try_into().map_err(|err| (err, req.id))?;
         let token = match self
             .dependency_provider
             .token_repo()
-            .gen(process.state().email.as_ref())
+            .gen(None, process.state().email.as_ref())
             .await
         {
             Ok(record) => record.token,
@@ -89,7 +89,7 @@ where
                 let process = process.fail(SignupProcessError::TokenGenrationFailed);
                 self.dependency_provider
                     .signup_process_repo()
-                    .save_latest_state(process.into())
+                    .save_latest_state(None, process.into())
                     .await?;
                 return Err(err.into());
             }
@@ -107,14 +107,14 @@ where
             let process = process.fail(SignupProcessError::VerificationEmailSendError);
             self.dependency_provider
                 .signup_process_repo()
-                .save_latest_state(process.into())
+                .save_latest_state(None, process.into())
                 .await?;
             return Err(err.into());
         }
         let process = process.send_verification_email();
         self.dependency_provider
             .signup_process_repo()
-            .save_latest_state(process.into())
+            .save_latest_state(None, process.into())
             .await?;
         Ok(Response { id: req.id })
     }

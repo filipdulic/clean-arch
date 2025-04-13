@@ -52,7 +52,7 @@ where
         let users = self
             .dependency_provider
             .user_repo()
-            .get_all()
+            .get_all(None)
             .await?
             .into_iter()
             .map(User::from)

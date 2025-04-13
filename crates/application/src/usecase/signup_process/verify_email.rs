@@ -75,7 +75,7 @@ where
         let record = self
             .dependency_provider
             .signup_process_repo()
-            .get_latest_state(req.id)
+            .get_latest_state(None, req.id)
             .await
             .map_err(|err| (err, req.id))?;
         let process: SignupProcess<VerificationEmailSent> =
@@ -84,7 +84,7 @@ where
         if let Err(err) = self
             .dependency_provider
             .token_repo()
-            .verify(process.state().email.as_ref(), &req.token)
+            .verify(None, process.state().email.as_ref(), &req.token)
             .await
         {
             log::error!("Token Repo error: {:?}", err);
@@ -93,7 +93,7 @@ where
                     process.fail(ca_domain::entity::signup_process::Error::VerificationTimedOut);
                 self.dependency_provider
                     .signup_process_repo()
-                    .save_latest_state(process.into())
+                    .save_latest_state(None, process.into())
                     .await?;
             }
             return Err(err.into());
@@ -102,7 +102,7 @@ where
         let process = process.verify_email();
         self.dependency_provider
             .signup_process_repo()
-            .save_latest_state(process.into())
+            .save_latest_state(None, process.into())
             .await?;
         Ok(Self::Response { id: req.id })
     }

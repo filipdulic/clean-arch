@@ -9,10 +9,6 @@ pub trait UserRepoProvider {
     fn user_repo(&self) -> impl repository::user::Repo;
 }
 
-pub trait UserIdGenProvider {
-    fn user_id_gen(&self) -> impl super::identifier::NewId<ca_domain::entity::user::Id>;
-}
-
 pub trait SignupProcessIdGenProvider {
     fn signup_process_id_gen(
         &self,

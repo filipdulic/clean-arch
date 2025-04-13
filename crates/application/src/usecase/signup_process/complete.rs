@@ -79,7 +79,7 @@ where
         let record = self
             .dependency_provider
             .signup_process_repo()
-            .get_latest_state(req.id)
+            .get_latest_state(None, req.id)
             .await
             .map_err(|_| Self::Error::Repo)?;
         let process: SignupProcess<EmailVerified> =
@@ -89,7 +89,7 @@ where
                 process.fail(ca_domain::entity::signup_process::Error::CompletionTimedOut);
             self.dependency_provider
                 .signup_process_repo()
-                .save_latest_state(process.into())
+                .save_latest_state(None, process.into())
                 .await?;
             return Err(Self::Error::CompletionTimedOut);
         }
@@ -106,13 +106,13 @@ where
         // Save User first, then save SignupProcess
         self.dependency_provider
             .user_repo()
-            .save(user.clone().into())
+            .save(None, user.clone().into())
             .await
             .map_err(|_| Error::Repo)?;
         // if save user fails, we should not save the signup process
         self.dependency_provider
             .signup_process_repo()
-            .save_latest_state(process.clone().into())
+            .save_latest_state(None, process.clone().into())
             .await
             .map_err(|_| Self::Error::NotFound(req.id))?;
         Ok(Self::Response {

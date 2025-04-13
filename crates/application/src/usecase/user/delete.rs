@@ -53,7 +53,10 @@ where
 
     async fn exec(&self, req: Self::Request) -> Result<Self::Response, Self::Error> {
         log::debug!("Delete User by ID: {:?}", req);
-        self.dependency_provider.user_repo().delete(req.id).await?;
+        self.dependency_provider
+            .user_repo()
+            .delete(None, req.id)
+            .await?;
         Ok(Self::Response {})
     }
 

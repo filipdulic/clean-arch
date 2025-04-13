@@ -1,13 +1,12 @@
-use ca_application::transactional::Transactional;
 use ca_application::gateway::service::auth::AuthExtractor;
 use ca_application::gateway::service::email::EmailVerificationService;
 use ca_application::gateway::{
     AuthExtractorProvider, AuthPackerProvider, EmailVerificationServiceProvider,
-    SignupProcessIdGenProvider, SignupProcessRepoProvider, TokenRepoProvider, UserIdGenProvider,
-    UserRepoProvider,
+    SignupProcessIdGenProvider, SignupProcessRepoProvider, TokenRepoProvider, UserRepoProvider,
 };
 use ca_application::identifier::NewId;
-use ca_domain::entity::{signup_process::Id as SignupProcessId, user::Id as UserId};
+use ca_application::transactional::Transactional;
+use ca_domain::entity::signup_process::Id as SignupProcessId;
 use ca_infrastructure_auth_jwt::JwtAuth;
 use ca_infrastructure_interface_cli_json as cli;
 use ca_infrastructure_persistance_sqlx_sqlite::{SqlxSqlite, SqlxSqliteTransaction};
@@ -56,13 +55,6 @@ impl SignupProcessRepoProvider for DependancyProvider {
         &self.db
     }
 }
-
-impl UserIdGenProvider for DependancyProvider {
-    fn user_id_gen(&self) -> impl NewId<UserId> {
-        &self.db
-    }
-}
-
 impl UserRepoProvider for DependancyProvider {
     fn user_repo(&self) -> impl ca_application::gateway::repository::user::Repo {
         &self.db

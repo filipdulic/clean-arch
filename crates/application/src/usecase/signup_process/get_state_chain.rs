@@ -60,7 +60,7 @@ where
         let state_chain = self
             .dependency_provider
             .signup_process_repo()
-            .get_state_chain(req.id)
+            .get_state_chain(None, req.id)
             .await
             .map_err(|err| (err, req.id))?;
         Ok(Self::Response { state_chain })

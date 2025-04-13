@@ -77,7 +77,7 @@ where
         let mut record = self
             .dependency_provider
             .user_repo()
-            .get(req.id)
+            .get(None, req.id)
             .await
             .map_err(|err| (err, req.id))?;
         record.user.update(
@@ -85,7 +85,10 @@ where
             UserName::new(&req.username),
             Password::new(&req.password),
         );
-        self.dependency_provider.user_repo().save(record).await?;
+        self.dependency_provider
+            .user_repo()
+            .save(None, record)
+            .await?;
         Ok(())
     }
 

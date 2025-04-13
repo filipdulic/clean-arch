@@ -71,7 +71,7 @@ where
         let record = self
             .dependency_provider
             .user_repo()
-            .get_by_username(user_name.clone())
+            .get_by_username(None, user_name.clone())
             .await
             .map_err(|err| (err, user_name))?;
         // check password

@@ -68,7 +68,7 @@ where
         let record = self
             .dependency_provider
             .signup_process_repo()
-            .get_latest_state(req.id)
+            .get_latest_state(None, req.id)
             .await
             .map_err(|err| (err, req.id))?;
         let process: SignupProcess<Failed<EmailVerified>> =
@@ -76,7 +76,7 @@ where
         let process = process.recover();
         self.dependency_provider
             .signup_process_repo()
-            .save_latest_state(process.into())
+            .save_latest_state(None, process.into())
             .await
             .map_err(|_| Self::Error::NotFound(req.id))?;
         Ok(Self::Response { id: req.id })

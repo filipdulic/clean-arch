@@ -58,7 +58,7 @@ where
         let user = self
             .dependency_provider
             .user_repo()
-            .get(req.id)
+            .get(None, req.id)
             .await?
             .into();
         Ok(Self::Response { user })
