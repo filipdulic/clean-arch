@@ -1,14 +1,8 @@
-use ca_adapter::dependency_provider::Transactional;
 use ca_application::gateway::service::auth::AuthExtractor;
 use ca_application::gateway::service::email::EmailVerificationService;
 use ca_application::gateway::{
-    AuthExtractorProvider, AuthPackerProvider, EmailVerificationServiceProvider,
-    SignupProcessIdGenProvider, SignupProcessRepoProvider, TokenRepoProvider, UserIdGenProvider,
-    UserRepoProvider,
+    AuthExtractorProvider, AuthPackerProvider, DatabaseProvider, EmailVerificationServiceProvider,
 };
-use ca_application::identifier::NewId;
-use ca_application::usecase::Comitable;
-use ca_domain::entity::{signup_process::Id as SignupProcessId, user::Id as UserId};
 use ca_infrastructure_auth_jwt::JwtAuth;
 use ca_infrastructure_interface_cli_json as cli;
 use ca_infrastructure_persistance_sqlx_sqlite::SqlxSqlite;
@@ -44,34 +38,8 @@ impl DependancyProvider {
     }
 }
 
-impl SignupProcessIdGenProvider for DependancyProvider {
-    fn signup_process_id_gen(&self) -> impl NewId<SignupProcessId> {
-        &self.db
-    }
-}
-
-impl SignupProcessRepoProvider for DependancyProvider {
-    fn signup_process_repo(
-        &self,
-    ) -> impl ca_application::gateway::repository::signup_process::Repo {
-        &self.db
-    }
-}
-
-impl UserIdGenProvider for DependancyProvider {
-    fn user_id_gen(&self) -> impl NewId<UserId> {
-        &self.db
-    }
-}
-
-impl UserRepoProvider for DependancyProvider {
-    fn user_repo(&self) -> impl ca_application::gateway::repository::user::Repo {
-        &self.db
-    }
-}
-
-impl TokenRepoProvider for DependancyProvider {
-    fn token_repo(&self) -> impl ca_application::gateway::repository::token::Repo {
+impl DatabaseProvider for DependancyProvider {
+    fn database(&self) -> impl ca_application::gateway::repository::Database {
         &self.db
     }
 }
@@ -101,27 +69,6 @@ impl AuthExtractorProvider for DependancyProvider {
 impl AuthPackerProvider for DependancyProvider {
     fn auth_packer(&self) -> impl ca_application::gateway::service::auth::AuthPacker {
         &self.jwt_auth
-    }
-}
-
-impl Transactional for DependancyProvider {
-    // TODO: implement a proper transaction
-    async fn run_in_transaction<'d, F, R, E>(&'d self, f: F) -> Result<R, E>
-    where
-        Result<R, E>: Into<Comitable<R, E>>,
-        F: AsyncFnOnce(&'d Self) -> Result<R, E>,
-    {
-        let res = f(self).await;
-        match res.into() {
-            Comitable::Commit(inner) => {
-                println!("Commiting");
-                inner
-            }
-            Comitable::Rollback(inner) => {
-                println!("Rolling Back");
-                inner
-            }
-        }
     }
 }
 #[tokio::main]

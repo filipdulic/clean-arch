@@ -13,16 +13,8 @@ pub trait Usecase<'d, D> {
     fn exec(&self, req: Self::Request)
         -> impl Future<Output = Result<Self::Response, Self::Error>>;
     fn new(db: &'d D) -> Self;
-    fn is_transactional() -> bool {
-        false
-    }
     #[allow(unused_variables)]
     fn authorize(req: &Self::Request, auth_context: Option<AuthContext>) -> Result<(), AuthError> {
         Err(AuthError::Unauthorized)
     }
-}
-
-pub enum Comitable<R, E> {
-    Commit(Result<R, E>),
-    Rollback(Result<R, E>),
 }

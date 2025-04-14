@@ -1,9 +1,12 @@
 use crate::{
     gateway::{
-        repository::user::{GetError, Repo},
-        UserRepoProvider,
+        repository::{
+            user::{GetError, Repo},
+            Database,
+        },
+        DatabaseProvider,
     },
-    usecase::{Comitable, Usecase},
+    usecase::Usecase,
 };
 use ca_domain::entity::{
     auth_context::{AuthContext, AuthError},
@@ -47,7 +50,7 @@ impl From<GetError> for Error {
 
 impl<'d, D> Usecase<'d, D> for GetOne<'d, D>
 where
-    D: UserRepoProvider,
+    D: DatabaseProvider,
 {
     type Request = Request;
     type Response = Response;
@@ -57,8 +60,9 @@ where
         log::debug!("Get user by ID");
         let user = self
             .dependency_provider
+            .database()
             .user_repo()
-            .get(req.id)
+            .get(None, req.id)
             .await?
             .into();
         Ok(Self::Response { user })
@@ -84,14 +88,5 @@ where
             }
         }
         Err(AuthError::Unauthorized)
-    }
-}
-
-impl From<Result<Response, Error>> for Comitable<Response, Error> {
-    fn from(res: Result<Response, Error>) -> Self {
-        match res {
-            Ok(res) => Comitable::Commit(Ok(res)),
-            Err(err) => Comitable::Rollback(Err(err)),
-        }
     }
 }

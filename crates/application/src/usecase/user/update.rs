@@ -1,11 +1,14 @@
 use crate::{
     gateway::{
-        repository::user::{GetError, Repo, SaveError},
-        UserRepoProvider,
+        repository::{
+            user::{GetError, Repo, SaveError},
+            Database,
+        },
+        DatabaseProvider,
     },
     usecase::{
         user::validate::{self, validate_user_properties, UserInvalidity},
-        Comitable, Usecase,
+        Usecase,
     },
 };
 use ca_domain::{
@@ -61,7 +64,7 @@ impl From<(GetError, Id)> for Error {
 
 impl<'d, D> Usecase<'d, D> for Update<'d, D>
 where
-    D: UserRepoProvider,
+    D: DatabaseProvider,
 {
     type Request = Request;
     type Response = Response;
@@ -76,8 +79,9 @@ where
         })?;
         let mut record = self
             .dependency_provider
+            .database()
             .user_repo()
-            .get(req.id)
+            .get(None, req.id)
             .await
             .map_err(|err| (err, req.id))?;
         record.user.update(
@@ -85,7 +89,11 @@ where
             UserName::new(&req.username),
             Password::new(&req.password),
         );
-        self.dependency_provider.user_repo().save(record).await?;
+        self.dependency_provider
+            .database()
+            .user_repo()
+            .save(None, record)
+            .await?;
         Ok(())
     }
 
@@ -93,9 +101,6 @@ where
         Self {
             dependency_provider,
         }
-    }
-    fn is_transactional() -> bool {
-        true
     }
     fn authorize(req: &Self::Request, auth_context: Option<AuthContext>) -> Result<(), AuthError> {
         // owner and admin only
@@ -111,14 +116,5 @@ where
             }
         }
         Err(AuthError::Unauthorized)
-    }
-}
-
-impl From<Result<Response, Error>> for Comitable<Response, Error> {
-    fn from(res: Result<Response, Error>) -> Self {
-        match res {
-            Ok(res) => Comitable::Commit(Ok(res)),
-            Err(err) => Comitable::Rollback(Err(err)),
-        }
     }
 }

@@ -1,9 +1,12 @@
 use crate::{
     gateway::{
-        repository::user::{DeleteError, Repo},
-        UserRepoProvider,
+        repository::{
+            user::{DeleteError, Repo},
+            Database,
+        },
+        DatabaseProvider,
     },
-    usecase::{Comitable, Usecase},
+    usecase::Usecase,
 };
 
 use ca_domain::entity::{
@@ -45,7 +48,7 @@ impl From<DeleteError> for Error {
 
 impl<'d, D> Usecase<'d, D> for Delete<'d, D>
 where
-    D: UserRepoProvider,
+    D: DatabaseProvider,
 {
     type Request = Request;
     type Response = Response;
@@ -53,7 +56,11 @@ where
 
     async fn exec(&self, req: Self::Request) -> Result<Self::Response, Self::Error> {
         log::debug!("Delete User by ID: {:?}", req);
-        self.dependency_provider.user_repo().delete(req.id).await?;
+        self.dependency_provider
+            .database()
+            .user_repo()
+            .delete(None, req.id)
+            .await?;
         Ok(Self::Response {})
     }
 
@@ -61,9 +68,6 @@ where
         Self {
             dependency_provider,
         }
-    }
-    fn is_transactional() -> bool {
-        true
     }
     fn authorize(_: &Self::Request, auth_context: Option<AuthContext>) -> Result<(), AuthError> {
         // admin only
@@ -73,14 +77,5 @@ where
             }
         }
         Err(AuthError::Unauthorized)
-    }
-}
-
-impl From<Result<Response, Error>> for Comitable<Response, Error> {
-    fn from(res: Result<Response, Error>) -> Self {
-        match res {
-            Ok(res) => Comitable::Commit(Ok(res)),
-            Err(err) => Comitable::Rollback(Err(err)),
-        }
     }
 }

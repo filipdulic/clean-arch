@@ -1,9 +1,6 @@
 use ca_adapter::boundary::{Presenter, UsecaseResponseResult};
 use ca_application::{
-    gateway::{
-        EmailVerificationServiceProvider, SignupProcessIdGenProvider, SignupProcessRepoProvider,
-        TokenRepoProvider, UserRepoProvider,
-    },
+    gateway::{DatabaseProvider, EmailVerificationServiceProvider},
     usecase::signup_process::{
         complete::Complete, delete::Delete, extend_completion_time::ExtendCompletionTime,
         extend_verification_time::ExtendVerificationTime, get_state_chain::GetStateChain,
@@ -16,7 +13,7 @@ use super::super::Boundary;
 
 impl<'d, D> Presenter<'d, D, Complete<'d, D>> for Boundary
 where
-    D: SignupProcessRepoProvider + UserRepoProvider,
+    D: DatabaseProvider,
 {
     type ViewModel = String;
 
@@ -30,7 +27,7 @@ where
 
 impl<'d, D> Presenter<'d, D, Delete<'d, D>> for Boundary
 where
-    D: SignupProcessRepoProvider,
+    D: DatabaseProvider,
 {
     type ViewModel = String;
 
@@ -44,7 +41,7 @@ where
 
 impl<'d, D> Presenter<'d, D, ExtendCompletionTime<'d, D>> for Boundary
 where
-    D: SignupProcessRepoProvider,
+    D: DatabaseProvider,
 {
     type ViewModel = String;
 
@@ -61,7 +58,7 @@ where
 
 impl<'d, D> Presenter<'d, D, ExtendVerificationTime<'d, D>> for Boundary
 where
-    D: SignupProcessRepoProvider + TokenRepoProvider,
+    D: DatabaseProvider,
 {
     type ViewModel = String;
 
@@ -80,7 +77,7 @@ where
 
 impl<'d, D> Presenter<'d, D, GetStateChain<'d, D>> for Boundary
 where
-    D: SignupProcessRepoProvider,
+    D: DatabaseProvider,
 {
     type ViewModel = String;
 
@@ -94,7 +91,7 @@ where
 
 impl<'d, D> Presenter<'d, D, Initialize<'d, D>> for Boundary
 where
-    D: SignupProcessRepoProvider + SignupProcessIdGenProvider,
+    D: DatabaseProvider,
 {
     type ViewModel = String;
 
@@ -108,7 +105,7 @@ where
 
 impl<'d, D> Presenter<'d, D, SendVerificationEmail<'d, D>> for Boundary
 where
-    D: SignupProcessRepoProvider + EmailVerificationServiceProvider + TokenRepoProvider,
+    D: DatabaseProvider + EmailVerificationServiceProvider,
 {
     type ViewModel = String;
 
@@ -124,7 +121,7 @@ where
 
 impl<'d, D> Presenter<'d, D, VerifyEmail<'d, D>> for Boundary
 where
-    D: SignupProcessRepoProvider + TokenRepoProvider,
+    D: DatabaseProvider,
 {
     type ViewModel = String;
 

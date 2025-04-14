@@ -35,7 +35,21 @@ pub struct Record {
 }
 
 pub trait Repo: Send + Sync {
-    fn gen(&self, email: &str) -> impl Future<Output = Result<Record, GenError>>;
-    fn verify(&self, email: &str, token: &str) -> impl Future<Output = Result<(), VerifyError>>;
-    fn extend(&self, email: &str) -> impl Future<Output = Result<(), ExtendError>>;
+    type Transaction;
+    fn gen(
+        &self,
+        transaction: Option<&mut Self::Transaction>,
+        email: &str,
+    ) -> impl Future<Output = Result<Record, GenError>>;
+    fn verify(
+        &self,
+        transaction: Option<&mut Self::Transaction>,
+        email: &str,
+        token: &str,
+    ) -> impl Future<Output = Result<(), VerifyError>>;
+    fn extend(
+        &self,
+        transaction: Option<&mut Self::Transaction>,
+        email: &str,
+    ) -> impl Future<Output = Result<(), ExtendError>>;
 }

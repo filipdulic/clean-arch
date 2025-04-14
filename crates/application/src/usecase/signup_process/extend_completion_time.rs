@@ -1,9 +1,12 @@
 use crate::{
     gateway::{
-        repository::signup_process::{GetError, Repo, SaveError},
-        SignupProcessRepoProvider,
+        repository::{
+            signup_process::{GetError, Repo, SaveError},
+            Database,
+        },
+        DatabaseProvider,
     },
-    usecase::{Comitable, Usecase},
+    usecase::Usecase,
 };
 
 use ca_domain::entity::{
@@ -57,7 +60,7 @@ impl From<(GetError, Id)> for Error {
 
 impl<'d, D> Usecase<'d, D> for ExtendCompletionTime<'d, D>
 where
-    D: SignupProcessRepoProvider,
+    D: DatabaseProvider,
 {
     type Request = Request;
     type Response = Response;
@@ -67,16 +70,18 @@ where
         log::debug!("SignupProcess Completion extended: {:?}", req);
         let record = self
             .dependency_provider
+            .database()
             .signup_process_repo()
-            .get_latest_state(req.id)
+            .get_latest_state(None, req.id)
             .await
             .map_err(|err| (err, req.id))?;
         let process: SignupProcess<Failed<EmailVerified>> =
             record.try_into().map_err(|err| (err, req.id))?;
         let process = process.recover();
         self.dependency_provider
+            .database()
             .signup_process_repo()
-            .save_latest_state(process.into())
+            .save_latest_state(None, process.into())
             .await
             .map_err(|_| Self::Error::NotFound(req.id))?;
         Ok(Self::Response { id: req.id })
@@ -86,9 +91,6 @@ where
             dependency_provider,
         }
     }
-    fn is_transactional() -> bool {
-        true
-    }
     fn authorize(_: &Self::Request, auth_context: Option<AuthContext>) -> Result<(), AuthError> {
         // admin only
         if let Some(auth_context) = auth_context {
@@ -97,14 +99,5 @@ where
             }
         }
         Err(AuthError::Unauthorized)
-    }
-}
-
-impl From<Result<Response, Error>> for Comitable<Response, Error> {
-    fn from(res: Result<Response, Error>) -> Self {
-        match res {
-            Ok(res) => Comitable::Commit(Ok(res)),
-            Err(err) => Comitable::Rollback(Err(err)),
-        }
     }
 }

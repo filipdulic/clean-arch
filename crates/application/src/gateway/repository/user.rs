@@ -49,10 +49,29 @@ impl From<Record> for User {
     }
 }
 pub trait Repo: Send + Sync {
-    fn save(&self, record: Record) -> impl Future<Output = Result<(), SaveError>>;
-    fn get(&self, id: Id) -> impl Future<Output = Result<Record, GetError>>;
-    fn get_by_username(&self, username: UserName)
-        -> impl Future<Output = Result<Record, GetError>>;
-    fn get_all(&self) -> impl Future<Output = Result<Vec<Record>, GetAllError>>;
-    fn delete(&self, id: Id) -> impl Future<Output = Result<(), DeleteError>>;
+    type Transaction;
+    fn save(
+        &self,
+        transaction: Option<&mut Self::Transaction>,
+        record: Record,
+    ) -> impl Future<Output = Result<(), SaveError>>;
+    fn get(
+        &self,
+        transaction: Option<&mut Self::Transaction>,
+        id: Id,
+    ) -> impl Future<Output = Result<Record, GetError>>;
+    fn get_by_username(
+        &self,
+        transaction: Option<&mut Self::Transaction>,
+        username: UserName,
+    ) -> impl Future<Output = Result<Record, GetError>>;
+    fn get_all(
+        &self,
+        transaction: Option<&mut Self::Transaction>,
+    ) -> impl Future<Output = Result<Vec<Record>, GetAllError>>;
+    fn delete(
+        &self,
+        transaction: Option<&mut Self::Transaction>,
+        id: Id,
+    ) -> impl Future<Output = Result<(), DeleteError>>;
 }

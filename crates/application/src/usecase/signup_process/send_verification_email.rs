@@ -3,11 +3,12 @@ use crate::{
         repository::{
             signup_process::{GetError, Repo, SaveError},
             token::{GenError as TokenRepoError, Repo as TokenRepo},
+            Database,
         },
         service::email::{EmailAddress, EmailServiceError, EmailVerificationService},
-        EmailVerificationServiceProvider, SignupProcessRepoProvider, TokenRepoProvider,
+        DatabaseProvider, EmailVerificationServiceProvider,
     },
-    usecase::{Comitable, Usecase},
+    usecase::Usecase,
 };
 
 use ca_domain::entity::{
@@ -62,7 +63,7 @@ impl From<SaveError> for Error {
 
 impl<'d, D> Usecase<'d, D> for SendVerificationEmail<'d, D>
 where
-    D: SignupProcessRepoProvider + EmailVerificationServiceProvider + TokenRepoProvider,
+    D: DatabaseProvider + EmailVerificationServiceProvider,
 {
     type Request = Request;
     type Response = Response;
@@ -72,15 +73,17 @@ where
         log::debug!("SignupProcess SendVerificationEmail ID: {:?}", req);
         let record = self
             .dependency_provider
+            .database()
             .signup_process_repo()
-            .get_latest_state(req.id)
+            .get_latest_state(None, req.id)
             .await
             .map_err(|err| (err, req.id))?;
         let process: SignupProcess<Initialized> = record.try_into().map_err(|err| (err, req.id))?;
         let token = match self
             .dependency_provider
+            .database()
             .token_repo()
-            .gen(process.state().email.as_ref())
+            .gen(None, process.state().email.as_ref())
             .await
         {
             Ok(record) => record.token,
@@ -88,8 +91,9 @@ where
                 log::error!("Token Repo error: {:?}", err);
                 let process = process.fail(SignupProcessError::TokenGenrationFailed);
                 self.dependency_provider
+                    .database()
                     .signup_process_repo()
-                    .save_latest_state(process.into())
+                    .save_latest_state(None, process.into())
                     .await?;
                 return Err(err.into());
             }
@@ -106,15 +110,17 @@ where
             log::error!("Email Service error: {:?}", err);
             let process = process.fail(SignupProcessError::VerificationEmailSendError);
             self.dependency_provider
+                .database()
                 .signup_process_repo()
-                .save_latest_state(process.into())
+                .save_latest_state(None, process.into())
                 .await?;
             return Err(err.into());
         }
         let process = process.send_verification_email();
         self.dependency_provider
+            .database()
             .signup_process_repo()
-            .save_latest_state(process.into())
+            .save_latest_state(None, process.into())
             .await?;
         Ok(Response { id: req.id })
     }
@@ -122,9 +128,6 @@ where
         Self {
             dependency_provider,
         }
-    }
-    fn is_transactional() -> bool {
-        true
     }
     fn authorize(_: &Self::Request, auth_context: Option<AuthContext>) -> Result<(), AuthError> {
         // admin only
@@ -134,14 +137,5 @@ where
             }
         }
         Err(AuthError::Unauthorized)
-    }
-}
-
-impl From<Result<Response, Error>> for Comitable<Response, Error> {
-    fn from(res: Result<Response, Error>) -> Self {
-        match res {
-            Ok(res) => Comitable::Commit(Ok(res)),
-            Err(err) => Comitable::Rollback(Err(err)),
-        }
     }
 }

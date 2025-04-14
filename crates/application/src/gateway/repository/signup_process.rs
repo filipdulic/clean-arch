@@ -64,8 +64,25 @@ impl<S: SignupStateTrait + Clone> TryFrom<Record> for SignupProcess<S> {
 }
 
 pub trait Repo: Send + Sync {
-    fn save_latest_state(&self, record: Record) -> impl Future<Output = Result<(), SaveError>>;
-    fn get_latest_state(&self, id: Id) -> impl Future<Output = Result<Record, GetError>>;
-    fn get_state_chain(&self, id: Id) -> impl Future<Output = Result<Vec<Record>, GetError>>;
-    fn delete(&self, id: Id) -> impl Future<Output = Result<(), DeleteError>>;
+    type Transaction;
+    fn save_latest_state(
+        &self,
+        transaction: Option<&mut Self::Transaction>,
+        record: Record,
+    ) -> impl Future<Output = Result<(), SaveError>>;
+    fn get_latest_state(
+        &self,
+        transaction: Option<&mut Self::Transaction>,
+        id: Id,
+    ) -> impl Future<Output = Result<Record, GetError>>;
+    fn get_state_chain(
+        &self,
+        transaction: Option<&mut Self::Transaction>,
+        id: Id,
+    ) -> impl Future<Output = Result<Vec<Record>, GetError>>;
+    fn delete(
+        &self,
+        transaction: Option<&mut Self::Transaction>,
+        id: Id,
+    ) -> impl Future<Output = Result<(), DeleteError>>;
 }

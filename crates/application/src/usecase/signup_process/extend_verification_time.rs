@@ -3,10 +3,11 @@ use crate::{
         repository::{
             signup_process::{GetError, Repo, SaveError},
             token::{ExtendError, Repo as TokenRepo},
+            Database,
         },
-        SignupProcessRepoProvider, TokenRepoProvider,
+        DatabaseProvider,
     },
-    usecase::{Comitable, Usecase},
+    usecase::Usecase,
 };
 
 use ca_domain::entity::{
@@ -62,7 +63,7 @@ impl From<(GetError, Id)> for Error {
 
 impl<'d, D> Usecase<'d, D> for ExtendVerificationTime<'d, D>
 where
-    D: SignupProcessRepoProvider + TokenRepoProvider,
+    D: DatabaseProvider,
 {
     type Request = Request;
     type Response = Response;
@@ -71,8 +72,9 @@ where
         log::debug!("SignupProcess Verification extended: {:?}", req);
         let record = self
             .dependency_provider
+            .database()
             .signup_process_repo()
-            .get_latest_state(req.id)
+            .get_latest_state(None, req.id)
             .await
             .map_err(|err| (err, req.id))?;
         // check if the process is in the right state
@@ -81,12 +83,14 @@ where
         // update token
         let process = process.recover();
         self.dependency_provider
+            .database()
             .token_repo()
-            .extend(process.state().email.as_ref())
+            .extend(None, process.state().email.as_ref())
             .await?;
         self.dependency_provider
+            .database()
             .signup_process_repo()
-            .save_latest_state(process.into())
+            .save_latest_state(None, process.into())
             .await
             .map_err(|_| Self::Error::NotFound(req.id))?;
         Ok(Self::Response { id: req.id })
@@ -96,9 +100,6 @@ where
             dependency_provider,
         }
     }
-    fn is_transactional() -> bool {
-        true
-    }
     fn authorize(_: &Self::Request, auth_context: Option<AuthContext>) -> Result<(), AuthError> {
         // admin only
         if let Some(auth_context) = auth_context {
@@ -107,14 +108,5 @@ where
             }
         }
         Err(AuthError::Unauthorized)
-    }
-}
-
-impl From<Result<Response, Error>> for Comitable<Response, Error> {
-    fn from(res: Result<Response, Error>) -> Self {
-        match res {
-            Ok(res) => Comitable::Commit(Ok(res)),
-            Err(err) => Comitable::Rollback(Err(err)),
-        }
     }
 }

@@ -1,9 +1,12 @@
 use crate::{
     gateway::{
-        repository::signup_process::{GetError, Record, Repo},
-        SignupProcessRepoProvider,
+        repository::{
+            signup_process::{GetError, Record, Repo},
+            Database,
+        },
+        DatabaseProvider,
     },
-    usecase::{Comitable, Usecase},
+    usecase::Usecase,
 };
 
 use ca_domain::entity::{
@@ -50,7 +53,7 @@ impl From<(GetError, Id)> for Error {
 
 impl<'d, D> Usecase<'d, D> for GetStateChain<'d, D>
 where
-    D: SignupProcessRepoProvider,
+    D: DatabaseProvider,
 {
     type Request = Request;
     type Response = Response;
@@ -59,8 +62,9 @@ where
         log::debug!("Get signup process state chain");
         let state_chain = self
             .dependency_provider
+            .database()
             .signup_process_repo()
-            .get_state_chain(req.id)
+            .get_state_chain(None, req.id)
             .await
             .map_err(|err| (err, req.id))?;
         Ok(Self::Response { state_chain })
@@ -78,14 +82,5 @@ where
             }
         }
         Err(AuthError::Unauthorized)
-    }
-}
-
-impl From<Result<Response, Error>> for Comitable<Response, Error> {
-    fn from(res: Result<Response, Error>) -> Self {
-        match res {
-            Ok(res) => Comitable::Commit(Ok(res)),
-            Err(err) => Comitable::Rollback(Err(err)),
-        }
     }
 }

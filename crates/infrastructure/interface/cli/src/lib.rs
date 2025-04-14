@@ -15,11 +15,11 @@ use std::sync::Arc;
 
 use clap::Subcommand;
 
-use ca_adapter::{controller::Controller, dependency_provider::Transactional};
+use ca_adapter::controller::Controller;
 use ca_application::{
     gateway::{
-        AuthExtractorProvider, AuthPackerProvider, EmailVerificationServiceProvider,
-        SignupProcessIdGenProvider, SignupProcessRepoProvider, TokenRepoProvider, UserRepoProvider,
+        AuthExtractorProvider, AuthPackerProvider, DatabaseProvider,
+        EmailVerificationServiceProvider,
     },
     usecase::{
         signup_process::{
@@ -97,12 +97,8 @@ pub enum Command {
 
 pub async fn run<D>(db: Arc<D>, cmd: Command)
 where
-    D: Transactional
-        + SignupProcessIdGenProvider
-        + SignupProcessRepoProvider
-        + UserRepoProvider
+    D: DatabaseProvider
         + EmailVerificationServiceProvider
-        + TokenRepoProvider
         + AuthPackerProvider
         + AuthExtractorProvider,
 {

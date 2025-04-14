@@ -3,12 +3,13 @@ use crate::{
         repository::{
             signup_process::{Repo, SaveError},
             token::GenError as TokenRepoError,
+            Database,
         },
         service::email::EmailServiceError,
-        SignupProcessIdGenProvider, SignupProcessRepoProvider,
+        DatabaseProvider,
     },
     identifier::{NewId, NewIdError},
-    usecase::{Comitable, Usecase},
+    usecase::Usecase,
 };
 
 use ca_domain::entity::{
@@ -54,7 +55,7 @@ impl From<SaveError> for Error {
 
 impl<'d, D> Usecase<'d, D> for Initialize<'d, D>
 where
-    D: SignupProcessIdGenProvider + SignupProcessRepoProvider,
+    D: DatabaseProvider,
 {
     type Request = Request;
     type Response = Response;
@@ -67,15 +68,17 @@ where
         log::debug!("SignupProcess Initialized: {:?}", req);
         let id = self
             .dependency_provider
-            .signup_process_id_gen()
+            .database()
+            .signuo_id_gen()
             .new_id()
             .await
             .map_err(|_| Error::NewId)?;
         let email = Email::new(&req.email);
         let signup_process = SignupProcess::new(id, email);
         self.dependency_provider
+            .database()
             .signup_process_repo()
-            .save_latest_state(signup_process.into())
+            .save_latest_state(None, signup_process.into())
             .await?;
         Ok(Response { id })
     }
@@ -84,20 +87,8 @@ where
             dependency_provider,
         }
     }
-    fn is_transactional() -> bool {
-        true
-    }
     fn authorize(_: &Self::Request, _: Option<AuthContext>) -> Result<(), AuthError> {
         // public signup endpoint, open/no auth
         Ok(())
-    }
-}
-
-impl From<Result<Response, Error>> for Comitable<Response, Error> {
-    fn from(res: Result<Response, Error>) -> Self {
-        match res {
-            Ok(res) => Comitable::Commit(Ok(res)),
-            Err(err) => Comitable::Rollback(Err(err)),
-        }
     }
 }

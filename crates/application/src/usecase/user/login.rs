@@ -1,10 +1,13 @@
 use crate::{
     gateway::{
-        repository::user::{GetError, Repo, SaveError},
+        repository::{
+            user::{GetError, Repo, SaveError},
+            Database,
+        },
         service::auth::AuthPacker,
-        AuthPackerProvider, UserRepoProvider,
+        AuthPackerProvider, DatabaseProvider,
     },
-    usecase::{Comitable, Usecase},
+    usecase::Usecase,
 };
 use ca_domain::entity::{
     auth_context::{AuthContext, AuthError},
@@ -58,7 +61,7 @@ impl From<(GetError, UserName)> for Error {
 
 impl<'d, D> Usecase<'d, D> for Login<'d, D>
 where
-    D: UserRepoProvider + AuthPackerProvider,
+    D: DatabaseProvider + AuthPackerProvider,
 {
     type Request = Request;
     type Response = Response;
@@ -70,8 +73,9 @@ where
         let password = Password::new(&req.password);
         let record = self
             .dependency_provider
+            .database()
             .user_repo()
-            .get_by_username(user_name.clone())
+            .get_by_username(None, user_name.clone())
             .await
             .map_err(|err| (err, user_name))?;
         // check password
@@ -98,14 +102,5 @@ where
     fn authorize(_: &Self::Request, _: Option<AuthContext>) -> Result<(), AuthError> {
         // public signup endpoint, open/no auth
         Ok(())
-    }
-}
-
-impl From<Result<Response, Error>> for Comitable<Response, Error> {
-    fn from(res: Result<Response, Error>) -> Self {
-        match res {
-            Ok(res) => Comitable::Commit(Ok(res)),
-            Err(err) => Comitable::Rollback(Err(err)),
-        }
     }
 }
