@@ -1,8 +1,11 @@
 use crate::{
     gateway::{
-        repository::user::{GetError, Repo, SaveError},
+        repository::{
+            user::{GetError, Repo, SaveError},
+            Database,
+        },
         service::auth::AuthPacker,
-        AuthPackerProvider, UserRepoProvider,
+        AuthPackerProvider, DatabaseProvider,
     },
     usecase::Usecase,
 };
@@ -58,7 +61,7 @@ impl From<(GetError, UserName)> for Error {
 
 impl<'d, D> Usecase<'d, D> for Login<'d, D>
 where
-    D: UserRepoProvider + AuthPackerProvider,
+    D: DatabaseProvider + AuthPackerProvider,
 {
     type Request = Request;
     type Response = Response;
@@ -70,6 +73,7 @@ where
         let password = Password::new(&req.password);
         let record = self
             .dependency_provider
+            .database()
             .user_repo()
             .get_by_username(None, user_name.clone())
             .await

@@ -1,7 +1,10 @@
 use crate::{
     gateway::{
-        repository::signup_process::{GetError, Record, Repo},
-        SignupProcessRepoProvider,
+        repository::{
+            signup_process::{GetError, Record, Repo},
+            Database,
+        },
+        DatabaseProvider,
     },
     usecase::Usecase,
 };
@@ -50,7 +53,7 @@ impl From<(GetError, Id)> for Error {
 
 impl<'d, D> Usecase<'d, D> for GetStateChain<'d, D>
 where
-    D: SignupProcessRepoProvider,
+    D: DatabaseProvider,
 {
     type Request = Request;
     type Response = Response;
@@ -59,6 +62,7 @@ where
         log::debug!("Get signup process state chain");
         let state_chain = self
             .dependency_provider
+            .database()
             .signup_process_repo()
             .get_state_chain(None, req.id)
             .await

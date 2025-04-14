@@ -4,7 +4,7 @@ use uuid::Uuid;
 
 use ca_adapter::boundary::{Error, Ingester, UsecaseRequestResult};
 use ca_application::{
-    gateway::{AuthPackerProvider, UserRepoProvider},
+    gateway::{AuthPackerProvider, DatabaseProvider},
     usecase::user::{
         delete::{Delete, Request as DeleteRequest},
         get_all::{GetAll, Request as GetAllRequest},
@@ -19,7 +19,7 @@ use super::super::Boundary;
 
 impl<'d, D> Ingester<'d, D, Delete<'d, D>> for Boundary
 where
-    D: UserRepoProvider,
+    D: DatabaseProvider,
 {
     type InputModel = String;
     fn ingest(input: Self::InputModel) -> UsecaseRequestResult<'d, D, Delete<'d, D>> {
@@ -32,7 +32,7 @@ where
 
 impl<'d, D> Ingester<'d, D, Update<'d, D>> for Boundary
 where
-    D: UserRepoProvider,
+    D: DatabaseProvider,
 {
     type InputModel = (String, String, String, String);
     fn ingest(input: Self::InputModel) -> UsecaseRequestResult<'d, D, Update<'d, D>> {
@@ -50,7 +50,7 @@ where
 
 impl<'d, D> Ingester<'d, D, GetOne<'d, D>> for Boundary
 where
-    D: UserRepoProvider,
+    D: DatabaseProvider,
 {
     type InputModel = String;
     fn ingest(input: Self::InputModel) -> UsecaseRequestResult<'d, D, GetOne<'d, D>> {
@@ -63,7 +63,7 @@ where
 
 impl<'d, D> Ingester<'d, D, GetAll<'d, D>> for Boundary
 where
-    D: UserRepoProvider,
+    D: DatabaseProvider,
 {
     type InputModel = ();
     fn ingest(_: Self::InputModel) -> UsecaseRequestResult<'d, D, GetAll<'d, D>> {
@@ -73,7 +73,7 @@ where
 
 impl<'d, D> Ingester<'d, D, Login<'d, D>> for Boundary
 where
-    D: UserRepoProvider + AuthPackerProvider,
+    D: DatabaseProvider + AuthPackerProvider,
 {
     type InputModel = (String, String);
     fn ingest(input: Self::InputModel) -> UsecaseRequestResult<'d, D, Login<'d, D>> {

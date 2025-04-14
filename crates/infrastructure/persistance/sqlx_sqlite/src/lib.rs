@@ -1,4 +1,4 @@
-use ca_application::identifier::NewIdError;
+use ca_application::{gateway::repository::Database, identifier::NewIdError};
 use sqlx::{migrate::MigrateDatabase, Pool, Sqlite, SqlitePool};
 
 mod models;
@@ -49,5 +49,60 @@ impl SqlxSqlite {
     }
     pub fn new_id_inner(&self) -> Result<uuid::Uuid, NewIdError> {
         Ok(uuid::Uuid::new_v4())
+    }
+}
+
+impl Database for &SqlxSqlite {
+    type Error = ();
+    type Transaction = SqlxSqliteTransaction;
+
+    async fn begin_transaction(&self) -> Self::Transaction {
+        self.pool()
+            .begin()
+            .await
+            .expect("Failed to begin transaction")
+    }
+
+    async fn commit_transaction(&self, transaction: Self::Transaction) -> Result<(), Self::Error> {
+        transaction.commit().await.map_err(|err| {
+            println!("Transaction commit error: {:?}", err);
+        })
+    }
+
+    async fn rollback_transaction(
+        &self,
+        transaction: Self::Transaction,
+    ) -> Result<(), Self::Error> {
+        transaction.rollback().await.map_err(|err| {
+            println!("Transaction rollback error: {:?}", err);
+        })
+    }
+
+    fn signup_process_repo(
+        &self,
+    ) -> impl ca_application::gateway::repository::signup_process::Repo<Transaction = Self::Transaction>
+    {
+        *self
+    }
+
+    fn signuo_id_gen(
+        &self,
+    ) -> impl ca_application::identifier::NewId<
+        ca_domain::value_object::Id<ca_domain::entity::signup_process::SignupProcessValue>,
+    > {
+        *self
+    }
+
+    fn user_repo(
+        &self,
+    ) -> impl ca_application::gateway::repository::user::Repo<Transaction = Self::Transaction> {
+        *self
+    }
+
+    fn token_repo(
+        &self,
+    ) -> impl ca_application::gateway::repository::token::Repo<Transaction = Self::Transaction>
+    {
+        *self
     }
 }

@@ -67,22 +67,22 @@ pub trait Repo: Send + Sync {
     type Transaction;
     fn save_latest_state(
         &self,
-        transaction: Option<Self::Transaction>,
+        transaction: Option<&mut Self::Transaction>,
         record: Record,
     ) -> impl Future<Output = Result<(), SaveError>>;
     fn get_latest_state(
         &self,
-        transaction: Option<Self::Transaction>,
+        transaction: Option<&mut Self::Transaction>,
         id: Id,
     ) -> impl Future<Output = Result<Record, GetError>>;
     fn get_state_chain(
         &self,
-        transaction: Option<Self::Transaction>,
+        transaction: Option<&mut Self::Transaction>,
         id: Id,
     ) -> impl Future<Output = Result<Vec<Record>, GetError>>;
     fn delete(
         &self,
-        transaction: Option<Self::Transaction>,
+        transaction: Option<&mut Self::Transaction>,
         id: Id,
     ) -> impl Future<Output = Result<(), DeleteError>>;
 }

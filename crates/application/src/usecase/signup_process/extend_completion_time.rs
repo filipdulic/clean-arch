@@ -1,7 +1,10 @@
 use crate::{
     gateway::{
-        repository::signup_process::{GetError, Repo, SaveError},
-        SignupProcessRepoProvider,
+        repository::{
+            signup_process::{GetError, Repo, SaveError},
+            Database,
+        },
+        DatabaseProvider,
     },
     usecase::Usecase,
 };
@@ -57,7 +60,7 @@ impl From<(GetError, Id)> for Error {
 
 impl<'d, D> Usecase<'d, D> for ExtendCompletionTime<'d, D>
 where
-    D: SignupProcessRepoProvider,
+    D: DatabaseProvider,
 {
     type Request = Request;
     type Response = Response;
@@ -67,6 +70,7 @@ where
         log::debug!("SignupProcess Completion extended: {:?}", req);
         let record = self
             .dependency_provider
+            .database()
             .signup_process_repo()
             .get_latest_state(None, req.id)
             .await
@@ -75,6 +79,7 @@ where
             record.try_into().map_err(|err| (err, req.id))?;
         let process = process.recover();
         self.dependency_provider
+            .database()
             .signup_process_repo()
             .save_latest_state(None, process.into())
             .await

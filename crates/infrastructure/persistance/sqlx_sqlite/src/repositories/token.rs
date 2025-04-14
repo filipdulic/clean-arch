@@ -7,7 +7,7 @@ impl Repo for &SqlxSqlite {
     type Transaction = SqlxSqliteTransaction;
     async fn gen(
         &self,
-        transaction: Option<Self::Transaction>,
+        transaction: Option<&mut Self::Transaction>,
         email: &str,
     ) -> Result<Record, GenError> {
         // log::debug!("Generate token for email: {}", email);
@@ -16,9 +16,9 @@ impl Repo for &SqlxSqlite {
             .bind(token.to_string())
             .bind(email.to_string());
         match transaction {
-            Some(mut tx) => {
+            Some(tx) => {
                 query
-                    .execute(&mut *tx)
+                    .execute(&mut **tx)
                     .await
                     .map_err(|_| GenError::Connection)?;
             }
@@ -36,7 +36,7 @@ impl Repo for &SqlxSqlite {
 
     async fn verify(
         &self,
-        transaction: Option<Self::Transaction>,
+        transaction: Option<&mut Self::Transaction>,
         email: &str,
         token: &str,
     ) -> Result<(), VerifyError> {
@@ -44,8 +44,8 @@ impl Repo for &SqlxSqlite {
         let query = sqlx::query_as("SELECT token, email, created_at FROM tokens WHERE token = ?")
             .bind(token.to_string());
         let maybe_row: Option<(String, String, String)> = match transaction {
-            Some(mut tx) => query
-                .fetch_optional(&mut *tx)
+            Some(tx) => query
+                .fetch_optional(&mut **tx)
                 .await
                 .map_err(|_| VerifyError::Connection)?,
             None => query
@@ -75,7 +75,7 @@ impl Repo for &SqlxSqlite {
 
     async fn extend(
         &self,
-        transaction: Option<Self::Transaction>,
+        transaction: Option<&mut Self::Transaction>,
         email: &str,
     ) -> Result<(), ExtendError> {
         let now = Utc::now().format("%Y-%m-%d %H:%M:%S").to_string();
@@ -83,8 +83,8 @@ impl Repo for &SqlxSqlite {
             .bind(now)
             .bind(email.to_string());
         match transaction {
-            Some(mut tx) => query
-                .execute(&mut *tx)
+            Some(tx) => query
+                .execute(&mut **tx)
                 .await
                 .map_err(|_| ExtendError::Connection)?,
             None => query

@@ -14,7 +14,7 @@ impl Repo for &SqlxSqlite {
     type Transaction = SqlxSqliteTransaction;
     async fn save_latest_state(
         &self,
-        transaction: Option<Self::Transaction>,
+        transaction: Option<&mut Self::Transaction>,
         record: Record,
     ) -> Result<(), SaveError> {
         println!("Save Latest State: {:?}", record);
@@ -27,8 +27,8 @@ impl Repo for &SqlxSqlite {
             .bind(sps.error)
             .bind(sps.state);
         let res = match transaction {
-            Some(mut tx) => query
-                .execute(&mut *tx)
+            Some(tx) => query
+                .execute(&mut **tx)
                 .await
                 .map_err(|_| SaveError::Connection),
             None => query
@@ -47,7 +47,7 @@ impl Repo for &SqlxSqlite {
 
     async fn get_latest_state(
         &self,
-        transaction: Option<Self::Transaction>,
+        transaction: Option<&mut Self::Transaction>,
         id: Id,
     ) -> Result<Record, GetError> {
         // TODO: Handle empty state chain/None
@@ -57,15 +57,15 @@ impl Repo for &SqlxSqlite {
 
     async fn get_state_chain(
         &self,
-        transaction: Option<Self::Transaction>,
+        transaction: Option<&mut Self::Transaction>,
         id: Id,
     ) -> Result<Vec<Record>, GetError> {
         let query =
             sqlx::query_as::<_, SignupProcessState>("SELECT id, username, email, password, error, state, entered_at FROM signup_process_states WHERE id = ?")
                 .bind(id.to_string());
         let sps_results = match transaction {
-            Some(mut tx) => query
-                .fetch_all(&mut *tx)
+            Some(tx) => query
+                .fetch_all(&mut **tx)
                 .await
                 .map_err(|_| GetError::Connection)?,
             None => query
@@ -79,14 +79,14 @@ impl Repo for &SqlxSqlite {
 
     async fn delete(
         &self,
-        transaction: Option<Self::Transaction>,
+        transaction: Option<&mut Self::Transaction>,
         id: Id,
     ) -> Result<(), DeleteError> {
         let query =
             sqlx::query("DELETE FROM signup_process_states WHERE id = ?").bind(id.to_string());
         match transaction {
-            Some(mut tx) => query
-                .execute(&mut *tx)
+            Some(tx) => query
+                .execute(&mut **tx)
                 .await
                 .map_err(|_| DeleteError::Connection)?,
             None => query

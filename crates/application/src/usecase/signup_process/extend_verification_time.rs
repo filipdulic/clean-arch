@@ -3,8 +3,9 @@ use crate::{
         repository::{
             signup_process::{GetError, Repo, SaveError},
             token::{ExtendError, Repo as TokenRepo},
+            Database,
         },
-        SignupProcessRepoProvider, TokenRepoProvider,
+        DatabaseProvider,
     },
     usecase::Usecase,
 };
@@ -62,7 +63,7 @@ impl From<(GetError, Id)> for Error {
 
 impl<'d, D> Usecase<'d, D> for ExtendVerificationTime<'d, D>
 where
-    D: SignupProcessRepoProvider + TokenRepoProvider,
+    D: DatabaseProvider,
 {
     type Request = Request;
     type Response = Response;
@@ -71,6 +72,7 @@ where
         log::debug!("SignupProcess Verification extended: {:?}", req);
         let record = self
             .dependency_provider
+            .database()
             .signup_process_repo()
             .get_latest_state(None, req.id)
             .await
@@ -81,10 +83,12 @@ where
         // update token
         let process = process.recover();
         self.dependency_provider
+            .database()
             .token_repo()
             .extend(None, process.state().email.as_ref())
             .await?;
         self.dependency_provider
+            .database()
             .signup_process_repo()
             .save_latest_state(None, process.into())
             .await

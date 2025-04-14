@@ -1,7 +1,10 @@
 use crate::{
     gateway::{
-        repository::user::{GetError, Repo, SaveError},
-        UserRepoProvider,
+        repository::{
+            user::{GetError, Repo, SaveError},
+            Database,
+        },
+        DatabaseProvider,
     },
     usecase::{
         user::validate::{self, validate_user_properties, UserInvalidity},
@@ -61,7 +64,7 @@ impl From<(GetError, Id)> for Error {
 
 impl<'d, D> Usecase<'d, D> for Update<'d, D>
 where
-    D: UserRepoProvider,
+    D: DatabaseProvider,
 {
     type Request = Request;
     type Response = Response;
@@ -76,6 +79,7 @@ where
         })?;
         let mut record = self
             .dependency_provider
+            .database()
             .user_repo()
             .get(None, req.id)
             .await
@@ -86,6 +90,7 @@ where
             Password::new(&req.password),
         );
         self.dependency_provider
+            .database()
             .user_repo()
             .save(None, record)
             .await?;

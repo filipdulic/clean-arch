@@ -2,7 +2,6 @@ use std::{marker::PhantomData, sync::Arc};
 
 use ca_application::{
     gateway::{service::auth::AuthExtractor, AuthExtractorProvider},
-    transactional::Transactional,
     usecase::Usecase,
 };
 use ca_domain::entity::auth_context::AuthError;
@@ -17,7 +16,7 @@ pub struct Controller<D, B> {
 
 impl<'d, D, B> Controller<D, B>
 where
-    D: 'd + Transactional + AuthExtractorProvider,
+    D: 'd + AuthExtractorProvider,
 {
     pub const fn new(dependency_provider: Arc<D>) -> Self {
         Self {

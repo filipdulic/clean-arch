@@ -1,7 +1,10 @@
 use crate::{
     gateway::{
-        repository::user::{GetError, Repo},
-        UserRepoProvider,
+        repository::{
+            user::{GetError, Repo},
+            Database,
+        },
+        DatabaseProvider,
     },
     usecase::Usecase,
 };
@@ -47,7 +50,7 @@ impl From<GetError> for Error {
 
 impl<'d, D> Usecase<'d, D> for GetOne<'d, D>
 where
-    D: UserRepoProvider,
+    D: DatabaseProvider,
 {
     type Request = Request;
     type Response = Response;
@@ -57,6 +60,7 @@ where
         log::debug!("Get user by ID");
         let user = self
             .dependency_provider
+            .database()
             .user_repo()
             .get(None, req.id)
             .await?

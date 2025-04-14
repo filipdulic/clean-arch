@@ -18,10 +18,9 @@ use clap::Subcommand;
 use ca_adapter::controller::Controller;
 use ca_application::{
     gateway::{
-        AuthExtractorProvider, AuthPackerProvider, EmailVerificationServiceProvider,
-        SignupProcessIdGenProvider, SignupProcessRepoProvider, TokenRepoProvider, UserRepoProvider,
+        AuthExtractorProvider, AuthPackerProvider, DatabaseProvider,
+        EmailVerificationServiceProvider,
     },
-    transactional::Transactional,
     usecase::{
         signup_process::{
             complete::Complete, delete::Delete, extend_completion_time::ExtendCompletionTime,
@@ -119,12 +118,8 @@ pub enum Command {
 
 pub async fn run<D>(db: Arc<D>, cmd: Command)
 where
-    D: Transactional
-        + SignupProcessIdGenProvider
-        + SignupProcessRepoProvider
-        + UserRepoProvider
+    D: DatabaseProvider
         + EmailVerificationServiceProvider
-        + TokenRepoProvider
         + AuthPackerProvider
         + AuthExtractorProvider,
 {

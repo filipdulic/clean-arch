@@ -3,8 +3,9 @@ use crate::{
         repository::{
             signup_process::{GetError, Repo, SaveError},
             token::{Repo as TokenRepo, VerifyError as TokenRepoError},
+            Database,
         },
-        SignupProcessRepoProvider, TokenRepoProvider,
+        DatabaseProvider,
     },
     usecase::Usecase,
 };
@@ -63,7 +64,7 @@ impl From<(GetError, Id)> for Error {
 
 impl<'d, D> Usecase<'d, D> for VerifyEmail<'d, D>
 where
-    D: SignupProcessRepoProvider + TokenRepoProvider,
+    D: DatabaseProvider,
 {
     type Request = Request;
     type Response = Response;
@@ -71,11 +72,18 @@ where
     /// Create a new user with the given name.
     async fn exec(&self, req: Request) -> Result<Response, Error> {
         log::debug!("SignupProcess Email Verification: {:?}", req);
+        // Begin transaction
+        let mut transaction = self
+            .dependency_provider
+            .database()
+            .begin_transaction()
+            .await;
         // Load record
         let record = self
             .dependency_provider
+            .database()
             .signup_process_repo()
-            .get_latest_state(None, req.id)
+            .get_latest_state(Some(&mut transaction), req.id)
             .await
             .map_err(|err| (err, req.id))?;
         let process: SignupProcess<VerificationEmailSent> =
@@ -83,8 +91,13 @@ where
         // Verify the token
         if let Err(err) = self
             .dependency_provider
+            .database()
             .token_repo()
-            .verify(None, process.state().email.as_ref(), &req.token)
+            .verify(
+                Some(&mut transaction),
+                process.state().email.as_ref(),
+                &req.token,
+            )
             .await
         {
             log::error!("Token Repo error: {:?}", err);
@@ -92,18 +105,30 @@ where
                 let process =
                     process.fail(ca_domain::entity::signup_process::Error::VerificationTimedOut);
                 self.dependency_provider
+                    .database()
                     .signup_process_repo()
-                    .save_latest_state(None, process.into())
+                    .save_latest_state(Some(&mut transaction), process.into())
                     .await?;
             }
+            self.dependency_provider
+                .database()
+                .commit_transaction(transaction)
+                .await
+                .map_err(|_| SaveError::Connection)?;
             return Err(err.into());
         };
         // Update the process state
         let process = process.verify_email();
         self.dependency_provider
+            .database()
             .signup_process_repo()
-            .save_latest_state(None, process.into())
+            .save_latest_state(Some(&mut transaction), process.into())
             .await?;
+        self.dependency_provider
+            .database()
+            .commit_transaction(transaction)
+            .await
+            .map_err(|_| SaveError::Connection)?;
         Ok(Self::Response { id: req.id })
     }
     fn new(dependency_provider: &'d D) -> Self {

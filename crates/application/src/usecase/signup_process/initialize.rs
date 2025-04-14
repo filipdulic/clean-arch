@@ -3,9 +3,10 @@ use crate::{
         repository::{
             signup_process::{Repo, SaveError},
             token::GenError as TokenRepoError,
+            Database,
         },
         service::email::EmailServiceError,
-        SignupProcessIdGenProvider, SignupProcessRepoProvider,
+        DatabaseProvider,
     },
     identifier::{NewId, NewIdError},
     usecase::Usecase,
@@ -54,7 +55,7 @@ impl From<SaveError> for Error {
 
 impl<'d, D> Usecase<'d, D> for Initialize<'d, D>
 where
-    D: SignupProcessIdGenProvider + SignupProcessRepoProvider,
+    D: DatabaseProvider,
 {
     type Request = Request;
     type Response = Response;
@@ -67,13 +68,15 @@ where
         log::debug!("SignupProcess Initialized: {:?}", req);
         let id = self
             .dependency_provider
-            .signup_process_id_gen()
+            .database()
+            .signuo_id_gen()
             .new_id()
             .await
             .map_err(|_| Error::NewId)?;
         let email = Email::new(&req.email);
         let signup_process = SignupProcess::new(id, email);
         self.dependency_provider
+            .database()
             .signup_process_repo()
             .save_latest_state(None, signup_process.into())
             .await?;

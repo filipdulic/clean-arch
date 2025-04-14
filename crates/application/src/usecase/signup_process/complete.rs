@@ -3,8 +3,9 @@ use crate::{
         repository::{
             signup_process::{GetError, Repo, SaveError},
             user::{self, Repo as UserRepo},
+            Database,
         },
-        SignupProcessRepoProvider, UserRepoProvider,
+        DatabaseProvider,
     },
     usecase::Usecase,
 };
@@ -68,7 +69,7 @@ impl From<(GetError, Id)> for Error {
 
 impl<'d, D> Usecase<'d, D> for Complete<'d, D>
 where
-    D: SignupProcessRepoProvider + UserRepoProvider,
+    D: DatabaseProvider,
 {
     type Request = Request;
     type Response = Response;
@@ -76,8 +77,15 @@ where
 
     async fn exec(&self, req: Self::Request) -> Result<Self::Response, Self::Error> {
         log::debug!("SignupProcess Completed: {:?}", req);
+
+        let transaction = self
+            .dependency_provider
+            .database()
+            .begin_transaction()
+            .await;
         let record = self
             .dependency_provider
+            .database()
             .signup_process_repo()
             .get_latest_state(None, req.id)
             .await
@@ -88,9 +96,15 @@ where
             let process =
                 process.fail(ca_domain::entity::signup_process::Error::CompletionTimedOut);
             self.dependency_provider
+                .database()
                 .signup_process_repo()
                 .save_latest_state(None, process.into())
                 .await?;
+            self.dependency_provider
+                .database()
+                .commit_transaction(transaction)
+                .await
+                .map_err(|_| Error::Repo)?;
             return Err(Self::Error::CompletionTimedOut);
         }
         let username = UserName::new(req.username);
@@ -105,16 +119,23 @@ where
         );
         // Save User first, then save SignupProcess
         self.dependency_provider
+            .database()
             .user_repo()
             .save(None, user.clone().into())
             .await
             .map_err(|_| Error::Repo)?;
         // if save user fails, we should not save the signup process
         self.dependency_provider
+            .database()
             .signup_process_repo()
             .save_latest_state(None, process.clone().into())
             .await
             .map_err(|_| Self::Error::NotFound(req.id))?;
+        self.dependency_provider
+            .database()
+            .commit_transaction(transaction)
+            .await
+            .map_err(|_| Error::Repo)?;
         Ok(Self::Response {
             record: user.into(),
         })

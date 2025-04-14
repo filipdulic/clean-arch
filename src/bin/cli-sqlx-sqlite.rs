@@ -1,15 +1,12 @@
 use ca_application::gateway::service::auth::{AuthExtractor, AuthPacker};
 use ca_application::gateway::service::email::EmailVerificationService;
 use ca_application::gateway::{
-    AuthExtractorProvider, AuthPackerProvider, EmailVerificationServiceProvider,
-    SignupProcessIdGenProvider, SignupProcessRepoProvider, TokenRepoProvider, UserRepoProvider,
+    AuthExtractorProvider, AuthPackerProvider, DatabaseProvider, EmailVerificationServiceProvider,
 };
-use ca_application::identifier::NewId;
-use ca_application::transactional::Transactional;
-use ca_domain::entity::signup_process::Id as SignupProcessId;
+
 use ca_infrastructure_auth_jwt::JwtAuth;
 use ca_infrastructure_interface_cli as cli;
-use ca_infrastructure_persistance_sqlx_sqlite::{SqlxSqlite, SqlxSqliteTransaction};
+use ca_infrastructure_persistance_sqlx_sqlite::SqlxSqlite;
 use ca_infrastructure_service_email_file::{data_storage_directory, FileEmailService};
 use clap::Parser;
 use std::{path::PathBuf, sync::Arc};
@@ -42,28 +39,8 @@ impl DependancyProvider {
     }
 }
 
-impl SignupProcessIdGenProvider for DependancyProvider {
-    fn signup_process_id_gen(&self) -> impl NewId<SignupProcessId> {
-        &self.db
-    }
-}
-
-impl SignupProcessRepoProvider for DependancyProvider {
-    fn signup_process_repo(
-        &self,
-    ) -> impl ca_application::gateway::repository::signup_process::Repo {
-        &self.db
-    }
-}
-
-impl UserRepoProvider for DependancyProvider {
-    fn user_repo(&self) -> impl ca_application::gateway::repository::user::Repo {
-        &self.db
-    }
-}
-
-impl TokenRepoProvider for DependancyProvider {
-    fn token_repo(&self) -> impl ca_application::gateway::repository::token::Repo {
+impl DatabaseProvider for DependancyProvider {
+    fn database(&self) -> impl ca_application::gateway::repository::Database {
         &self.db
     }
 }
@@ -96,33 +73,6 @@ impl AuthPackerProvider for DependancyProvider {
     }
 }
 
-impl Transactional for DependancyProvider {
-    type Error = ();
-    type Transaction = SqlxSqliteTransaction;
-
-    async fn begin_transaction(&self) -> Self::Transaction {
-        self.db
-            .pool()
-            .begin()
-            .await
-            .expect("Failed to begin transaction")
-    }
-
-    async fn commit_transaction(&self, transaction: Self::Transaction) -> Result<(), Self::Error> {
-        transaction.commit().await.map_err(|err| {
-            println!("Transaction commit error: {:?}", err);
-        })
-    }
-
-    async fn rollback_transaction(
-        &self,
-        transaction: Self::Transaction,
-    ) -> Result<(), Self::Error> {
-        transaction.rollback().await.map_err(|err| {
-            println!("Transaction rollback error: {:?}", err);
-        })
-    }
-}
 #[tokio::main]
 pub async fn main() -> Result<(), std::io::Error> {
     let args = Args::parse();

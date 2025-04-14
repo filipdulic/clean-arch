@@ -3,9 +3,10 @@ use crate::{
         repository::{
             signup_process::{GetError, Repo, SaveError},
             token::{GenError as TokenRepoError, Repo as TokenRepo},
+            Database,
         },
         service::email::{EmailAddress, EmailServiceError, EmailVerificationService},
-        EmailVerificationServiceProvider, SignupProcessRepoProvider, TokenRepoProvider,
+        DatabaseProvider, EmailVerificationServiceProvider,
     },
     usecase::Usecase,
 };
@@ -62,7 +63,7 @@ impl From<SaveError> for Error {
 
 impl<'d, D> Usecase<'d, D> for SendVerificationEmail<'d, D>
 where
-    D: SignupProcessRepoProvider + EmailVerificationServiceProvider + TokenRepoProvider,
+    D: DatabaseProvider + EmailVerificationServiceProvider,
 {
     type Request = Request;
     type Response = Response;
@@ -72,6 +73,7 @@ where
         log::debug!("SignupProcess SendVerificationEmail ID: {:?}", req);
         let record = self
             .dependency_provider
+            .database()
             .signup_process_repo()
             .get_latest_state(None, req.id)
             .await
@@ -79,6 +81,7 @@ where
         let process: SignupProcess<Initialized> = record.try_into().map_err(|err| (err, req.id))?;
         let token = match self
             .dependency_provider
+            .database()
             .token_repo()
             .gen(None, process.state().email.as_ref())
             .await
@@ -88,6 +91,7 @@ where
                 log::error!("Token Repo error: {:?}", err);
                 let process = process.fail(SignupProcessError::TokenGenrationFailed);
                 self.dependency_provider
+                    .database()
                     .signup_process_repo()
                     .save_latest_state(None, process.into())
                     .await?;
@@ -106,6 +110,7 @@ where
             log::error!("Email Service error: {:?}", err);
             let process = process.fail(SignupProcessError::VerificationEmailSendError);
             self.dependency_provider
+                .database()
                 .signup_process_repo()
                 .save_latest_state(None, process.into())
                 .await?;
@@ -113,6 +118,7 @@ where
         }
         let process = process.send_verification_email();
         self.dependency_provider
+            .database()
             .signup_process_repo()
             .save_latest_state(None, process.into())
             .await?;

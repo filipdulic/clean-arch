@@ -52,26 +52,26 @@ pub trait Repo: Send + Sync {
     type Transaction;
     fn save(
         &self,
-        transaction: Option<Self::Transaction>,
+        transaction: Option<&mut Self::Transaction>,
         record: Record,
     ) -> impl Future<Output = Result<(), SaveError>>;
     fn get(
         &self,
-        transaction: Option<Self::Transaction>,
+        transaction: Option<&mut Self::Transaction>,
         id: Id,
     ) -> impl Future<Output = Result<Record, GetError>>;
     fn get_by_username(
         &self,
-        transaction: Option<Self::Transaction>,
+        transaction: Option<&mut Self::Transaction>,
         username: UserName,
     ) -> impl Future<Output = Result<Record, GetError>>;
     fn get_all(
         &self,
-        transaction: Option<Self::Transaction>,
+        transaction: Option<&mut Self::Transaction>,
     ) -> impl Future<Output = Result<Vec<Record>, GetAllError>>;
     fn delete(
         &self,
-        transaction: Option<Self::Transaction>,
+        transaction: Option<&mut Self::Transaction>,
         id: Id,
     ) -> impl Future<Output = Result<(), DeleteError>>;
 }

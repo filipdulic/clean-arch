@@ -1,7 +1,10 @@
 use crate::{
     gateway::{
-        repository::user::{DeleteError, Repo},
-        UserRepoProvider,
+        repository::{
+            user::{DeleteError, Repo},
+            Database,
+        },
+        DatabaseProvider,
     },
     usecase::Usecase,
 };
@@ -45,7 +48,7 @@ impl From<DeleteError> for Error {
 
 impl<'d, D> Usecase<'d, D> for Delete<'d, D>
 where
-    D: UserRepoProvider,
+    D: DatabaseProvider,
 {
     type Request = Request;
     type Response = Response;
@@ -54,6 +57,7 @@ where
     async fn exec(&self, req: Self::Request) -> Result<Self::Response, Self::Error> {
         log::debug!("Delete User by ID: {:?}", req);
         self.dependency_provider
+            .database()
             .user_repo()
             .delete(None, req.id)
             .await?;

@@ -38,18 +38,18 @@ pub trait Repo: Send + Sync {
     type Transaction;
     fn gen(
         &self,
-        transaction: Option<Self::Transaction>,
+        transaction: Option<&mut Self::Transaction>,
         email: &str,
     ) -> impl Future<Output = Result<Record, GenError>>;
     fn verify(
         &self,
-        transaction: Option<Self::Transaction>,
+        transaction: Option<&mut Self::Transaction>,
         email: &str,
         token: &str,
     ) -> impl Future<Output = Result<(), VerifyError>>;
     fn extend(
         &self,
-        transaction: Option<Self::Transaction>,
+        transaction: Option<&mut Self::Transaction>,
         email: &str,
     ) -> impl Future<Output = Result<(), ExtendError>>;
 }

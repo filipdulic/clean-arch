@@ -1,7 +1,10 @@
 use crate::{
     gateway::{
-        repository::user::{GetAllError, Repo},
-        UserRepoProvider,
+        repository::{
+            user::{GetAllError, Repo},
+            Database,
+        },
+        DatabaseProvider,
     },
     usecase::Usecase,
 };
@@ -41,7 +44,7 @@ impl From<GetAllError> for Error {
 
 impl<'d, D> Usecase<'d, D> for GetAll<'d, D>
 where
-    D: UserRepoProvider,
+    D: DatabaseProvider,
 {
     type Request = Request;
     type Response = Response;
@@ -51,6 +54,7 @@ where
         log::debug!("Get all users");
         let users = self
             .dependency_provider
+            .database()
             .user_repo()
             .get_all(None)
             .await?

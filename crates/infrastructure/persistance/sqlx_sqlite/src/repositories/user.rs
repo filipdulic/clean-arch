@@ -9,7 +9,7 @@ impl Repo for &SqlxSqlite {
     type Transaction = SqlxSqliteTransaction;
     async fn save(
         &self,
-        transaction: Option<Self::Transaction>,
+        transaction: Option<&mut Self::Transaction>,
         record: Record,
     ) -> Result<(), SaveError> {
         let query = sqlx::query(
@@ -21,9 +21,9 @@ impl Repo for &SqlxSqlite {
         .bind(record.user.password().to_string())
         .bind(record.user.role().to_string());
         match transaction {
-            Some(mut tx) => {
+            Some(tx) => {
                 query
-                    .execute(&mut *tx)
+                    .execute(&mut **tx)
                     .await
                     .map_err(|_| SaveError::Connection)?;
             }
@@ -39,7 +39,7 @@ impl Repo for &SqlxSqlite {
 
     async fn get(
         &self,
-        transaction: Option<Self::Transaction>,
+        transaction: Option<&mut Self::Transaction>,
         id: Id,
     ) -> Result<Record, GetError> {
         let query = sqlx::query_as::<_, User>(
@@ -47,8 +47,8 @@ impl Repo for &SqlxSqlite {
         )
         .bind(id.to_string());
         let user_result = match transaction {
-            Some(mut tx) => query
-                .fetch_optional(&mut *tx)
+            Some(tx) => query
+                .fetch_optional(&mut **tx)
                 .await
                 .map_err(|_| GetError::Connection)?
                 .ok_or(GetError::NotFound)?,
@@ -63,7 +63,7 @@ impl Repo for &SqlxSqlite {
 
     async fn get_by_username(
         &self,
-        transaction: Option<Self::Transaction>,
+        transaction: Option<&mut Self::Transaction>,
         username: UserName,
     ) -> Result<Record, GetError> {
         let query = sqlx::query_as::<_, User>(
@@ -71,8 +71,8 @@ impl Repo for &SqlxSqlite {
         )
         .bind(username.to_string());
         let user_result = match transaction {
-            Some(mut tx) => query
-                .fetch_optional(&mut *tx)
+            Some(tx) => query
+                .fetch_optional(&mut **tx)
                 .await
                 .map_err(|_| GetError::Connection)?
                 .ok_or(GetError::NotFound)?,
@@ -87,12 +87,12 @@ impl Repo for &SqlxSqlite {
 
     async fn get_all(
         &self,
-        transaction: Option<Self::Transaction>,
+        transaction: Option<&mut Self::Transaction>,
     ) -> Result<Vec<Record>, GetAllError> {
         let query = sqlx::query_as::<_, User>("SELECT id, name, email, password, role FROM users");
         let user_results = match transaction {
-            Some(mut tx) => query
-                .fetch_all(&mut *tx)
+            Some(tx) => query
+                .fetch_all(&mut **tx)
                 .await
                 .map_err(|_| GetAllError::Connection)?,
             None => query
@@ -105,13 +105,13 @@ impl Repo for &SqlxSqlite {
 
     async fn delete(
         &self,
-        transaction: Option<Self::Transaction>,
+        transaction: Option<&mut Self::Transaction>,
         id: Id,
     ) -> Result<(), DeleteError> {
         let query = sqlx::query("DELETE FROM users WHERE id = ?").bind(id.to_string());
         match transaction {
-            Some(mut tx) => query
-                .execute(&mut *tx)
+            Some(tx) => query
+                .execute(&mut **tx)
                 .await
                 .map_err(|_| DeleteError::Connection)?,
             None => query

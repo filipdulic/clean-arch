@@ -2,7 +2,7 @@ use super::super::Boundary;
 
 use ca_adapter::boundary::{Presenter, UsecaseResponseResult};
 use ca_application::{
-    gateway::{AuthPackerProvider, UserRepoProvider},
+    gateway::{AuthPackerProvider, DatabaseProvider},
     usecase::user::{
         delete::Delete, get_all::GetAll, get_one::GetOne, login::Login, update::Update,
     },
@@ -10,7 +10,7 @@ use ca_application::{
 
 impl<'d, D> Presenter<'d, D, Update<'d, D>> for Boundary
 where
-    D: UserRepoProvider,
+    D: DatabaseProvider,
 {
     type ViewModel = String;
 
@@ -24,7 +24,7 @@ where
 
 impl<'d, D> Presenter<'d, D, GetOne<'d, D>> for Boundary
 where
-    D: UserRepoProvider,
+    D: DatabaseProvider,
 {
     type ViewModel = String;
 
@@ -38,7 +38,7 @@ where
 
 impl<'d, D> Presenter<'d, D, GetAll<'d, D>> for Boundary
 where
-    D: UserRepoProvider,
+    D: DatabaseProvider,
 {
     type ViewModel = String;
 
@@ -57,7 +57,7 @@ where
 
 impl<'d, D> Presenter<'d, D, Delete<'d, D>> for Boundary
 where
-    D: UserRepoProvider,
+    D: DatabaseProvider,
 {
     type ViewModel = String;
 
@@ -71,7 +71,7 @@ where
 
 impl<'d, D> Presenter<'d, D, Login<'d, D>> for Boundary
 where
-    D: UserRepoProvider + AuthPackerProvider,
+    D: DatabaseProvider + AuthPackerProvider,
 {
     type ViewModel = String;
 

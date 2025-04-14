@@ -1,7 +1,10 @@
 use crate::{
     gateway::{
-        repository::signup_process::{GetError, Repo, SaveError},
-        SignupProcessRepoProvider,
+        repository::{
+            signup_process::{GetError, Repo, SaveError},
+            Database,
+        },
+        DatabaseProvider,
     },
     usecase::Usecase,
 };
@@ -59,7 +62,7 @@ impl From<(GetError, Id)> for Error {
 
 impl<'d, D> Usecase<'d, D> for Delete<'d, D>
 where
-    D: SignupProcessRepoProvider,
+    D: DatabaseProvider,
 {
     type Request = Request;
     type Response = Response;
@@ -68,6 +71,7 @@ where
         log::debug!("SignupProcess scheduled for deletion: {:?}", req);
         let record = self
             .dependency_provider
+            .database()
             .signup_process_repo()
             .get_latest_state(None, req.id)
             .await
@@ -93,6 +97,7 @@ where
         };
 
         self.dependency_provider
+            .database()
             .signup_process_repo()
             .save_latest_state(None, process.into())
             .await
