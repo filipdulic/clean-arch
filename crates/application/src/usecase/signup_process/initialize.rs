@@ -1,6 +1,7 @@
 use crate::{
     gateway::{
         database::{
+            identifier::{NewId, NewIdError},
             signup_process::{Repo, SaveError},
             token::GenError as TokenRepoError,
             Database,
@@ -8,10 +9,8 @@ use crate::{
         service::email::EmailServiceError,
         DatabaseProvider,
     },
-    identifier::{NewId, NewIdError},
     usecase::Usecase,
 };
-
 use ca_domain::entity::{
     auth_context::{AuthContext, AuthError},
     signup_process::{Id, SignupProcess},
@@ -33,7 +32,7 @@ pub struct Initialize<'d, D> {
     dependency_provider: &'d D,
 }
 
-#[derive(Debug, Error, Serialize)]
+#[derive(Debug, Error, Serialize, PartialEq)]
 pub enum Error {
     #[error("{}", SaveError::Connection)]
     Repo,
@@ -90,5 +89,30 @@ where
     fn authorize(_: &Self::Request, _: Option<AuthContext>) -> Result<(), AuthError> {
         // public signup endpoint, open/no auth
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::gateway::database::mock::MockDependencyProvider;
+
+    #[tokio::test]
+    async fn test_initialize_fails_signup_id_gen() {
+        let mut db_provider = MockDependencyProvider::new();
+        db_provider
+            .db
+            .signup_id_gen
+            .expect_new_id()
+            .returning(|| Box::pin(async { Err(NewIdError) }));
+        let usecase = <Initialize<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
+            &db_provider,
+        );
+        let req = super::Request {
+            email: "email@test.com".to_string(),
+        };
+        let result = usecase.exec(req).await;
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), super::Error::NewId);
     }
 }

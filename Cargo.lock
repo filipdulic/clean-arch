@@ -194,6 +194,8 @@ dependencies = [
  "mockall",
  "serde",
  "thiserror",
+ "tokio",
+ "uuid",
 ]
 
 [[package]]
