@@ -95,19 +95,22 @@ where
 
 #[cfg(test)]
 mod tests {
+    use ca_domain::entity::user;
+    use ca_domain::value_object::Role;
+
     use super::*;
     use crate::gateway::database::mock::MockDependencyProvider;
     use crate::gateway::database::signup_process;
 
     #[tokio::test]
     async fn test_initialize_success() {
-        let mut db_provider = MockDependencyProvider::new();
+        let mut db_provider = MockDependencyProvider::default();
         let id = Id::new(uuid::Uuid::new_v4());
         db_provider
             .db
             .signup_id_gen
             .expect_new_id()
-            .returning(move || Box::pin(async move { Ok(id.clone()) }));
+            .returning(move || Box::pin(async move { Ok(id) }));
         db_provider
             .db
             .signup_process_repo
@@ -127,7 +130,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_initialize_fails_verify_email_min_lenght() {
-        let db_provider = MockDependencyProvider::new();
+        let db_provider = MockDependencyProvider::default();
         let usecase = <Initialize<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
             &db_provider,
         );
@@ -144,7 +147,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_initialize_fails_signup_id_gen() {
-        let mut db_provider = MockDependencyProvider::new();
+        let mut db_provider = MockDependencyProvider::default();
         db_provider
             .db
             .signup_id_gen
@@ -163,13 +166,13 @@ mod tests {
 
     #[tokio::test]
     async fn test_initialize_fails_save_latest_state() {
-        let mut db_provider = MockDependencyProvider::new();
+        let mut db_provider = MockDependencyProvider::default();
         let id = Id::new(uuid::Uuid::new_v4());
         db_provider
             .db
             .signup_id_gen
             .expect_new_id()
-            .returning(move || Box::pin(async move { Ok(id.clone()) }));
+            .returning(move || Box::pin(async move { Ok(id) }));
         db_provider
             .db
             .signup_process_repo
@@ -187,5 +190,52 @@ mod tests {
             result.unwrap_err(),
             signup_process::SaveError::Connection.into(),
         );
+    }
+
+    #[test]
+    fn test_authorize_admin_zero() {
+        let req = super::Request {
+            email: "email@test.com".to_string(),
+        };
+        let auth_context = Some(AuthContext {
+            user_id: user::Id::new(uuid::Uuid::nil()),
+            role: Role::Admin,
+        });
+        let result =
+            <Initialize<MockDependencyProvider> as Usecase<MockDependencyProvider>>::authorize(
+                &req,
+                auth_context,
+            );
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_authorize_user_zero() {
+        let req = super::Request {
+            email: "email@test.com".to_string(),
+        };
+        let auth_context = Some(AuthContext {
+            user_id: user::Id::new(uuid::Uuid::nil()),
+            role: Role::User,
+        });
+        let result =
+            <Initialize<MockDependencyProvider> as Usecase<MockDependencyProvider>>::authorize(
+                &req,
+                auth_context,
+            );
+        assert!(result.is_ok());
+    }
+    #[test]
+    fn test_authorize_none() {
+        let req = super::Request {
+            email: "email@test.com".to_string(),
+        };
+        let auth_context = None;
+        let result =
+            <Initialize<MockDependencyProvider> as Usecase<MockDependencyProvider>>::authorize(
+                &req,
+                auth_context,
+            );
+        assert!(result.is_ok());
     }
 }

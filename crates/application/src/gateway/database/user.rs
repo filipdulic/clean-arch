@@ -118,36 +118,36 @@ pub mod mock {
     }
     impl Repo for &MockUserRepo {
         type Transaction = ();
-        fn save<'a>(
+        fn save(
             &self,
-            transaction: Option<&'a mut <MockUserRepo as Repo>::Transaction>,
+            transaction: Option<&mut <MockUserRepo as Repo>::Transaction>,
             record: Record,
         ) -> impl Future<Output = Result<(), SaveError>> {
             (*self).save(transaction, record)
         }
-        fn get<'a>(
+        fn get(
             &self,
-            transaction: Option<&'a mut <MockUserRepo as Repo>::Transaction>,
+            transaction: Option<&mut <MockUserRepo as Repo>::Transaction>,
             id: Id,
         ) -> impl Future<Output = Result<Record, GetError>> {
             (*self).get(transaction, id)
         }
-        fn get_by_username<'a>(
+        fn get_by_username(
             &self,
-            transaction: Option<&'a mut <MockUserRepo as Repo>::Transaction>,
+            transaction: Option<&mut <MockUserRepo as Repo>::Transaction>,
             username: UserName,
         ) -> impl Future<Output = Result<Record, GetError>> {
             (*self).get_by_username(transaction, username)
         }
-        fn get_all<'a>(
+        fn get_all(
             &self,
-            transaction: Option<&'a mut <MockUserRepo as Repo>::Transaction>,
+            transaction: Option<&mut <MockUserRepo as Repo>::Transaction>,
         ) -> impl Future<Output = Result<Vec<Record>, GetAllError>> {
             (*self).get_all(transaction)
         }
-        fn delete<'a>(
+        fn delete(
             &self,
-            transaction: Option<&'a mut <MockUserRepo as Repo>::Transaction>,
+            transaction: Option<&mut <MockUserRepo as Repo>::Transaction>,
             id: Id,
         ) -> impl Future<Output = Result<(), DeleteError>> {
             (*self).delete(transaction, id)
