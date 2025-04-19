@@ -83,24 +83,24 @@ pub mod mock {
 
     impl Repo for &MockTokenRepo {
         type Transaction = ();
-        fn gen<'a>(
+        fn gen(
             &self,
-            transaction: Option<&'a mut <MockTokenRepo as Repo>::Transaction>,
+            transaction: Option<&mut <MockTokenRepo as Repo>::Transaction>,
             email: &str,
         ) -> impl Future<Output = Result<Record, GenError>> {
             (*self).gen(transaction, email)
         }
-        fn verify<'a>(
+        fn verify(
             &self,
-            transaction: Option<&'a mut <MockTokenRepo as Repo>::Transaction>,
+            transaction: Option<&mut <MockTokenRepo as Repo>::Transaction>,
             email: &str,
             token: &str,
         ) -> impl Future<Output = Result<(), VerifyError>> {
             (*self).verify(transaction, email, token)
         }
-        fn extend<'a>(
+        fn extend(
             &self,
-            transaction: Option<&'a mut <MockTokenRepo as Repo>::Transaction>,
+            transaction: Option<&mut <MockTokenRepo as Repo>::Transaction>,
             email: &str,
         ) -> impl Future<Output = Result<(), ExtendError>> {
             (*self).extend(transaction, email)

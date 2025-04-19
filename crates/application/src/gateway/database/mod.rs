@@ -55,8 +55,8 @@ pub mod mock {
         pub token_repo: MockTokenRepo,
         pub user_repo: MockUserRepo,
     }
-    impl MockDatabase {
-        pub fn new() -> Self {
+    impl Default for MockDatabase {
+        fn default() -> Self {
             Self {
                 signup_process_repo: MockSignupProcessRepo::new(),
                 signup_id_gen: MockSignupIdGen::new(),
@@ -82,32 +82,24 @@ pub mod mock {
         fn token_repo(&self) -> impl token::Repo<Transaction = Self::Transaction> {
             &self.token_repo
         }
-        fn begin_transaction(&self) -> impl Future<Output = Self::Transaction> {
-            async { () }
-        }
-        fn commit_transaction(
+        async fn begin_transaction(&self) -> Self::Transaction {}
+        async fn commit_transaction(
             &self,
             _transaction: Self::Transaction,
-        ) -> impl Future<Output = Result<(), Self::Error>> {
-            async { Ok(()) }
+        ) -> Result<(), Self::Error> {
+            Ok(())
         }
-        fn rollback_transaction(
+        async fn rollback_transaction(
             &self,
             _transaction: Self::Transaction,
-        ) -> impl Future<Output = Result<(), Self::Error>> {
-            async { Ok(()) }
+        ) -> Result<(), Self::Error> {
+            Ok(())
         }
     }
 
+    #[derive(Default)]
     pub struct MockDependencyProvider {
         pub db: MockDatabase,
-    }
-    impl MockDependencyProvider {
-        pub fn new() -> Self {
-            Self {
-                db: MockDatabase::new(),
-            }
-        }
     }
     impl DatabaseProvider for MockDependencyProvider {
         fn database(&self) -> impl Database {
