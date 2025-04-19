@@ -2,6 +2,7 @@ use std::future::Future;
 
 use ca_domain::entity::signup_process::*;
 use chrono::{DateTime, Utc};
+
 use serde::Serialize;
 use thiserror::Error;
 

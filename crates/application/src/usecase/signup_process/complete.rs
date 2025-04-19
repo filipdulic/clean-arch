@@ -1,6 +1,6 @@
 use crate::{
     gateway::{
-        repository::{
+        database::{
             signup_process::{GetError, Repo, SaveError},
             user::{self, Repo as UserRepo},
             Database,

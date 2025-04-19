@@ -1,4 +1,4 @@
-use ca_application::gateway::repository::user::{
+use ca_application::gateway::database::user::{
     DeleteError, GetAllError, GetError, Record, Repo, SaveError,
 };
 use ca_domain::entity::user::{Id, UserName};

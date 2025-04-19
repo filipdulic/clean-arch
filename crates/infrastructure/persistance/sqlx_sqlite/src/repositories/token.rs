@@ -1,4 +1,4 @@
-use ca_application::gateway::repository::token::*;
+use ca_application::gateway::database::token::*;
 use chrono::{DateTime, Duration, NaiveDateTime, Utc};
 
 use crate::{SqlxSqlite, SqlxSqliteTransaction};

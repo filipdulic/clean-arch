@@ -40,7 +40,7 @@ impl DependancyProvider {
 }
 
 impl DatabaseProvider for DependancyProvider {
-    fn database(&self) -> impl ca_application::gateway::repository::Database {
+    fn database(&self) -> impl ca_application::gateway::database::Database {
         &self.db
     }
 }
