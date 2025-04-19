@@ -28,7 +28,7 @@ pub enum UserNameInvalidity {
     MaxLength { max: usize, actual: usize },
 }
 
-#[derive(Debug, Error, Serialize)]
+#[derive(Debug, Error, Serialize, PartialEq)]
 pub enum EmailInvalidity {
     #[error("The email must have at least {min} but has {actual} chars")]
     MinLength { min: usize, actual: usize },
@@ -52,7 +52,7 @@ pub fn validate_user_properties(req: &Request) -> Response {
     Ok(())
 }
 
-fn validate_username(username: &str) -> Result<(), UserNameInvalidity> {
+pub fn validate_username(username: &str) -> Result<(), UserNameInvalidity> {
     let actual = username.len();
     let min = UserName::min_len();
 
@@ -66,7 +66,7 @@ fn validate_username(username: &str) -> Result<(), UserNameInvalidity> {
     Ok(())
 }
 
-fn validate_email(email: &str) -> Result<(), EmailInvalidity> {
+pub fn validate_email(email: &str) -> Result<(), EmailInvalidity> {
     let actual = email.len();
     let min = Email::min_len();
 

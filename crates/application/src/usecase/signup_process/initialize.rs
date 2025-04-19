@@ -3,13 +3,14 @@ use crate::{
         database::{
             identifier::{NewId, NewIdError},
             signup_process::{Repo, SaveError},
-            token::GenError as TokenRepoError,
             Database,
         },
-        service::email::EmailServiceError,
         DatabaseProvider,
     },
-    usecase::Usecase,
+    usecase::{
+        user::validate::{validate_email, EmailInvalidity},
+        Usecase,
+    },
 };
 use ca_domain::entity::{
     auth_context::{AuthContext, AuthError},
@@ -38,10 +39,8 @@ pub enum Error {
     Repo,
     #[error("{}", NewIdError)]
     NewId,
-    #[error("Token Repo error: {0}")]
-    TokenRepoError(#[from] TokenRepoError),
-    #[error("Email Service error: {0}")]
-    EmailServiceError(#[from] EmailServiceError),
+    #[error(transparent)]
+    EmailInvalidity(#[from] EmailInvalidity),
 }
 
 impl From<SaveError> for Error {
@@ -65,6 +64,8 @@ where
     /// with generated token.
     async fn exec(&self, req: Request) -> Result<Response, Error> {
         log::debug!("SignupProcess Initialized: {:?}", req);
+        // validate email
+        validate_email(&req.email)?;
         let id = self
             .dependency_provider
             .database()
@@ -96,6 +97,50 @@ where
 mod tests {
     use super::*;
     use crate::gateway::database::mock::MockDependencyProvider;
+    use crate::gateway::database::signup_process;
+
+    #[tokio::test]
+    async fn test_initialize_success() {
+        let mut db_provider = MockDependencyProvider::new();
+        let id = Id::new(uuid::Uuid::new_v4());
+        db_provider
+            .db
+            .signup_id_gen
+            .expect_new_id()
+            .returning(move || Box::pin(async move { Ok(id.clone()) }));
+        db_provider
+            .db
+            .signup_process_repo
+            .expect_save_latest_state()
+            .returning(|_, _| Box::pin(async { Ok(()) }));
+        let usecase = <Initialize<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
+            &db_provider,
+        );
+        let req = super::Request {
+            email: "email@test.com".to_string(),
+        };
+        let result = usecase.exec(req).await;
+        assert!(result.is_ok());
+        let response = result.unwrap();
+        assert_eq!(response.id, id);
+    }
+
+    #[tokio::test]
+    async fn test_initialize_fails_verify_email_min_lenght() {
+        let db_provider = MockDependencyProvider::new();
+        let usecase = <Initialize<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
+            &db_provider,
+        );
+        let req = super::Request {
+            email: "ttt".to_string(),
+        };
+        let result = usecase.exec(req).await;
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err(),
+            super::Error::EmailInvalidity(EmailInvalidity::MinLength { min: 5, actual: 3 })
+        );
+    }
 
     #[tokio::test]
     async fn test_initialize_fails_signup_id_gen() {
@@ -114,5 +159,33 @@ mod tests {
         let result = usecase.exec(req).await;
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), super::Error::NewId);
+    }
+
+    #[tokio::test]
+    async fn test_initialize_fails_save_latest_state() {
+        let mut db_provider = MockDependencyProvider::new();
+        let id = Id::new(uuid::Uuid::new_v4());
+        db_provider
+            .db
+            .signup_id_gen
+            .expect_new_id()
+            .returning(move || Box::pin(async move { Ok(id.clone()) }));
+        db_provider
+            .db
+            .signup_process_repo
+            .expect_save_latest_state()
+            .returning(|_, _| Box::pin(async { Err(signup_process::SaveError::Connection) }));
+        let usecase = <Initialize<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
+            &db_provider,
+        );
+        let req = super::Request {
+            email: "email@test.com".to_string(),
+        };
+        let result = usecase.exec(req).await;
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err(),
+            signup_process::SaveError::Connection.into(),
+        );
     }
 }
