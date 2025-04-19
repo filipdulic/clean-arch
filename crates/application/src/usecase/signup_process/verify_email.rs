@@ -17,10 +17,12 @@ use ca_domain::entity::{
 
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
+use validator::Validate;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Validate)]
 pub struct Request {
     pub id: Id,
+    #[validate(length(min = 1, max = 255))]
     pub token: String,
 }
 
@@ -42,6 +44,8 @@ pub enum Error {
     Repo,
     #[error("Token Repo error: {0}")]
     TokenRepoError(#[from] TokenRepoError),
+    #[error(transparent)]
+    TokenInvalidity(#[from] validator::ValidationErrors),
 }
 
 impl From<SaveError> for Error {
@@ -72,6 +76,8 @@ where
     /// Create a new user with the given name.
     async fn exec(&self, req: Request) -> Result<Response, Error> {
         log::debug!("SignupProcess Email Verification: {:?}", req);
+        // Validate the request
+        req.validate()?;
         // Begin transaction
         let mut transaction = self
             .dependency_provider

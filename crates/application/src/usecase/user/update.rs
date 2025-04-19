@@ -6,10 +6,7 @@ use crate::{
         },
         DatabaseProvider,
     },
-    usecase::{
-        user::validate::{self, validate_user_properties, UserInvalidity},
-        Usecase,
-    },
+    usecase::Usecase,
 };
 use ca_domain::{
     entity::{
@@ -20,12 +17,16 @@ use ca_domain::{
 };
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
+use validator::Validate;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Validate)]
 pub struct Request {
     pub id: Id,
+    #[validate(email)]
     pub email: String,
+    #[validate(length(min = 1, max = 30))]
     pub username: String,
+    #[validate(length(min = 5, max = 60))]
     pub password: String,
 }
 
@@ -40,7 +41,7 @@ pub enum Error {
     #[error("User {0} not found")]
     NotFound(Id),
     #[error(transparent)]
-    Invalidity(#[from] UserInvalidity),
+    Invalidity(#[from] validator::ValidationErrors),
     #[error("{}", SaveError::Connection)]
     Repo,
 }
@@ -72,11 +73,7 @@ where
 
     async fn exec(&self, req: Self::Request) -> Result<Self::Response, Self::Error> {
         log::debug!("Update User: {:?}", req);
-        validate_user_properties(&validate::Request {
-            username: &req.username,
-            email: &req.email,
-            password: &req.password,
-        })?;
+        req.validate()?;
         let mut record = self
             .dependency_provider
             .database()
