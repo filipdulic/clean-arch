@@ -1,4 +1,4 @@
-use ca_application::gateway::repository::user::Record;
+use ca_application::gateway::database::user::Record;
 use ca_domain::entity::user::{Email, Password, User as DomainUser, UserName};
 use sqlx::prelude::FromRow;
 use uuid::Uuid;

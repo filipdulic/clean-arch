@@ -1,6 +1,6 @@
 use crate::{
     gateway::{
-        repository::{
+        database::{
             signup_process::{Repo, SaveError},
             token::GenError as TokenRepoError,
             Database,

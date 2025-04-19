@@ -10,7 +10,9 @@ publish = false
 ca-domain = { version = "=0.1.0", path = "../domain" }
 chrono = { version = "0.4.40", features = ["serde"] }
 
+
 # External dependencies
 log = "0.4.27"
 thiserror = "2.0.12"
 serde = { version = "1.0.219", features = ["derive"] }
+mockall = { version = "0.13.1" }

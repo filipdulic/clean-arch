@@ -1,5 +1,5 @@
 use ca_application::{
-    gateway::repository::signup_process::{DeleteError, GetError, Record, Repo, SaveError},
+    gateway::database::signup_process::{DeleteError, GetError, Record, Repo, SaveError},
     identifier::{NewId, NewIdError},
 };
 use ca_domain::entity::signup_process::Id;

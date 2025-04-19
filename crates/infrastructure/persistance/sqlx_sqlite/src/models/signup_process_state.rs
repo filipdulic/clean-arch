@@ -3,7 +3,7 @@ use std::{str::FromStr, sync::Arc};
 use chrono::{DateTime, Utc};
 use sqlx::prelude::FromRow;
 
-use ca_application::gateway::repository::signup_process::Record;
+use ca_application::gateway::database::signup_process::Record;
 use ca_domain::{
     entity::{
         signup_process::{Error as SignupError, Id, SignupStateEnum},

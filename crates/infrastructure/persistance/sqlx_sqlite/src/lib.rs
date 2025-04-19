@@ -1,4 +1,4 @@
-use ca_application::{gateway::repository::Database, identifier::NewIdError};
+use ca_application::{gateway::database::Database, identifier::NewIdError};
 use sqlx::{migrate::MigrateDatabase, Pool, Sqlite, SqlitePool};
 
 mod models;
@@ -80,7 +80,7 @@ impl Database for &SqlxSqlite {
 
     fn signup_process_repo(
         &self,
-    ) -> impl ca_application::gateway::repository::signup_process::Repo<Transaction = Self::Transaction>
+    ) -> impl ca_application::gateway::database::signup_process::Repo<Transaction = Self::Transaction>
     {
         *self
     }
@@ -95,13 +95,13 @@ impl Database for &SqlxSqlite {
 
     fn user_repo(
         &self,
-    ) -> impl ca_application::gateway::repository::user::Repo<Transaction = Self::Transaction> {
+    ) -> impl ca_application::gateway::database::user::Repo<Transaction = Self::Transaction> {
         *self
     }
 
     fn token_repo(
         &self,
-    ) -> impl ca_application::gateway::repository::token::Repo<Transaction = Self::Transaction>
+    ) -> impl ca_application::gateway::database::token::Repo<Transaction = Self::Transaction>
     {
         *self
     }

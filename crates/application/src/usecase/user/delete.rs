@@ -1,6 +1,6 @@
 use crate::{
     gateway::{
-        repository::{
+        database::{
             user::{DeleteError, Repo},
             Database,
         },

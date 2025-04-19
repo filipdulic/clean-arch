@@ -1,6 +1,6 @@
-use repository::Database;
+use database::Database;
 
-pub mod repository;
+pub mod database;
 pub mod service;
 
 pub trait DatabaseProvider {
