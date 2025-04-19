@@ -7,10 +7,7 @@ use crate::{
         },
         DatabaseProvider,
     },
-    usecase::{
-        user::validate::{validate_email, EmailInvalidity},
-        Usecase,
-    },
+    usecase::Usecase,
 };
 use ca_domain::entity::{
     auth_context::{AuthContext, AuthError},
@@ -19,9 +16,11 @@ use ca_domain::entity::{
 };
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
+use validator::Validate;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Validate)]
 pub struct Request {
+    #[validate(email)]
     pub email: String,
 }
 
@@ -40,7 +39,7 @@ pub enum Error {
     #[error("{}", NewIdError)]
     NewId,
     #[error(transparent)]
-    EmailInvalidity(#[from] EmailInvalidity),
+    EmailInvalidity(#[from] validator::ValidationErrors),
 }
 
 impl From<SaveError> for Error {
@@ -65,7 +64,7 @@ where
     async fn exec(&self, req: Request) -> Result<Response, Error> {
         log::debug!("SignupProcess Initialized: {:?}", req);
         // validate email
-        validate_email(&req.email)?;
+        req.validate()?;
         let id = self
             .dependency_provider
             .database()
@@ -95,12 +94,11 @@ where
 
 #[cfg(test)]
 mod tests {
-    use ca_domain::entity::user;
-    use ca_domain::value_object::Role;
-
     use super::*;
     use crate::gateway::database::mock::MockDependencyProvider;
     use crate::gateway::database::signup_process;
+    use ca_domain::entity::user;
+    use ca_domain::value_object::Role;
 
     #[tokio::test]
     async fn test_initialize_success() {
@@ -140,8 +138,8 @@ mod tests {
         let result = usecase.exec(req).await;
         assert!(result.is_err());
         assert_eq!(
-            result.unwrap_err(),
-            super::Error::EmailInvalidity(EmailInvalidity::MinLength { min: 5, actual: 3 })
+            result.unwrap_err().to_string(),
+            "email: Validation error: email [{\"value\": String(\"ttt\")}]"
         );
     }
 
