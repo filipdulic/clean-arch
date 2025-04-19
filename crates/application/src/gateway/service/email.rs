@@ -11,7 +11,7 @@ impl EmailAddress {
         &self.0
     }
 }
-#[derive(Debug, Error, Serialize)]
+#[derive(Debug, Error, Serialize, PartialEq)]
 pub enum EmailServiceError {
     #[error("Invalid email address: {0}")]
     InvalidEmailAddress(String),

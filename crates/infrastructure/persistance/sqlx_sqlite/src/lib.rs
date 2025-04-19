@@ -1,4 +1,9 @@
-use ca_application::{gateway::database::Database, identifier::NewIdError};
+use ca_application::gateway::database::{
+    self,
+    identifier::{NewId, NewIdError},
+    Database,
+};
+use ca_domain::{entity::signup_process::SignupProcessValue, value_object::Id};
 use sqlx::{migrate::MigrateDatabase, Pool, Sqlite, SqlitePool};
 
 mod models;
@@ -80,29 +85,19 @@ impl Database for &SqlxSqlite {
 
     fn signup_process_repo(
         &self,
-    ) -> impl ca_application::gateway::database::signup_process::Repo<Transaction = Self::Transaction>
-    {
+    ) -> impl database::signup_process::Repo<Transaction = Self::Transaction> {
         *self
     }
 
-    fn signuo_id_gen(
-        &self,
-    ) -> impl ca_application::identifier::NewId<
-        ca_domain::value_object::Id<ca_domain::entity::signup_process::SignupProcessValue>,
-    > {
+    fn signuo_id_gen(&self) -> impl NewId<Id<SignupProcessValue>> {
         *self
     }
 
-    fn user_repo(
-        &self,
-    ) -> impl ca_application::gateway::database::user::Repo<Transaction = Self::Transaction> {
+    fn user_repo(&self) -> impl database::user::Repo<Transaction = Self::Transaction> {
         *self
     }
 
-    fn token_repo(
-        &self,
-    ) -> impl ca_application::gateway::database::token::Repo<Transaction = Self::Transaction>
-    {
+    fn token_repo(&self) -> impl database::token::Repo<Transaction = Self::Transaction> {
         *self
     }
 }

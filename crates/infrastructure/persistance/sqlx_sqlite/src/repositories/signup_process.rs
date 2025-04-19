@@ -1,6 +1,6 @@
-use ca_application::{
-    gateway::database::signup_process::{DeleteError, GetError, Record, Repo, SaveError},
+use ca_application::gateway::database::{
     identifier::{NewId, NewIdError},
+    signup_process::{DeleteError, GetError, Record, Repo, SaveError},
 };
 use ca_domain::entity::signup_process::Id;
 
