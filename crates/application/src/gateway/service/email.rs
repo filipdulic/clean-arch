@@ -34,3 +34,28 @@ pub trait EmailVerificationService {
         token: &str,
     ) -> impl Future<Output = Result<(), EmailServiceError>>;
 }
+
+#[cfg(test)]
+pub mod mock {
+    use mockall::mock;
+
+    mock! {
+        pub EmailVerificationService {}
+        impl super::EmailVerificationService for EmailVerificationService {
+            async fn send_verification_email(
+                &self,
+                to: super::EmailAddress,
+                token: &str,
+            ) -> Result<(), super::EmailServiceError>;
+        }
+    }
+    impl super::EmailVerificationService for &MockEmailVerificationService {
+        async fn send_verification_email(
+            &self,
+            to: super::EmailAddress,
+            token: &str,
+        ) -> Result<(), super::EmailServiceError> {
+            (*self).send_verification_email(to, token).await
+        }
+    }
+}

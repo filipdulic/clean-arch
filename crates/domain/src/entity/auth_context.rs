@@ -28,7 +28,7 @@ impl AuthContext {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Error)]
+#[derive(Debug, Clone, Serialize, Deserialize, Error, PartialEq)]
 pub enum AuthError {
     #[error("Unauthorized")]
     Unauthorized,
