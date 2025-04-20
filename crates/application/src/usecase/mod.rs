@@ -4,6 +4,8 @@ use ca_domain::entity::auth_context::{AuthContext, AuthError};
 use serde::{de::DeserializeOwned, Serialize};
 
 pub mod signup_process;
+#[cfg(test)]
+mod tests;
 pub mod user;
 
 pub trait Usecase<'d, D> {

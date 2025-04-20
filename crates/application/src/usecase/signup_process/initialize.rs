@@ -97,7 +97,7 @@ mod tests {
     use super::*;
     use crate::gateway::database::signup_process::{self, Record as SignupProcessRepoRecord};
     use crate::gateway::mock::MockDependencyProvider;
-    use crate::usecase::signup_process::fixtures::*;
+    use crate::usecase::tests::fixtures::*;
     use ca_domain::entity::signup_process::SignupStateEnum;
     use rstest::rstest;
 
