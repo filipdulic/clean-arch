@@ -96,14 +96,28 @@ where
 mod tests {
     use super::*;
     use crate::gateway::database::mock::MockDependencyProvider;
-    use crate::gateway::database::signup_process;
+    use crate::gateway::database::signup_process::{self, Record as SignupProcessRepoRecord};
+    use ca_domain::entity::signup_process::SignupStateEnum;
     use ca_domain::entity::user;
     use ca_domain::value_object::Role;
 
     #[tokio::test]
     async fn test_initialize_success() {
-        let mut db_provider = MockDependencyProvider::default();
+        // Fixtures
         let id = Id::new(uuid::Uuid::new_v4());
+        let email = "email@test.com".to_string();
+        let record = SignupProcessRepoRecord {
+            id,
+            state: SignupStateEnum::Initialized {
+                email: Email::new(email.clone()),
+            },
+            entered_at: chrono::Utc::now(),
+        };
+        let req = super::Request {
+            email: email.clone(),
+        };
+        // Mock setup -- predicates and return values
+        let mut db_provider = MockDependencyProvider::default();
         db_provider
             .db
             .signup_id_gen
@@ -113,17 +127,23 @@ mod tests {
             .db
             .signup_process_repo
             .expect_save_latest_state()
+            .withf(move |transaction, actual_record| {
+                // Check if the transaction is None
+                // and the actual_record matches the expected record
+                transaction.is_none() && actual_record == &record
+            })
+            .times(1)
             .returning(|_, _| Box::pin(async { Ok(()) }));
+        // Usecase Initialization
         let usecase = <Initialize<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
             &db_provider,
         );
-        let req = super::Request {
-            email: "email@test.com".to_string(),
-        };
+        // Usecase Execution -- mock predicates will fail during execution
         let result = usecase.exec(req).await;
+        // Assert execution is successful
         assert!(result.is_ok());
-        let response = result.unwrap();
-        assert_eq!(response.id, id);
+        // Assert return id equals the mock returned id.
+        assert_eq!(result.unwrap().id, id);
     }
 
     #[tokio::test]
