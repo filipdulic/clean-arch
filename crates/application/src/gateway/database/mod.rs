@@ -29,8 +29,6 @@ pub trait Database {
 
 #[cfg(test)]
 pub mod mock {
-    use crate::gateway::DatabaseProvider;
-
     use super::{
         signup_process::mock::MockSignupProcessRepo, token::mock::MockTokenRepo,
         user::mock::MockUserRepo, *,
@@ -94,16 +92,6 @@ pub mod mock {
             _transaction: Self::Transaction,
         ) -> Result<(), Self::Error> {
             Ok(())
-        }
-    }
-
-    #[derive(Default)]
-    pub struct MockDependencyProvider {
-        pub db: MockDatabase,
-    }
-    impl DatabaseProvider for MockDependencyProvider {
-        fn database(&self) -> impl Database {
-            &self.db
         }
     }
 }

@@ -147,3 +147,33 @@ where
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use rstest::rstest;
+
+    use crate::{
+        gateway::mock::MockDependencyProvider,
+        usecase::signup_process::fixtures::dependency_provider,
+    };
+
+    use super::*;
+
+    #[rstest]
+    async fn test_fails_verify_token_min_lenght(dependency_provider: MockDependencyProvider) {
+        let usecase = <VerifyEmail<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
+            &dependency_provider,
+        );
+        let id = Id::from(uuid::Uuid::new_v4());
+        let req = super::Request {
+            id,
+            token: "".to_string(),
+        };
+        let result = usecase.exec(req).await;
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("token: Validation error: length"));
+    }
+}

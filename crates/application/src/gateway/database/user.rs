@@ -162,8 +162,9 @@ mod tests {
         entity::user::{Email, Id, Password, User, UserName},
         value_object::Role,
     };
+    use rstest::rstest;
 
-    #[tokio::test]
+    #[rstest]
     async fn test_mock() {
         // Create a mock instance
         let mut mock = mock::MockUserRepo::new();

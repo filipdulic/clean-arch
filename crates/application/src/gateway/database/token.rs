@@ -3,7 +3,7 @@ use std::future::Future;
 use serde::Serialize;
 use thiserror::Error;
 
-#[derive(Debug, Error, Serialize, PartialEq)]
+#[derive(Debug, Error, Serialize, PartialEq, Clone)]
 pub enum GenError {
     #[error("Token repository connection problem")]
     Connection,
@@ -29,7 +29,7 @@ pub enum ExtendError {
     NotFound,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Record {
     pub token: String,
 }
@@ -110,9 +110,11 @@ pub mod mock {
 
 #[cfg(test)]
 mod tests {
+    use rstest::rstest;
+
     use super::*;
 
-    #[tokio::test]
+    #[rstest]
     async fn test_mock() {
         // Create a mock instance
         let mut mock = mock::MockTokenRepo::new();

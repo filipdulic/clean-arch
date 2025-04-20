@@ -154,8 +154,9 @@ pub mod mock {
 mod tests {
     use super::*;
     use ca_domain::entity::signup_process::Id;
+    use rstest::rstest;
 
-    #[tokio::test]
+    #[rstest]
     async fn test_mock() {
         // Create a mock instance
         let mut mock = mock::MockSignupProcessRepo::new();
