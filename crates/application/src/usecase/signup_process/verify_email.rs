@@ -152,10 +152,7 @@ where
 mod tests {
     use rstest::rstest;
 
-    use crate::{
-        gateway::mock::MockDependencyProvider,
-        usecase::signup_process::fixtures::dependency_provider,
-    };
+    use crate::{gateway::mock::MockDependencyProvider, usecase::tests::fixtures::*};
 
     use super::*;
 

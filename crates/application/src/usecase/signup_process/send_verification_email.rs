@@ -142,11 +142,11 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::super::fixtures::*;
     use super::*;
     use crate::gateway::database::signup_process::{self, Record as SignupProcessRepoRecord};
     use crate::gateway::database::token::{GenError as TokenRepoError, Record as TokenRepoRecord};
     use crate::gateway::mock::MockDependencyProvider;
+    use crate::usecase::tests::fixtures::*;
     use ca_domain::entity::signup_process::{
         Error as SignupProcessError, Id as SignupId, SignupStateEnum,
     };
