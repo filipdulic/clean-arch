@@ -1,10 +1,10 @@
 pub mod fixtures {
-    use std::str::FromStr;
+    use std::{str::FromStr, sync::Arc};
 
     use ca_domain::{
         entity::{
             auth_context::AuthContext,
-            signup_process::{Id as SignupId, SignupStateEnum},
+            signup_process::{Error as SignupError, Id as SignupId, SignupStateEnum},
             user::{Email, Id as UserId},
         },
         value_object::Role,
@@ -61,6 +61,31 @@ pub mod fixtures {
         SignupProcessRepoRecord {
             id: signup_id,
             state: SignupStateEnum::Initialized { email },
+            entered_at: chrono::Utc::now(),
+        }
+    }
+    #[fixture]
+    pub fn verification_email_sent_record(
+        signup_id: SignupId,
+        email: Email,
+    ) -> SignupProcessRepoRecord {
+        SignupProcessRepoRecord {
+            id: signup_id,
+            state: SignupStateEnum::VerificationEmailSent { email },
+            entered_at: chrono::Utc::now(),
+        }
+    }
+    #[fixture]
+    pub fn failed_verification_email_sent_record(
+        signup_id: SignupId,
+        email: Email,
+    ) -> SignupProcessRepoRecord {
+        SignupProcessRepoRecord {
+            id: signup_id,
+            state: SignupStateEnum::Failed {
+                previous_state: Arc::new(SignupStateEnum::VerificationEmailSent { email }),
+                error: SignupError::VerificationTimedOut,
+            },
             entered_at: chrono::Utc::now(),
         }
     }

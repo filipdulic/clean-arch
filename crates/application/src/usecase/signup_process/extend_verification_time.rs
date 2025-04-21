@@ -31,7 +31,7 @@ pub struct ExtendVerificationTime<'d, D> {
     dependency_provider: &'d D,
 }
 
-#[derive(Debug, Error, Serialize)]
+#[derive(Debug, Error, Serialize, PartialEq)]
 pub enum Error {
     #[error("SignupProcess {0} not found")]
     NotFound(Id),
@@ -91,8 +91,7 @@ where
             .database()
             .signup_process_repo()
             .save_latest_state(None, process.into())
-            .await
-            .map_err(|_| Self::Error::NotFound(req.id))?;
+            .await?;
         Ok(Self::Response { id: req.id })
     }
     fn new(dependency_provider: &'d D) -> Self {
@@ -108,5 +107,296 @@ where
             }
         }
         Err(AuthError::Unauthorized)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        gateway::{
+            database::signup_process::Record as SignupProcessRepoRecord,
+            mock::MockDependencyProvider,
+        },
+        usecase::tests::fixtures::*,
+    };
+    use ca_domain::entity::signup_process::Id as SignupId;
+    use rstest::*;
+
+    #[rstest]
+    async fn test_extend_verification_time_success(
+        mut dependency_provider: MockDependencyProvider,
+        signup_id: SignupId,
+        failed_verification_email_sent_record: SignupProcessRepoRecord,
+    ) {
+        // fixtures
+        let req = Request {
+            id: signup_id.clone(),
+        };
+        let process: SignupProcess<Failed<VerificationEmailSent>> =
+            failed_verification_email_sent_record
+                .clone()
+                .try_into()
+                .unwrap();
+        let record_to_save = process.recover().into();
+        // Mock setup -- predicates and return values
+        dependency_provider
+            .db
+            .signup_process_repo
+            .expect_get_latest_state()
+            // makes sure the correct id is used
+            .withf(move |_, actual_id| actual_id == &signup_id)
+            .times(1)
+            // returns the record with the correct state
+            .returning(move |_, _| {
+                Box::pin({
+                    let record = failed_verification_email_sent_record.clone();
+                    async move { Ok(record) }
+                })
+            });
+        dependency_provider
+            .db
+            .token_repo
+            .expect_extend()
+            .withf(move |_, actual_email| actual_email == TEST_EMAIL)
+            .times(1)
+            .returning(move |_, _| Box::pin(async move { Ok(()) }));
+        dependency_provider
+            .db
+            .signup_process_repo
+            .expect_save_latest_state()
+            .withf(move |_, actual_record| actual_record == &record_to_save)
+            .times(1)
+            .returning(move |_, _| Box::pin(async move { Ok(()) }));
+        // Usecase Initialization
+        let usecase = <ExtendVerificationTime<MockDependencyProvider> as Usecase<
+            MockDependencyProvider,
+        >>::new(&dependency_provider);
+        // Usecase Execution -- mock predicates will fail during execution
+        let result = usecase.exec(req).await;
+        // Assert execution success
+        assert!(result.is_ok());
+        let response = result.unwrap();
+        assert_eq!(response.id, signup_id);
+    }
+    #[rstest]
+    async fn test_extend_verification_time_fail_get_latest_state_connection(
+        mut dependency_provider: MockDependencyProvider,
+        signup_id: SignupId,
+    ) {
+        // fixtures
+        let req = Request {
+            id: signup_id.clone(),
+        };
+        // Mock setup -- predicates and return values
+        dependency_provider
+            .db
+            .signup_process_repo
+            .expect_get_latest_state()
+            // makes sure the correct id is used
+            .withf(move |_, actual_id| actual_id == &signup_id)
+            .times(1)
+            // returns the connection error
+            .returning(move |_, _| Box::pin(async move { Err(GetError::Connection) }));
+        // Usecase Initialization
+        let usecase = <ExtendVerificationTime<MockDependencyProvider> as Usecase<
+            MockDependencyProvider,
+        >>::new(&dependency_provider);
+        // Usecase Execution -- mock predicates will fail during execution
+        let result = usecase.exec(req).await;
+        // Assert execution has failed
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), Error::Repo);
+    }
+    #[rstest]
+    async fn test_extend_verification_time_fail_get_latest_state_not_found(
+        mut dependency_provider: MockDependencyProvider,
+        signup_id: SignupId,
+    ) {
+        // fixtures
+        let req = Request {
+            id: signup_id.clone(),
+        };
+        // Mock setup -- predicates and return values
+        dependency_provider
+            .db
+            .signup_process_repo
+            .expect_get_latest_state()
+            // makes sure the correct id is used
+            .withf(move |_, actual_id| actual_id == &signup_id)
+            .times(1)
+            // returns the not found error
+            .returning(move |_, _| Box::pin(async move { Err(GetError::NotFound) }));
+        // Usecase Initialization
+        let usecase = <ExtendVerificationTime<MockDependencyProvider> as Usecase<
+            MockDependencyProvider,
+        >>::new(&dependency_provider);
+        // Usecase Execution -- mock predicates will fail during execution
+        let result = usecase.exec(req).await;
+        // Assert execution has failed
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), Error::NotFound(signup_id));
+    }
+    #[rstest]
+    async fn test_extend_verification_time_fails_incorrect_state(
+        mut dependency_provider: MockDependencyProvider,
+        signup_id: SignupId,
+        verification_email_sent_record: SignupProcessRepoRecord,
+    ) {
+        // fixtures
+        let req = Request {
+            id: signup_id.clone(),
+        };
+        // Mock setup -- predicates and return values
+        dependency_provider
+            .db
+            .signup_process_repo
+            .expect_get_latest_state()
+            // makes sure the correct id is used
+            .withf(move |_, actual_id| actual_id == &signup_id)
+            .times(1)
+            // returns the record with the incorrect state
+            .returning(move |_, _| {
+                Box::pin({
+                    let record = verification_email_sent_record.clone();
+                    async move { Ok(record) }
+                })
+            });
+        // Usecase Initialization
+        let usecase = <ExtendVerificationTime<MockDependencyProvider> as Usecase<
+            MockDependencyProvider,
+        >>::new(&dependency_provider);
+        // Usecase Execution -- mock predicates will fail during execution
+        let result = usecase.exec(req).await;
+        // Assert execution success
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), Error::IncorrectState(signup_id));
+    }
+    #[rstest]
+    async fn test_extend_verification_time_fail_token_repo_extend(
+        mut dependency_provider: MockDependencyProvider,
+        signup_id: SignupId,
+        failed_verification_email_sent_record: SignupProcessRepoRecord,
+    ) {
+        // fixtures
+        let req = Request {
+            id: signup_id.clone(),
+        };
+        // Mock setup -- predicates and return values
+        dependency_provider
+            .db
+            .signup_process_repo
+            .expect_get_latest_state()
+            // makes sure the correct id is used
+            .withf(move |_, actual_id| actual_id == &signup_id)
+            .times(1)
+            // returns the record with the correct state
+            .returning(move |_, _| {
+                Box::pin({
+                    let record = failed_verification_email_sent_record.clone();
+                    async move { Ok(record) }
+                })
+            });
+        dependency_provider
+            .db
+            .token_repo
+            .expect_extend()
+            .withf(move |_, actual_email| actual_email == TEST_EMAIL)
+            .times(1)
+            .returning(move |_, _| Box::pin(async move { Err(ExtendError::Connection) }));
+        // Usecase Initialization
+        let usecase = <ExtendVerificationTime<MockDependencyProvider> as Usecase<
+            MockDependencyProvider,
+        >>::new(&dependency_provider);
+        // Usecase Execution -- mock predicates will fail during execution
+        let result = usecase.exec(req).await;
+        // Assert execution success
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err(),
+            Error::TokenRepoError(ExtendError::Connection)
+        );
+    }
+    #[rstest]
+    async fn test_extend_verification_time_fail_save_latest_state_connection(
+        mut dependency_provider: MockDependencyProvider,
+        signup_id: SignupId,
+        failed_verification_email_sent_record: SignupProcessRepoRecord,
+    ) {
+        // fixtures
+        let req = Request {
+            id: signup_id.clone(),
+        };
+        let process: SignupProcess<Failed<VerificationEmailSent>> =
+            failed_verification_email_sent_record
+                .clone()
+                .try_into()
+                .unwrap();
+        let record_to_save = process.recover().into();
+        // Mock setup -- predicates and return values
+        dependency_provider
+            .db
+            .signup_process_repo
+            .expect_get_latest_state()
+            // makes sure the correct id is used
+            .withf(move |_, actual_id| actual_id == &signup_id)
+            .times(1)
+            // returns the record with the correct state
+            .returning(move |_, _| {
+                Box::pin({
+                    let record = failed_verification_email_sent_record.clone();
+                    async move { Ok(record) }
+                })
+            });
+        dependency_provider
+            .db
+            .token_repo
+            .expect_extend()
+            .withf(move |_, actual_email| actual_email == TEST_EMAIL)
+            .times(1)
+            .returning(move |_, _| Box::pin(async move { Ok(()) }));
+        dependency_provider
+            .db
+            .signup_process_repo
+            .expect_save_latest_state()
+            .withf(move |_, actual_record| actual_record == &record_to_save)
+            .times(1)
+            .returning(move |_, _| Box::pin(async move { Err(SaveError::Connection) }));
+        // Usecase Initialization
+        let usecase = <ExtendVerificationTime<MockDependencyProvider> as Usecase<
+            MockDependencyProvider,
+        >>::new(&dependency_provider);
+        // Usecase Execution -- mock predicates will fail during execution
+        let result = usecase.exec(req).await;
+        // Assert execution success
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), Error::Repo);
+    }
+    #[rstest]
+    fn test_authorize_admin_zero_success(signup_id: SignupId, auth_context_admin: AuthContext) {
+        let req = super::Request { id: signup_id };
+        let result = <ExtendVerificationTime<MockDependencyProvider> as Usecase<
+            MockDependencyProvider,
+        >>::authorize(&req, Some(auth_context_admin));
+        assert!(result.is_ok());
+    }
+
+    #[rstest]
+    fn test_authorize_user_fail(signup_id: SignupId, auth_context_user: AuthContext) {
+        let req = super::Request { id: signup_id };
+        let result = <ExtendVerificationTime<MockDependencyProvider> as Usecase<
+            MockDependencyProvider,
+        >>::authorize(&req, Some(auth_context_user));
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), AuthError::Unauthorized);
+    }
+    #[rstest]
+    fn test_authorize_none_fail(signup_id: SignupId) {
+        let req = super::Request { id: signup_id };
+        let result = <ExtendVerificationTime<MockDependencyProvider> as Usecase<
+            MockDependencyProvider,
+        >>::authorize(&req, None);
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), AuthError::Unauthorized);
     }
 }
