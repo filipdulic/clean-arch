@@ -103,4 +103,31 @@ pub mod fixtures {
             entered_at: chrono::Utc::now(),
         }
     }
+    #[fixture]
+    pub fn state_chain_record_vector(
+        signup_id: SignupId,
+        email: Email,
+    ) -> Vec<SignupProcessRepoRecord> {
+        vec![
+            SignupProcessRepoRecord {
+                id: signup_id,
+                state: SignupStateEnum::Initialized {
+                    email: email.clone(),
+                },
+                entered_at: chrono::Utc::now(),
+            },
+            SignupProcessRepoRecord {
+                id: signup_id,
+                state: SignupStateEnum::VerificationEmailSent {
+                    email: email.clone(),
+                },
+                entered_at: chrono::Utc::now(),
+            },
+            SignupProcessRepoRecord {
+                id: signup_id,
+                state: SignupStateEnum::EmailVerified { email },
+                entered_at: chrono::Utc::now(),
+            },
+        ]
+    }
 }
