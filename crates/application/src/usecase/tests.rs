@@ -89,4 +89,18 @@ pub mod fixtures {
             entered_at: chrono::Utc::now(),
         }
     }
+    #[fixture]
+    pub fn failed_verification_email_verified_record(
+        signup_id: SignupId,
+        email: Email,
+    ) -> SignupProcessRepoRecord {
+        SignupProcessRepoRecord {
+            id: signup_id,
+            state: SignupStateEnum::Failed {
+                previous_state: Arc::new(SignupStateEnum::EmailVerified { email }),
+                error: SignupError::VerificationTimedOut,
+            },
+            entered_at: chrono::Utc::now(),
+        }
+    }
 }
