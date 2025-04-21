@@ -115,7 +115,7 @@ mod tests {
     use rstest::*;
 
     #[rstest]
-    async fn test_extend_verification_time_success(
+    async fn test_extend_completion_time_success(
         mut dependency_provider: MockDependencyProvider,
         signup_id: SignupId,
         failed_verification_email_verified_record: SignupProcessRepoRecord,
@@ -127,6 +127,7 @@ mod tests {
                 .clone()
                 .try_into()
                 .unwrap();
+        // record to be passed to the save latest state method
         let record_to_save = process.recover().into();
         // Mock setup -- predicates and return values
         dependency_provider
@@ -162,7 +163,7 @@ mod tests {
         assert_eq!(response.id, signup_id);
     }
     #[rstest]
-    async fn test_extend_verification_time_fail_get_latest_state_connection(
+    async fn test_extend_completion_time_fail_get_latest_state_connection(
         mut dependency_provider: MockDependencyProvider,
         signup_id: SignupId,
     ) {
@@ -176,7 +177,7 @@ mod tests {
             // makes sure the correct id is used
             .withf(move |_, actual_id| actual_id == &signup_id)
             .times(1)
-            // returns the record with the correct state
+            // returns a connection error
             .returning(move |_, _| Box::pin(async move { Err(GetError::Connection) }));
         // Usecase Initialization
         let usecase = <ExtendCompletionTime<MockDependencyProvider> as Usecase<
@@ -184,12 +185,13 @@ mod tests {
         >>::new(&dependency_provider);
         // Usecase Execution -- mock predicates will fail during execution
         let result = usecase.exec(req).await;
-        // Assert execution success
+        // Assert execution error
         assert!(result.is_err());
+        // Assert error GetError::Connection is converted to Error::Repo
         assert_eq!(result.unwrap_err(), Error::Repo);
     }
     #[rstest]
-    async fn test_extend_verification_time_fail_get_latest_state_not_found(
+    async fn test_extend_completion_time_fail_get_latest_state_not_found(
         mut dependency_provider: MockDependencyProvider,
         signup_id: SignupId,
     ) {
@@ -203,7 +205,7 @@ mod tests {
             // makes sure the correct id is used
             .withf(move |_, actual_id| actual_id == &signup_id)
             .times(1)
-            // returns the record with the correct state
+            // returns the error not found
             .returning(move |_, _| Box::pin(async move { Err(GetError::NotFound) }));
         // Usecase Initialization
         let usecase = <ExtendCompletionTime<MockDependencyProvider> as Usecase<
@@ -211,12 +213,14 @@ mod tests {
         >>::new(&dependency_provider);
         // Usecase Execution -- mock predicates will fail during execution
         let result = usecase.exec(req).await;
-        // Assert execution success
+        // Assert execution error
         assert!(result.is_err());
+        // Assert error GetError::NotFound is converted to Error::NotFound
+        // and correct id is passed
         assert_eq!(result.unwrap_err(), Error::NotFound(signup_id));
     }
     #[rstest]
-    async fn test_extend_verification_time_fail_incorrect_state(
+    async fn test_extend_completion_time_fail_incorrect_state(
         mut dependency_provider: MockDependencyProvider,
         signup_id: SignupId,
         initialized_record: SignupProcessRepoRecord,
@@ -231,7 +235,7 @@ mod tests {
             // makes sure the correct id is used
             .withf(move |_, actual_id| actual_id == &signup_id)
             .times(1)
-            // returns the record with the correct state
+            // returns the record with the incorrect state
             .returning(move |_, _| {
                 Box::pin({
                     let record = initialized_record.clone();
@@ -244,12 +248,13 @@ mod tests {
         >>::new(&dependency_provider);
         // Usecase Execution -- mock predicates will fail during execution
         let result = usecase.exec(req).await;
-        // Assert execution success
+        // Assert execution error
         assert!(result.is_err());
+        // Assert error IncorrectState is returned
         assert_eq!(result.unwrap_err(), Error::IncorrectState(signup_id));
     }
     #[rstest]
-    async fn test_extend_verification_time_fail_save_latest_state_connection(
+    async fn test_extend_completion_time_fail_save_latest_state_connection(
         mut dependency_provider: MockDependencyProvider,
         signup_id: SignupId,
         failed_verification_email_verified_record: SignupProcessRepoRecord,
@@ -283,6 +288,7 @@ mod tests {
             .expect_save_latest_state()
             .withf(move |_, actual_record| actual_record == &record_to_save)
             .times(1)
+            // returns a connection error
             .returning(move |_, _| Box::pin(async move { Err(SaveError::Connection) }));
         // Usecase Initialization
         let usecase = <ExtendCompletionTime<MockDependencyProvider> as Usecase<
@@ -290,8 +296,9 @@ mod tests {
         >>::new(&dependency_provider);
         // Usecase Execution -- mock predicates will fail during execution
         let result = usecase.exec(req).await;
-        // Assert execution success
+        // Assert execution error
         assert!(result.is_err());
+        // Assert error SaveError::Connection is converted to Error::Repo
         assert_eq!(result.unwrap_err(), Error::Repo);
     }
     #[rstest]
