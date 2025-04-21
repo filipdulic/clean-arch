@@ -69,6 +69,8 @@ pub enum Error {
     VerificationTimedOut,
     #[error("Completion timed out")]
     CompletionTimedOut,
+    #[error("Token Expired")]
+    TokenExpired,
 }
 
 impl FromStr for Error {
