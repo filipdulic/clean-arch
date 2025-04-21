@@ -130,9 +130,7 @@ mod tests {
         failed_verification_email_sent_record: SignupProcessRepoRecord,
     ) {
         // fixtures
-        let req = Request {
-            id: signup_id.clone(),
-        };
+        let req = Request { id: signup_id };
         let process: SignupProcess<Failed<VerificationEmailSent>> =
             failed_verification_email_sent_record
                 .clone()
@@ -185,9 +183,7 @@ mod tests {
         signup_id: SignupId,
     ) {
         // fixtures
-        let req = Request {
-            id: signup_id.clone(),
-        };
+        let req = Request { id: signup_id };
         // Mock setup -- predicates and return values
         dependency_provider
             .db
@@ -214,9 +210,7 @@ mod tests {
         signup_id: SignupId,
     ) {
         // fixtures
-        let req = Request {
-            id: signup_id.clone(),
-        };
+        let req = Request { id: signup_id };
         // Mock setup -- predicates and return values
         dependency_provider
             .db
@@ -244,9 +238,7 @@ mod tests {
         verification_email_sent_record: SignupProcessRepoRecord,
     ) {
         // fixtures
-        let req = Request {
-            id: signup_id.clone(),
-        };
+        let req = Request { id: signup_id };
         // Mock setup -- predicates and return values
         dependency_provider
             .db
@@ -279,9 +271,7 @@ mod tests {
         failed_verification_email_sent_record: SignupProcessRepoRecord,
     ) {
         // fixtures
-        let req = Request {
-            id: signup_id.clone(),
-        };
+        let req = Request { id: signup_id };
         // Mock setup -- predicates and return values
         dependency_provider
             .db
@@ -324,9 +314,7 @@ mod tests {
         failed_verification_email_sent_record: SignupProcessRepoRecord,
     ) {
         // fixtures
-        let req = Request {
-            id: signup_id.clone(),
-        };
+        let req = Request { id: signup_id };
         let process: SignupProcess<Failed<VerificationEmailSent>> =
             failed_verification_email_sent_record
                 .clone()
