@@ -22,6 +22,7 @@ pub mod fixtures {
     pub static TEST_EMAIL: &str = "test@email.com";
     pub static TEST_TOKEN: &str = "test_token";
     pub static TEST_UUID: &str = "9dcccf0f-a1ff-49fb-a238-cd9d88502391";
+    pub static TEST_UUID2: &str = "03b85a20-e4cb-4e34-b6a5-a8cd86ba4a98";
     pub static TEST_USERNAME: &str = "test_username";
     pub static TEST_PASSWORD: &str = "test_password";
 
@@ -164,5 +165,28 @@ pub mod fixtures {
                 Password::new(TEST_PASSWORD),
             ),
         }
+    }
+    #[fixture]
+    pub fn user_records() -> Vec<UserRecord> {
+        vec![
+            UserRecord {
+                user: User::new(
+                    UserId::new(uuid::Uuid::parse_str(TEST_UUID).unwrap()),
+                    Role::User,
+                    Email::new(TEST_EMAIL),
+                    UserName::new(TEST_USERNAME),
+                    Password::new(TEST_PASSWORD),
+                ),
+            },
+            UserRecord {
+                user: User::new(
+                    UserId::new(uuid::Uuid::parse_str(TEST_UUID2).unwrap()),
+                    Role::User,
+                    Email::new(TEST_EMAIL),
+                    UserName::new(TEST_USERNAME),
+                    Password::new(TEST_PASSWORD),
+                ),
+            },
+        ]
     }
 }
