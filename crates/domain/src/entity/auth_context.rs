@@ -4,7 +4,7 @@ use thiserror::Error;
 use crate::entity::user::Id as UserId;
 use crate::value_object::Role;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct AuthContext {
     pub user_id: UserId,
     pub role: Role,

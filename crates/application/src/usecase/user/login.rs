@@ -33,7 +33,7 @@ pub struct Login<'d, D> {
     dependency_provider: &'d D,
 }
 
-#[derive(Debug, Error, Serialize)]
+#[derive(Debug, Error, Serialize, PartialEq)]
 pub enum Error {
     #[error("User with username {0} not found")]
     NotFound(UserName),
@@ -102,5 +102,181 @@ where
     }
     fn auth_strategy(&self) -> AuthStrategy {
         AuthStrategy::Public
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        gateway::{database::user::Record as UserRecord, mock::MockDependencyProvider},
+        usecase::tests::fixtures::*,
+    };
+    use ca_domain::entity::auth_context::AuthContext;
+    use rstest::*;
+
+    #[rstest]
+    async fn test_login_success(
+        mut dependency_provider: MockDependencyProvider,
+        user_record: UserRecord,
+    ) {
+        // fixtures
+        let req = Request {
+            username: TEST_USERNAME.to_string(),
+            password: TEST_PASSWORD.to_string(),
+        };
+        let user_id = user_record.user.id();
+        let auth_context = AuthContext::new(user_id, user_record.user.role().clone());
+        // mock setup
+        dependency_provider
+            .db
+            .user_repo
+            .expect_get_by_username()
+            .withf(move |_, actual_username| actual_username == &UserName::new(TEST_USERNAME))
+            .times(1)
+            .returning(move |_, _| {
+                Box::pin({
+                    let record = user_record.clone();
+                    async move { Ok(record) }
+                })
+            });
+        dependency_provider
+            .auth_packer
+            .expect_pack_auth()
+            .withf(move |actual_auth_context| actual_auth_context == &auth_context)
+            .times(1)
+            .returning(move |_| TEST_TOKEN.to_string());
+        // Usecase Initialization
+        let usecase = <Login<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
+            &dependency_provider,
+        );
+        // Usecase Execution -- mock predicates will fail during execution
+        let result = usecase.exec(req).await;
+        // Assert execution success
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result.user_id, user_id);
+        assert_eq!(result.token, TEST_TOKEN);
+    }
+    #[rstest]
+    async fn test_login_fail_get_by_username_connection(
+        mut dependency_provider: MockDependencyProvider,
+    ) {
+        // fixtures
+        let req = Request {
+            username: TEST_USERNAME.to_string(),
+            password: TEST_PASSWORD.to_string(),
+        };
+        // mock setup
+        dependency_provider
+            .db
+            .user_repo
+            .expect_get_by_username()
+            .withf(move |_, actual_username| actual_username == &UserName::new(TEST_USERNAME))
+            .times(1)
+            .returning(move |_, _| Box::pin(async move { Err(GetError::Connection) }));
+        // Usecase Initialization
+        let usecase = <Login<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
+            &dependency_provider,
+        );
+        // Usecase Execution -- mock predicates will fail during execution
+        let result = usecase.exec(req).await;
+        // Assert execution error
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), Error::Repo);
+    }
+    #[rstest]
+    async fn test_login_fail_get_by_username_not_found(
+        mut dependency_provider: MockDependencyProvider,
+    ) {
+        // fixtures
+        let req = Request {
+            username: TEST_USERNAME.to_string(),
+            password: TEST_PASSWORD.to_string(),
+        };
+        // mock setup
+        dependency_provider
+            .db
+            .user_repo
+            .expect_get_by_username()
+            .withf(move |_, actual_username| actual_username == &UserName::new(TEST_USERNAME))
+            .times(1)
+            .returning(move |_, _| Box::pin(async move { Err(GetError::NotFound) }));
+        // Usecase Initialization
+        let usecase = <Login<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
+            &dependency_provider,
+        );
+        // Usecase Execution -- mock predicates will fail during execution
+        let result = usecase.exec(req).await;
+        // Assert execution error
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err(),
+            Error::NotFound(UserName::new(TEST_USERNAME))
+        );
+    }
+    #[rstest]
+    async fn test_login_fail_get_by_username_invalid_password(
+        mut dependency_provider: MockDependencyProvider,
+        user_record: UserRecord,
+    ) {
+        // fixtures
+        let req = Request {
+            username: TEST_USERNAME.to_string(),
+            password: "fail password".to_string(),
+        };
+        // mock setup
+        dependency_provider
+            .db
+            .user_repo
+            .expect_get_by_username()
+            .withf(move |_, actual_username| actual_username == &UserName::new(TEST_USERNAME))
+            .times(1)
+            .returning(move |_, _| {
+                Box::pin({
+                    let record = user_record.clone();
+                    async move { Ok(record) }
+                })
+            });
+        // Usecase Initialization
+        let usecase = <Login<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
+            &dependency_provider,
+        );
+        // Usecase Execution -- mock predicates will fail during execution
+        let result = usecase.exec(req).await;
+        // Assert execution error
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), Error::InvalidLogin);
+    }
+    #[rstest]
+    fn test_authorize_admin_zero(auth_context_admin: AuthContext) {
+        let req = Request {
+            username: TEST_USERNAME.to_string(),
+            password: TEST_PASSWORD.to_string(),
+        };
+        let result = Login::new(&MockDependencyProvider::default())
+            .authorize(&req, Some(auth_context_admin));
+        assert!(result.is_ok());
+    }
+
+    #[rstest]
+    fn test_authorize_user_zero(auth_context_user: AuthContext) {
+        let req = Request {
+            username: TEST_USERNAME.to_string(),
+            password: TEST_PASSWORD.to_string(),
+        };
+        let result =
+            Login::new(&MockDependencyProvider::default()).authorize(&req, Some(auth_context_user));
+        assert!(result.is_ok());
+    }
+    #[rstest]
+    fn test_authorize_none() {
+        let req = Request {
+            username: TEST_USERNAME.to_string(),
+            password: TEST_PASSWORD.to_string(),
+        };
+        let auth_context = None;
+        let result = Login::new(&MockDependencyProvider::default()).authorize(&req, auth_context);
+        assert!(result.is_ok());
     }
 }

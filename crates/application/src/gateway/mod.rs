@@ -23,14 +23,18 @@ pub trait AuthExtractorProvider {
 pub mod mock {
     use super::{
         database::{mock::MockDatabase, Database},
-        service::email::{mock::MockEmailVerificationService, EmailVerificationService},
-        DatabaseProvider, EmailVerificationServiceProvider,
+        service::{
+            auth::{mock::MockAuthPacker, AuthPacker},
+            email::{mock::MockEmailVerificationService, EmailVerificationService},
+        },
+        AuthPackerProvider, DatabaseProvider, EmailVerificationServiceProvider,
     };
 
     #[derive(Default)]
     pub struct MockDependencyProvider {
         pub db: MockDatabase,
         pub email_verification_service: MockEmailVerificationService,
+        pub auth_packer: MockAuthPacker,
     }
     impl DatabaseProvider for MockDependencyProvider {
         fn database(&self) -> impl Database {
@@ -40,6 +44,11 @@ pub mod mock {
     impl EmailVerificationServiceProvider for MockDependencyProvider {
         fn email_verification_service(&self) -> impl EmailVerificationService {
             &self.email_verification_service
+        }
+    }
+    impl AuthPackerProvider for MockDependencyProvider {
+        fn auth_packer(&self) -> impl AuthPacker {
+            &self.auth_packer
         }
     }
 }
