@@ -189,4 +189,8 @@ pub mod fixtures {
             },
         ]
     }
+    #[fixture]
+    pub fn user_id() -> UserId {
+        UserId::new(uuid::Uuid::from_str(TEST_UUID).unwrap())
+    }
 }
