@@ -9,7 +9,7 @@ use crate::{
     usecase::Usecase,
 };
 use ca_domain::entity::{
-    auth_context::{AuthContext, AuthError},
+    auth_strategy::AuthStrategy,
     user::{Id, User},
 };
 
@@ -74,19 +74,10 @@ where
         }
     }
 
-    fn authorize(req: &Self::Request, auth_context: Option<AuthContext>) -> Result<(), AuthError> {
-        // owner and admin only
-        if let Some(auth_context) = auth_context {
-            // admin allowed
-            if auth_context.is_admin() {
-                return Ok(());
-            } else {
-                // if requested id is same as auth_context id
-                if &req.id == auth_context.user_id() {
-                    return Ok(());
-                }
-            }
-        }
-        Err(AuthError::Unauthorized)
+    fn auth_strategy(&self) -> AuthStrategy {
+        AuthStrategy::AdminAndOwnerOnly
+    }
+    fn extract_owner(&self, req: &Self::Request) -> Option<Id> {
+        Some(req.id)
     }
 }

@@ -10,7 +10,7 @@ use crate::{
     usecase::Usecase,
 };
 use ca_domain::entity::{
-    auth_context::{AuthContext, AuthError},
+    auth_strategy::AuthStrategy,
     signup_process::{Id, SignupProcess},
     user::Email,
 };
@@ -86,9 +86,8 @@ where
             dependency_provider,
         }
     }
-    fn authorize(_: &Self::Request, _: Option<AuthContext>) -> Result<(), AuthError> {
-        // public signup endpoint, open/no auth
-        Ok(())
+    fn auth_strategy(&self) -> AuthStrategy {
+        AuthStrategy::Public
     }
 }
 
@@ -98,6 +97,7 @@ mod tests {
     use crate::gateway::database::signup_process::{self, Record as SignupProcessRepoRecord};
     use crate::gateway::mock::MockDependencyProvider;
     use crate::usecase::tests::fixtures::*;
+    use ca_domain::entity::auth_context::AuthContext;
     use ca_domain::entity::signup_process::SignupStateEnum;
     use rstest::rstest;
 
@@ -208,11 +208,8 @@ mod tests {
         let req = super::Request {
             email: TEST_EMAIL.to_string(),
         };
-        let result =
-            <Initialize<MockDependencyProvider> as Usecase<MockDependencyProvider>>::authorize(
-                &req,
-                Some(auth_context_admin),
-            );
+        let result = Initialize::new(&MockDependencyProvider::default())
+            .authorize(&req, Some(auth_context_admin));
         assert!(result.is_ok());
     }
 
@@ -221,11 +218,8 @@ mod tests {
         let req = super::Request {
             email: TEST_EMAIL.to_string(),
         };
-        let result =
-            <Initialize<MockDependencyProvider> as Usecase<MockDependencyProvider>>::authorize(
-                &req,
-                Some(auth_context_user),
-            );
+        let result = Initialize::new(&MockDependencyProvider::default())
+            .authorize(&req, Some(auth_context_user));
         assert!(result.is_ok());
     }
     #[rstest]
@@ -235,10 +229,7 @@ mod tests {
         };
         let auth_context = None;
         let result =
-            <Initialize<MockDependencyProvider> as Usecase<MockDependencyProvider>>::authorize(
-                &req,
-                auth_context,
-            );
+            Initialize::new(&MockDependencyProvider::default()).authorize(&req, auth_context);
         assert!(result.is_ok());
     }
 }

@@ -11,7 +11,7 @@ use crate::{
 };
 
 use ca_domain::entity::{
-    auth_context::{AuthContext, AuthError},
+    auth_strategy::AuthStrategy,
     signup_process::{Id, SignupProcess, VerificationEmailSent},
 };
 
@@ -142,9 +142,8 @@ where
             dependency_provider,
         }
     }
-    fn authorize(_: &Self::Request, _: Option<AuthContext>) -> Result<(), AuthError> {
-        // public signup endpoint, open/no auth
-        Ok(())
+    fn auth_strategy(&self) -> AuthStrategy {
+        AuthStrategy::Public
     }
 }
 
@@ -159,7 +158,10 @@ mod tests {
         },
         usecase::tests::fixtures::*,
     };
-    use ca_domain::entity::signup_process::{Error as SignupError, Id as SignupId};
+    use ca_domain::entity::{
+        auth_context::AuthContext,
+        signup_process::{Error as SignupError, Id as SignupId},
+    };
 
     use super::*;
 
@@ -632,11 +634,8 @@ mod tests {
             id: signup_id,
             token: TEST_TOKEN.to_string(),
         };
-        let result =
-            <VerifyEmail<MockDependencyProvider> as Usecase<MockDependencyProvider>>::authorize(
-                &req,
-                Some(auth_context_admin),
-            );
+        let result = VerifyEmail::new(&MockDependencyProvider::default())
+            .authorize(&req, Some(auth_context_admin));
         assert!(result.is_ok());
     }
 
@@ -646,11 +645,8 @@ mod tests {
             id: signup_id,
             token: TEST_TOKEN.to_string(),
         };
-        let result =
-            <VerifyEmail<MockDependencyProvider> as Usecase<MockDependencyProvider>>::authorize(
-                &req,
-                Some(auth_context_user),
-            );
+        let result = VerifyEmail::new(&MockDependencyProvider::default())
+            .authorize(&req, Some(auth_context_user));
         assert!(result.is_ok());
     }
     #[rstest]
@@ -661,10 +657,7 @@ mod tests {
         };
         let auth_context = None;
         let result =
-            <VerifyEmail<MockDependencyProvider> as Usecase<MockDependencyProvider>>::authorize(
-                &req,
-                auth_context,
-            );
+            VerifyEmail::new(&MockDependencyProvider::default()).authorize(&req, auth_context);
         assert!(result.is_ok());
     }
 }

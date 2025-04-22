@@ -10,7 +10,8 @@ use crate::{
     usecase::Usecase,
 };
 use ca_domain::entity::{
-    auth_context::{AuthContext, AuthError},
+    auth_context::AuthContext,
+    auth_strategy::AuthStrategy,
     user::{Id, Password, UserName},
 };
 use serde::{Deserialize, Serialize};
@@ -99,8 +100,7 @@ where
             dependency_provider,
         }
     }
-    fn authorize(_: &Self::Request, _: Option<AuthContext>) -> Result<(), AuthError> {
-        // public signup endpoint, open/no auth
-        Ok(())
+    fn auth_strategy(&self) -> AuthStrategy {
+        AuthStrategy::Public
     }
 }

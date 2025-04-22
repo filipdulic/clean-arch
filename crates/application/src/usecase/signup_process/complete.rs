@@ -12,7 +12,7 @@ use crate::{
 
 use ca_domain::{
     entity::{
-        auth_context::{AuthContext, AuthError},
+        auth_strategy::AuthStrategy,
         signup_process::{EmailVerified, Id, SignupProcess},
         user::{Password, User, UserName},
     },
@@ -157,9 +157,8 @@ where
             dependency_provider: db,
         }
     }
-    fn authorize(_: &Self::Request, _: Option<AuthContext>) -> Result<(), AuthError> {
-        // public signup endpoint, open/no auth
-        Ok(())
+    fn auth_strategy(&self) -> AuthStrategy {
+        AuthStrategy::Public
     }
 }
 
@@ -174,7 +173,10 @@ mod tests {
         usecase::tests::fixtures::*,
     };
     use ca_domain::{
-        entity::signup_process::{Error as SignupError, Id as SignupId},
+        entity::{
+            auth_context::AuthContext,
+            signup_process::{Error as SignupError, Id as SignupId},
+        },
         value_object::Email,
     };
     use rstest::*;
@@ -564,11 +566,8 @@ mod tests {
             username: TEST_USERNAME.to_string(),
             password: TEST_PASSWORD.to_string(),
         };
-        let result =
-            <Complete<MockDependencyProvider> as Usecase<MockDependencyProvider>>::authorize(
-                &req,
-                Some(auth_context_admin),
-            );
+        let result = Complete::new(&MockDependencyProvider::default())
+            .authorize(&req, Some(auth_context_admin));
         assert!(result.is_ok());
     }
 
@@ -579,11 +578,8 @@ mod tests {
             username: TEST_USERNAME.to_string(),
             password: TEST_PASSWORD.to_string(),
         };
-        let result =
-            <Complete<MockDependencyProvider> as Usecase<MockDependencyProvider>>::authorize(
-                &req,
-                Some(auth_context_user),
-            );
+        let result = Complete::new(&MockDependencyProvider::default())
+            .authorize(&req, Some(auth_context_user));
         assert!(result.is_ok());
     }
     #[rstest]
@@ -593,12 +589,7 @@ mod tests {
             username: TEST_USERNAME.to_string(),
             password: TEST_PASSWORD.to_string(),
         };
-        let auth_context = None;
-        let result =
-            <Complete<MockDependencyProvider> as Usecase<MockDependencyProvider>>::authorize(
-                &req,
-                auth_context,
-            );
+        let result = Complete::new(&MockDependencyProvider::default()).authorize(&req, None);
         assert!(result.is_ok());
     }
 }
