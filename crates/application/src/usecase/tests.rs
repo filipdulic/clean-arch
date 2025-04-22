@@ -5,15 +5,16 @@ pub mod fixtures {
         entity::{
             auth_context::AuthContext,
             signup_process::{Error as SignupError, Id as SignupId, SignupStateEnum},
-            user::{Email, Id as UserId},
+            user::{Email, Id as UserId, User},
         },
-        value_object::Role,
+        value_object::{Password, Role, UserName},
     };
     use rstest::*;
 
     use crate::gateway::{
         database::{
             signup_process::Record as SignupProcessRepoRecord, token::Record as TokenRepoRecord,
+            user::Record as UserRecord,
         },
         mock::MockDependencyProvider,
     };
@@ -151,5 +152,17 @@ pub mod fixtures {
                 entered_at: chrono::Utc::now(),
             },
         ]
+    }
+    #[fixture]
+    pub fn user_record() -> UserRecord {
+        UserRecord {
+            user: User::new(
+                UserId::new(uuid::Uuid::parse_str(TEST_UUID).unwrap()),
+                Role::User,
+                Email::new(TEST_EMAIL),
+                UserName::new(TEST_USERNAME),
+                Password::new(TEST_PASSWORD),
+            ),
+        }
     }
 }
