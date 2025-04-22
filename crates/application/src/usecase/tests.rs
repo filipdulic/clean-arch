@@ -21,6 +21,8 @@ pub mod fixtures {
     pub static TEST_EMAIL: &str = "test@email.com";
     pub static TEST_TOKEN: &str = "test_token";
     pub static TEST_UUID: &str = "9dcccf0f-a1ff-49fb-a238-cd9d88502391";
+    pub static TEST_USERNAME: &str = "test_username";
+    pub static TEST_PASSWORD: &str = "test_password";
 
     #[fixture]
     pub fn signup_id() -> SignupId {
@@ -111,6 +113,18 @@ pub mod fixtures {
             entered_at: chrono::Utc::now(),
         }
     }
+    #[fixture]
+    pub fn failed_initialized_record(signup_id: SignupId, email: Email) -> SignupProcessRepoRecord {
+        SignupProcessRepoRecord {
+            id: signup_id,
+            state: SignupStateEnum::Failed {
+                previous_state: Arc::new(SignupStateEnum::Initialized { email }),
+                error: SignupError::TokenGenrationFailed,
+            },
+            entered_at: chrono::Utc::now(),
+        }
+    }
+
     #[fixture]
     pub fn state_chain_record_vector(
         signup_id: SignupId,
