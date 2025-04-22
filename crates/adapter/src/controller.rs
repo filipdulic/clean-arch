@@ -49,12 +49,14 @@ where
         } else {
             None
         };
+        // Instantiate the usecase
+        let usecase = U::new(&self.dependency_provider);
         // Authorize request
-        if U::authorize(&processed_req, auth_context).is_err() {
+        if usecase.authorize(&processed_req, auth_context).is_err() {
             return <B as Presenter<D, U>>::present(Err(Error::AuthError(AuthError::Unauthorized)));
         }
         // Execute use case in transaction if it is transactional
-        let req = U::new(&self.dependency_provider)
+        let req = usecase
             .exec(processed_req)
             .await
             .map_err(|err| Error::UsecaseError(err));

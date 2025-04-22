@@ -8,10 +8,7 @@ use crate::{
     },
     usecase::Usecase,
 };
-use ca_domain::entity::{
-    auth_context::{AuthContext, AuthError},
-    user::User,
-};
+use ca_domain::entity::{auth_strategy::AuthStrategy, user::User};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -69,13 +66,7 @@ where
             dependency_provider,
         }
     }
-    fn authorize(_: &Self::Request, auth_context: Option<AuthContext>) -> Result<(), AuthError> {
-        // admin only
-        if let Some(auth_context) = auth_context {
-            if auth_context.is_admin() {
-                return Ok(());
-            }
-        }
-        Err(AuthError::Unauthorized)
+    fn auth_strategy(&self) -> AuthStrategy {
+        AuthStrategy::AdminOnly
     }
 }

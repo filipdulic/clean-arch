@@ -11,9 +11,8 @@ use crate::{
     usecase::Usecase,
 };
 
-use ca_domain::entity::{
-    auth_context::{AuthContext, AuthError},
-    signup_process::{Error as SignupProcessError, Id, Initialized, SignupProcess},
+use ca_domain::entity::signup_process::{
+    Error as SignupProcessError, Id, Initialized, SignupProcess,
 };
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -129,15 +128,6 @@ where
             dependency_provider,
         }
     }
-    fn authorize(_: &Self::Request, auth_context: Option<AuthContext>) -> Result<(), AuthError> {
-        // admin only
-        if let Some(auth_context) = auth_context {
-            if auth_context.is_admin() {
-                return Ok(());
-            }
-        }
-        Err(AuthError::Unauthorized)
-    }
 }
 
 #[cfg(test)]
@@ -147,6 +137,7 @@ mod tests {
     use crate::gateway::database::token::{GenError as TokenRepoError, Record as TokenRepoRecord};
     use crate::gateway::mock::MockDependencyProvider;
     use crate::usecase::tests::fixtures::*;
+    use ca_domain::entity::auth_context::{AuthContext, AuthError};
     use ca_domain::entity::signup_process::{
         Error as SignupProcessError, Id as SignupId, SignupStateEnum,
     };
@@ -432,27 +423,24 @@ mod tests {
     #[rstest]
     fn test_authorize_admin_zero(signup_id: SignupId, auth_context_admin: AuthContext) {
         let req = super::Request { id: signup_id };
-        let result = <SendVerificationEmail<MockDependencyProvider> as Usecase<
-            MockDependencyProvider,
-        >>::authorize(&req, Some(auth_context_admin));
+        let result = SendVerificationEmail::new(&MockDependencyProvider::default())
+            .authorize(&req, Some(auth_context_admin));
         assert!(result.is_ok());
     }
 
     #[rstest]
     fn test_authorize_user(signup_id: SignupId, auth_context_user: AuthContext) {
         let req = super::Request { id: signup_id };
-        let result = <SendVerificationEmail<MockDependencyProvider> as Usecase<
-            MockDependencyProvider,
-        >>::authorize(&req, Some(auth_context_user));
+        let result = SendVerificationEmail::new(&MockDependencyProvider::default())
+            .authorize(&req, Some(auth_context_user));
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), AuthError::Unauthorized);
     }
     #[rstest]
     fn test_authorize_none(signup_id: SignupId) {
         let req = super::Request { id: signup_id };
-        let result = <SendVerificationEmail<MockDependencyProvider> as Usecase<
-            MockDependencyProvider,
-        >>::authorize(&req, None);
+        let result =
+            SendVerificationEmail::new(&MockDependencyProvider::default()).authorize(&req, None);
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), AuthError::Unauthorized);
     }
