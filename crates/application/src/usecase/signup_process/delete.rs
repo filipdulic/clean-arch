@@ -271,15 +271,49 @@ mod tests {
         assert_eq!(result.unwrap_err(), Error::IncorrectState(signup_id));
     }
     #[rstest]
-    async fn test_delete_fail_save_latest_state_connection(
+    async fn test_delete_fail_incorrect_failed_state(
         mut dependency_provider: MockDependencyProvider,
         signup_id: SignupId,
-        failed_verification_email_verified_record: SignupProcessRepoRecord,
+        failed_initialized_record: SignupProcessRepoRecord,
     ) {
         // fixtures
         let req = Request { id: signup_id };
-        let process: SignupProcess<Failed<EmailVerified>> =
-            failed_verification_email_verified_record
+        // Mock setup -- predicates and return values
+        dependency_provider
+            .db
+            .signup_process_repo
+            .expect_get_latest_state()
+            // makes sure the correct id is used
+            .withf(move |_, actual_id| actual_id == &signup_id)
+            .times(1)
+            // returns the record with the incorrect state
+            .returning(move |_, _| {
+                Box::pin({
+                    let record = failed_initialized_record.clone();
+                    async move { Ok(record) }
+                })
+            });
+        // Usecase Initialization
+        let usecase = <Delete<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
+            &dependency_provider,
+        );
+        // Usecase Execution -- mock predicates will fail during execution
+        let result = usecase.exec(req).await;
+        // Assert execution success
+        assert!(result.is_err());
+        // Assert GetError::IncorrectState is converted to Error::IncorrectState with the correct id
+        assert_eq!(result.unwrap_err(), Error::IncorrectState(signup_id));
+    }
+    #[rstest]
+    async fn test_delete_fail_save_latest_state_connection(
+        mut dependency_provider: MockDependencyProvider,
+        signup_id: SignupId,
+        failed_verification_email_sent_record: SignupProcessRepoRecord,
+    ) {
+        // fixtures
+        let req = Request { id: signup_id };
+        let process: SignupProcess<Failed<VerificationEmailSent>> =
+            failed_verification_email_sent_record
                 .clone()
                 .try_into()
                 .unwrap();
@@ -296,7 +330,7 @@ mod tests {
             // returns the record with the correct state
             .returning(move |_, _| {
                 Box::pin({
-                    let record = failed_verification_email_verified_record.clone();
+                    let record = failed_verification_email_sent_record.clone();
                     async move { Ok(record) }
                 })
             });
