@@ -22,6 +22,7 @@ members = [
     "crates/domain",
     "crates/infrastructure/boundary/string",
     "crates/infrastructure/boundary/json",
+    "crates/infrastructure/boundary/poem-openapi",
     "crates/infrastructure/interface/cli",
     "crates/infrastructure/interface/cli-json",
     "crates/infrastructure/persistance/sqlx_sqlite",
@@ -41,6 +42,7 @@ rust-version = "1.81.0"
 ca-infrastructure-service-email-file = { version = "0.1.0", path = "crates/infrastructure/service/email/file" }
 ca-infrastructure-boundary-string = { version = "0.1.0", path = "crates/infrastructure/boundary/string" }
 ca-infrastructure-boundary-json = { version = "0.1.0", path = "crates/infrastructure/boundary/json" }
+ca-infrastructure-boundary-poem-openapi = { version = "0.1.0", path = "crates/infrastructure/boundary/poem-openapi" }
 ca-infrastructure-interface-cli = { version = "0.1.0", path = "crates/infrastructure/interface/cli" }
 ca-infrastructure-interface-cli-json = { version = "0.1.0", path = "crates/infrastructure/interface/cli-json" }
 ca-infrastructure-persistance-sqlx-sqlite = { version = "0.1.0", path = "crates/infrastructure/persistance/sqlx_sqlite" }
