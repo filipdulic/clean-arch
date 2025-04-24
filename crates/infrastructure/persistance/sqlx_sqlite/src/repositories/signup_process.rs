@@ -1,3 +1,6 @@
+use futures::lock::Mutex;
+use std::sync::Arc;
+
 use ca_application::gateway::database::{
     identifier::{NewId, NewIdError},
     signup_process::{DeleteError, GetError, Record, Repo, SaveError},
@@ -14,7 +17,7 @@ impl Repo for &SqlxSqlite {
     type Transaction = SqlxSqliteTransaction;
     async fn save_latest_state(
         &self,
-        transaction: Option<&mut Self::Transaction>,
+        transaction: Option<Arc<Mutex<Self::Transaction>>>,
         record: Record,
     ) -> Result<(), SaveError> {
         println!("Save Latest State: {:?}", record);
@@ -28,7 +31,7 @@ impl Repo for &SqlxSqlite {
             .bind(sps.state);
         let res = match transaction {
             Some(tx) => query
-                .execute(&mut **tx)
+                .execute(&mut **tx.lock().await)
                 .await
                 .map_err(|_| SaveError::Connection),
             None => query
@@ -47,7 +50,7 @@ impl Repo for &SqlxSqlite {
 
     async fn get_latest_state(
         &self,
-        transaction: Option<&mut Self::Transaction>,
+        transaction: Option<Arc<Mutex<Self::Transaction>>>,
         id: Id,
     ) -> Result<Record, GetError> {
         // TODO: Handle empty state chain/None
@@ -57,7 +60,7 @@ impl Repo for &SqlxSqlite {
 
     async fn get_state_chain(
         &self,
-        transaction: Option<&mut Self::Transaction>,
+        transaction: Option<Arc<Mutex<Self::Transaction>>>,
         id: Id,
     ) -> Result<Vec<Record>, GetError> {
         let query =
@@ -65,7 +68,7 @@ impl Repo for &SqlxSqlite {
                 .bind(id.to_string());
         let sps_results = match transaction {
             Some(tx) => query
-                .fetch_all(&mut **tx)
+                .fetch_all(&mut **tx.lock().await)
                 .await
                 .map_err(|_| GetError::Connection)?,
             None => query
@@ -79,14 +82,14 @@ impl Repo for &SqlxSqlite {
 
     async fn delete(
         &self,
-        transaction: Option<&mut Self::Transaction>,
+        transaction: Option<Arc<Mutex<Self::Transaction>>>,
         id: Id,
     ) -> Result<(), DeleteError> {
         let query =
             sqlx::query("DELETE FROM signup_process_states WHERE id = ?").bind(id.to_string());
         match transaction {
             Some(tx) => query
-                .execute(&mut **tx)
+                .execute(&mut **tx.lock().await)
                 .await
                 .map_err(|_| DeleteError::Connection)?,
             None => query
