@@ -1,4 +1,4 @@
-use std::future::Future;
+use std::{future::Future, sync::Arc};
 
 use ca_domain::{entity::signup_process::SignupProcessValue, value_object::Id};
 
@@ -16,24 +16,31 @@ pub trait Database {
     fn signuo_id_gen(&self) -> impl NewId<Id<SignupProcessValue>>;
     fn user_repo(&self) -> impl user::Repo<Transaction = Self::Transaction>;
     fn token_repo(&self) -> impl token::Repo<Transaction = Self::Transaction>;
-    fn begin_transaction(&self) -> impl Future<Output = Self::Transaction>;
+    fn begin_transaction(
+        &self,
+    ) -> impl Future<Output = Arc<futures::lock::Mutex<Self::Transaction>>>;
     fn commit_transaction(
         &self,
-        transaction: Self::Transaction,
+        transaction: Arc<futures::lock::Mutex<Self::Transaction>>,
     ) -> impl Future<Output = Result<(), Self::Error>>;
     fn rollback_transaction(
         &self,
-        transaction: Self::Transaction,
+        transaction: Arc<futures::lock::Mutex<Self::Transaction>>,
     ) -> impl Future<Output = Result<(), Self::Error>>;
 }
 
 #[cfg(test)]
 pub mod mock {
-    use super::{
-        signup_process::mock::MockSignupProcessRepo, token::mock::MockTokenRepo,
-        user::mock::MockUserRepo, *,
+    use std::sync::Arc;
+
+    use super::*;
+    use crate::gateway::database::{
+        identifier::{NewId, NewIdError},
+        signup_process::MockRepo as MockSignupProcessRepo,
+        token::MockRepo as MockTokenRepo,
+        user::MockRepo as MockUserRepo,
     };
-    use identifier::NewIdError;
+    use ca_domain::{entity::signup_process::SignupProcessValue, value_object::Id};
     use mockall::mock;
 
     mock! {
@@ -80,16 +87,18 @@ pub mod mock {
         fn token_repo(&self) -> impl token::Repo<Transaction = Self::Transaction> {
             &self.token_repo
         }
-        async fn begin_transaction(&self) -> Self::Transaction {}
+        async fn begin_transaction(&self) -> Arc<futures::lock::Mutex<Self::Transaction>> {
+            Arc::new(futures::lock::Mutex::new(()))
+        }
         async fn commit_transaction(
             &self,
-            _transaction: Self::Transaction,
+            _transaction: Arc<futures::lock::Mutex<Self::Transaction>>,
         ) -> Result<(), Self::Error> {
             Ok(())
         }
         async fn rollback_transaction(
             &self,
-            _transaction: Self::Transaction,
+            _transaction: Arc<futures::lock::Mutex<Self::Transaction>>,
         ) -> Result<(), Self::Error> {
             Ok(())
         }

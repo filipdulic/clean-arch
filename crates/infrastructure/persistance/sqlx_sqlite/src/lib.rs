@@ -1,3 +1,6 @@
+use futures::lock::Mutex;
+use std::sync::Arc;
+
 use ca_application::gateway::database::{
     self,
     identifier::{NewId, NewIdError},
@@ -61,26 +64,41 @@ impl Database for &SqlxSqlite {
     type Error = ();
     type Transaction = SqlxSqliteTransaction;
 
-    async fn begin_transaction(&self) -> Self::Transaction {
-        self.pool()
-            .begin()
-            .await
-            .expect("Failed to begin transaction")
+    async fn begin_transaction(&self) -> Arc<Mutex<Self::Transaction>> {
+        Arc::new(Mutex::new(
+            self.pool()
+                .begin()
+                .await
+                .expect("Failed to begin transaction"),
+        ))
     }
 
-    async fn commit_transaction(&self, transaction: Self::Transaction) -> Result<(), Self::Error> {
-        transaction.commit().await.map_err(|err| {
-            println!("Transaction commit error: {:?}", err);
-        })
+    async fn commit_transaction(
+        &self,
+        transaction: Arc<Mutex<Self::Transaction>>,
+    ) -> Result<(), Self::Error> {
+        Arc::try_unwrap(transaction)
+            .unwrap()
+            .into_inner()
+            .commit()
+            .await
+            .map_err(|err| {
+                println!("Transaction commit error: {:?}", err);
+            })
     }
 
     async fn rollback_transaction(
         &self,
-        transaction: Self::Transaction,
+        transaction: Arc<Mutex<Self::Transaction>>,
     ) -> Result<(), Self::Error> {
-        transaction.rollback().await.map_err(|err| {
-            println!("Transaction rollback error: {:?}", err);
-        })
+        Arc::try_unwrap(transaction)
+            .unwrap()
+            .into_inner()
+            .rollback()
+            .await
+            .map_err(|err| {
+                println!("Transaction rollback error: {:?}", err);
+            })
     }
 
     fn signup_process_repo(

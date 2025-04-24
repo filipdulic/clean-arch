@@ -1,8 +1,7 @@
-use std::future::Future;
-
 use ca_domain::entity::signup_process::*;
 use chrono::{DateTime, Utc};
 use serde::Serialize;
+use std::{future::Future, sync::Arc};
 use thiserror::Error;
 
 #[derive(Debug, Error, Serialize)]
@@ -62,91 +61,61 @@ impl<S: SignupStateTrait + Clone> TryFrom<Record> for SignupProcess<S> {
             .map_err(|_| GetError::IncorrectState)
     }
 }
-
+#[cfg_attr(test, mockall::automock(type Transaction = ();))]
 pub trait Repo: Send + Sync {
     type Transaction;
     fn save_latest_state(
         &self,
-        transaction: Option<&mut Self::Transaction>,
+        transaction: Option<Arc<futures::lock::Mutex<Self::Transaction>>>,
         record: Record,
     ) -> impl Future<Output = Result<(), SaveError>>;
     fn get_latest_state(
         &self,
-        transaction: Option<&mut Self::Transaction>,
+        transaction: Option<Arc<futures::lock::Mutex<Self::Transaction>>>,
         id: Id,
     ) -> impl Future<Output = Result<Record, GetError>>;
     fn get_state_chain(
         &self,
-        transaction: Option<&mut Self::Transaction>,
+        transaction: Option<Arc<futures::lock::Mutex<Self::Transaction>>>,
         id: Id,
     ) -> impl Future<Output = Result<Vec<Record>, GetError>>;
     fn delete(
         &self,
-        transaction: Option<&mut Self::Transaction>,
+        transaction: Option<Arc<futures::lock::Mutex<Self::Transaction>>>,
         id: Id,
     ) -> impl Future<Output = Result<(), DeleteError>>;
 }
 
 #[cfg(test)]
-pub mod mock {
-    use super::*;
-    use mockall::mock;
-    mock! {
-        pub SignupProcessRepo {}
-        impl Repo for  SignupProcessRepo{
-            type Transaction = ();
-            fn save_latest_state<'a>(
-                &self,
-                transaction: Option<&'a mut <MockSignupProcessRepo as Repo>::Transaction>,
-                record: Record,
-            ) -> impl Future<Output = Result<(), SaveError>>;
-            fn get_latest_state<'a>(
-                &self,
-                transaction: Option<&'a mut <MockSignupProcessRepo as Repo>::Transaction>,
-                id: Id,
-            ) -> impl Future<Output = Result<Record, GetError>>;
-            fn get_state_chain<'a>(
-                &self,
-                transaction: Option<&'a mut <MockSignupProcessRepo as Repo>::Transaction>,
-                id: Id,
-            ) -> impl Future<Output = Result<Vec<Record>, GetError>>;
-            fn delete<'a>(
-                &self,
-                transaction: Option<&'a mut <MockSignupProcessRepo as Repo>::Transaction>,
-                id: Id,
-            ) -> impl Future<Output = Result<(), DeleteError>>;
-        }
+impl Repo for &MockRepo {
+    type Transaction = ();
+    fn save_latest_state(
+        &self,
+        transaction: Option<Arc<futures::lock::Mutex<Self::Transaction>>>,
+        record: Record,
+    ) -> impl Future<Output = Result<(), SaveError>> {
+        (*self).save_latest_state(transaction, record)
     }
-    impl Repo for &MockSignupProcessRepo {
-        type Transaction = ();
-        fn save_latest_state(
-            &self,
-            transaction: Option<&mut Self::Transaction>,
-            record: Record,
-        ) -> impl Future<Output = Result<(), SaveError>> {
-            (*self).save_latest_state(transaction, record)
-        }
-        fn get_latest_state(
-            &self,
-            transaction: Option<&mut Self::Transaction>,
-            id: Id,
-        ) -> impl Future<Output = Result<Record, GetError>> {
-            (*self).get_latest_state(transaction, id)
-        }
-        fn get_state_chain(
-            &self,
-            transaction: Option<&mut Self::Transaction>,
-            id: Id,
-        ) -> impl Future<Output = Result<Vec<Record>, GetError>> {
-            (*self).get_state_chain(transaction, id)
-        }
-        fn delete(
-            &self,
-            transaction: Option<&mut Self::Transaction>,
-            id: Id,
-        ) -> impl Future<Output = Result<(), DeleteError>> {
-            (*self).delete(transaction, id)
-        }
+    fn get_latest_state(
+        &self,
+        transaction: Option<Arc<futures::lock::Mutex<Self::Transaction>>>,
+        id: Id,
+    ) -> impl Future<Output = Result<Record, GetError>> {
+        (*self).get_latest_state(transaction, id)
+    }
+    fn get_state_chain(
+        &self,
+        transaction: Option<Arc<futures::lock::Mutex<Self::Transaction>>>,
+        id: Id,
+    ) -> impl Future<Output = Result<Vec<Record>, GetError>> {
+        (*self).get_state_chain(transaction, id)
+    }
+    fn delete(
+        &self,
+        transaction: Option<Arc<futures::lock::Mutex<Self::Transaction>>>,
+        id: Id,
+    ) -> impl Future<Output = Result<(), DeleteError>> {
+        (*self).delete(transaction, id)
     }
 }
 
@@ -159,7 +128,7 @@ mod tests {
     #[rstest]
     async fn test_mock() {
         // Create a mock instance
-        let mut mock = mock::MockSignupProcessRepo::new();
+        let mut mock = MockRepo::new();
 
         // Define a sample record
         let record = Record {

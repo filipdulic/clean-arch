@@ -1,3 +1,6 @@
+use futures::lock::Mutex;
+use std::sync::Arc;
+
 use ca_application::gateway::database::token::*;
 use chrono::{DateTime, Duration, NaiveDateTime, Utc};
 
@@ -7,7 +10,7 @@ impl Repo for &SqlxSqlite {
     type Transaction = SqlxSqliteTransaction;
     async fn gen(
         &self,
-        transaction: Option<&mut Self::Transaction>,
+        transaction: Option<Arc<Mutex<Self::Transaction>>>,
         email: &str,
     ) -> Result<Record, GenError> {
         // log::debug!("Generate token for email: {}", email);
@@ -18,7 +21,7 @@ impl Repo for &SqlxSqlite {
         match transaction {
             Some(tx) => {
                 query
-                    .execute(&mut **tx)
+                    .execute(&mut **tx.lock().await)
                     .await
                     .map_err(|_| GenError::Connection)?;
             }
@@ -36,7 +39,7 @@ impl Repo for &SqlxSqlite {
 
     async fn verify(
         &self,
-        transaction: Option<&mut Self::Transaction>,
+        transaction: Option<Arc<Mutex<Self::Transaction>>>,
         email: &str,
         token: &str,
     ) -> Result<(), VerifyError> {
@@ -45,7 +48,7 @@ impl Repo for &SqlxSqlite {
             .bind(token.to_string());
         let maybe_row: Option<(String, String, String)> = match transaction {
             Some(tx) => query
-                .fetch_optional(&mut **tx)
+                .fetch_optional(&mut **tx.lock().await)
                 .await
                 .map_err(|_| VerifyError::Connection)?,
             None => query
@@ -75,7 +78,7 @@ impl Repo for &SqlxSqlite {
 
     async fn extend(
         &self,
-        transaction: Option<&mut Self::Transaction>,
+        transaction: Option<Arc<Mutex<Self::Transaction>>>,
         email: &str,
     ) -> Result<(), ExtendError> {
         let now = Utc::now().format("%Y-%m-%d %H:%M:%S").to_string();
@@ -84,7 +87,7 @@ impl Repo for &SqlxSqlite {
             .bind(email.to_string());
         match transaction {
             Some(tx) => query
-                .execute(&mut **tx)
+                .execute(&mut **tx.lock().await)
                 .await
                 .map_err(|_| ExtendError::Connection)?,
             None => query

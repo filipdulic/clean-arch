@@ -79,7 +79,7 @@ where
         // Validate the request
         req.validate()?;
         // Begin transaction
-        let mut transaction = self
+        let transaction = self
             .dependency_provider
             .database()
             .begin_transaction()
@@ -89,7 +89,7 @@ where
             .dependency_provider
             .database()
             .signup_process_repo()
-            .get_latest_state(Some(&mut transaction), req.id)
+            .get_latest_state(Some(transaction.clone()), req.id)
             .await
             .map_err(|err| (err, req.id))?;
         let process: SignupProcess<VerificationEmailSent> =
@@ -100,7 +100,7 @@ where
             .database()
             .token_repo()
             .verify(
-                Some(&mut transaction),
+                Some(transaction.clone()),
                 process.state().email.as_ref(),
                 &req.token,
             )
@@ -113,7 +113,7 @@ where
                 self.dependency_provider
                     .database()
                     .signup_process_repo()
-                    .save_latest_state(Some(&mut transaction), process.into())
+                    .save_latest_state(Some(transaction.clone()), process.into())
                     .await?;
             }
             self.dependency_provider
@@ -128,7 +128,7 @@ where
         self.dependency_provider
             .database()
             .signup_process_repo()
-            .save_latest_state(Some(&mut transaction), process.into())
+            .save_latest_state(Some(transaction.clone()), process.into())
             .await?;
         self.dependency_provider
             .database()
