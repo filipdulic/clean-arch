@@ -24,8 +24,8 @@ pub mod mock {
     use super::{
         database::{Database, MockDatabase},
         service::{
-            auth::{mock::MockAuthPacker, AuthPacker},
-            email::{mock::MockEmailVerificationService, EmailVerificationService},
+            auth::{AuthPacker, MockAuthPacker},
+            email::{EmailVerificationService, MockEmailVerificationService},
         },
         AuthPackerProvider, DatabaseProvider, EmailVerificationServiceProvider,
     };
