@@ -128,7 +128,7 @@ mod tests {
             .expect_save_latest_state()
             .withf(move |_, actual_record| actual_record == &record)
             .times(1)
-            .returning(|_, _| Box::pin(async { Ok(()) }));
+            .returning(|_, _| Ok(()));
         // Usecase Initialization
         let usecase = <Initialize<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
             &dependency_provider,
@@ -191,7 +191,7 @@ mod tests {
             .db
             .signup_process_repo
             .expect_save_latest_state()
-            .returning(|_, _| Box::pin(async { Err(signup_process::SaveError::Connection) }));
+            .returning(|_, _| Err(signup_process::SaveError::Connection));
         let usecase = <Initialize<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
             &dependency_provider,
         );

@@ -167,12 +167,7 @@ mod tests {
             .withf(move |_, actual_id| actual_id == &initialized_record.id)
             .times(1)
             // returns the record with the correct state
-            .returning(move |_, _| {
-                Box::pin({
-                    let record = initialized_record.clone();
-                    async move { Ok(record) }
-                })
-            });
+            .returning(move |_, _| Ok(initialized_record.clone()));
         dependency_provider
             .db
             .token_repo
@@ -205,7 +200,7 @@ mod tests {
             // makes sure the correct process in failed state is saved
             .withf(move |_, actual_record| actual_record == &record_to_save)
             .times(1)
-            .returning(|_, _| Box::pin(async { Ok(()) }));
+            .returning(|_, _| Ok(()));
         // Usecase Initialization
         let usecase = <SendVerificationEmail<MockDependencyProvider> as Usecase<
             MockDependencyProvider,
@@ -228,7 +223,7 @@ mod tests {
             .expect_get_latest_state()
             .withf(move |_, actual_id| actual_id == &signup_id)
             .times(1)
-            .returning(|_, _| Box::pin(async { Err(signup_process::GetError::Connection) }));
+            .returning(|_, _| Err(signup_process::GetError::Connection));
         let usecase = <SendVerificationEmail<MockDependencyProvider> as Usecase<
             MockDependencyProvider,
         >>::new(&dependency_provider);
@@ -248,7 +243,7 @@ mod tests {
             .expect_get_latest_state()
             .withf(move |_, actual_id| actual_id == &signup_id)
             .times(1)
-            .returning(|_, _| Box::pin(async { Err(signup_process::GetError::NotFound) }));
+            .returning(|_, _| Err(signup_process::GetError::NotFound));
         let usecase = <SendVerificationEmail<MockDependencyProvider> as Usecase<
             MockDependencyProvider,
         >>::new(&dependency_provider);
@@ -269,12 +264,10 @@ mod tests {
             .withf(move |_, actual_id| actual_id == &signup_id)
             .times(1)
             .returning(move |_, _| {
-                Box::pin(async move {
-                    Ok(SignupProcessRepoRecord {
-                        id: signup_id,
-                        state: SignupStateEnum::ForDeletion, // should be Initialized
-                        entered_at: chrono::Utc::now(),
-                    })
+                Ok(SignupProcessRepoRecord {
+                    id: signup_id,
+                    state: SignupStateEnum::ForDeletion, // should be Initialized
+                    entered_at: chrono::Utc::now(),
                 })
             });
         let usecase = <SendVerificationEmail<MockDependencyProvider> as Usecase<
@@ -307,12 +300,7 @@ mod tests {
             .withf(move |_, actual_id| actual_id == &initialized_record.id)
             .times(1)
             // returns the record with the correct state
-            .returning(move |_, _| {
-                Box::pin({
-                    let record = initialized_record.clone();
-                    async move { Ok(record) }
-                })
-            });
+            .returning(move |_, _| Ok(initialized_record.clone()));
         dependency_provider
             .db
             .token_repo
@@ -330,7 +318,7 @@ mod tests {
             // makes sure the correct process in failed state is saved
             .withf(move |_, actual_record| actual_record == &record_to_save)
             .times(1)
-            .returning(|_, _| Box::pin(async { Ok(()) }));
+            .returning(|_, _| Ok(()));
         // Usecase Initialization
         let usecase = <SendVerificationEmail<MockDependencyProvider> as Usecase<
             MockDependencyProvider,
@@ -368,12 +356,7 @@ mod tests {
             .withf(move |_, actual_id| actual_id == &initialized_record.id)
             .times(1)
             // returns the record with the correct state
-            .returning(move |_, _| {
-                Box::pin({
-                    let record = initialized_record.clone();
-                    async move { Ok(record) }
-                })
-            });
+            .returning(move |_, _| Ok(initialized_record.clone()));
         dependency_provider
             .db
             .token_repo
@@ -406,7 +389,7 @@ mod tests {
             // makes sure the correct process in failed state is saved
             .withf(move |_, actual_record| actual_record == &record_to_save)
             .times(1)
-            .returning(|_, _| Box::pin(async { Ok(()) }));
+            .returning(|_, _| Ok(()));
         // Usecase Initialization
         let usecase = <SendVerificationEmail<MockDependencyProvider> as Usecase<
             MockDependencyProvider,

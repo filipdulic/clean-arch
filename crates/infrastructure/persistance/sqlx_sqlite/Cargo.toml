@@ -22,5 +22,6 @@ sqlx = { version = "0.8.3", features = [
     "chrono",
 
 ] }
+async-trait = "0.1.88"
 
 [dev-dependencies]
