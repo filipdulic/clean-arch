@@ -6,9 +6,12 @@ use ca_application::gateway::database::user::{
 };
 use ca_domain::entity::user::{Id, UserName};
 
-use crate::{models::user::User, SqlxSqlite, SqlxSqliteTransaction};
+use crate::{models::user::User, SqlxSqliteTransaction};
 
-impl Repo for &SqlxSqlite {
+use super::SqlxSqliteRepository;
+#[async_trait::async_trait]
+
+impl Repo for SqlxSqliteRepository {
     type Transaction = SqlxSqliteTransaction;
     async fn save(
         &self,
@@ -32,7 +35,7 @@ impl Repo for &SqlxSqlite {
             }
             None => {
                 query
-                    .execute(self.pool())
+                    .execute(self.pool.as_ref())
                     .await
                     .map_err(|_| SaveError::Connection)?;
             }
@@ -56,7 +59,7 @@ impl Repo for &SqlxSqlite {
                 .map_err(|_| GetError::Connection)?
                 .ok_or(GetError::NotFound)?,
             None => query
-                .fetch_optional(self.pool())
+                .fetch_optional(self.pool.as_ref())
                 .await
                 .map_err(|_| GetError::Connection)?
                 .ok_or(GetError::NotFound)?,
@@ -80,7 +83,7 @@ impl Repo for &SqlxSqlite {
                 .map_err(|_| GetError::Connection)?
                 .ok_or(GetError::NotFound)?,
             None => query
-                .fetch_optional(self.pool())
+                .fetch_optional(self.pool.as_ref())
                 .await
                 .map_err(|_| GetError::Connection)?
                 .ok_or(GetError::NotFound)?,
@@ -99,7 +102,7 @@ impl Repo for &SqlxSqlite {
                 .await
                 .map_err(|_| GetAllError::Connection)?,
             None => query
-                .fetch_all(self.pool())
+                .fetch_all(self.pool.as_ref())
                 .await
                 .map_err(|_| GetAllError::Connection)?,
         };
@@ -118,7 +121,7 @@ impl Repo for &SqlxSqlite {
                 .await
                 .map_err(|_| DeleteError::Connection)?,
             None => query
-                .execute(self.pool())
+                .execute(self.pool.as_ref())
                 .await
                 .map_err(|_| DeleteError::Connection)?,
         };

@@ -1,6 +1,6 @@
 use ca_domain::entity::user::*;
 use serde::Serialize;
-use std::{future::Future, sync::Arc};
+use std::sync::Arc;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -54,69 +54,71 @@ impl From<Record> for User {
     }
 }
 #[cfg_attr(test, mockall::automock(type Transaction = ();))]
+#[async_trait::async_trait]
 pub trait Repo: Send + Sync {
     type Transaction;
-    fn save(
+    async fn save(
         &self,
         transaction: Option<Arc<futures::lock::Mutex<Self::Transaction>>>,
         record: Record,
-    ) -> impl Future<Output = Result<(), SaveError>>;
-    fn get(
+    ) -> Result<(), SaveError>;
+    async fn get(
         &self,
         transaction: Option<Arc<futures::lock::Mutex<Self::Transaction>>>,
         id: Id,
-    ) -> impl Future<Output = Result<Record, GetError>>;
-    fn get_by_username(
+    ) -> Result<Record, GetError>;
+    async fn get_by_username(
         &self,
         transaction: Option<Arc<futures::lock::Mutex<Self::Transaction>>>,
         username: UserName,
-    ) -> impl Future<Output = Result<Record, GetError>>;
-    fn get_all(
+    ) -> Result<Record, GetError>;
+    async fn get_all(
         &self,
         transaction: Option<Arc<futures::lock::Mutex<Self::Transaction>>>,
-    ) -> impl Future<Output = Result<Vec<Record>, GetAllError>>;
-    fn delete(
+    ) -> Result<Vec<Record>, GetAllError>;
+    async fn delete(
         &self,
         transaction: Option<Arc<futures::lock::Mutex<Self::Transaction>>>,
         id: Id,
-    ) -> impl Future<Output = Result<(), DeleteError>>;
+    ) -> Result<(), DeleteError>;
 }
 #[cfg(test)]
+#[async_trait::async_trait]
 impl Repo for &MockRepo {
     type Transaction = ();
-    fn save(
+    async fn save(
         &self,
         transaction: Option<Arc<futures::lock::Mutex<Self::Transaction>>>,
         record: Record,
-    ) -> impl Future<Output = Result<(), SaveError>> {
-        (*self).save(transaction, record)
+    ) -> Result<(), SaveError> {
+        (*self).save(transaction, record).await
     }
-    fn get(
+    async fn get(
         &self,
         transaction: Option<Arc<futures::lock::Mutex<Self::Transaction>>>,
         id: Id,
-    ) -> impl Future<Output = Result<Record, GetError>> {
-        (*self).get(transaction, id)
+    ) -> Result<Record, GetError> {
+        (*self).get(transaction, id).await
     }
-    fn get_by_username(
+    async fn get_by_username(
         &self,
         transaction: Option<Arc<futures::lock::Mutex<Self::Transaction>>>,
         username: UserName,
-    ) -> impl Future<Output = Result<Record, GetError>> {
-        (*self).get_by_username(transaction, username)
+    ) -> Result<Record, GetError> {
+        (*self).get_by_username(transaction, username).await
     }
-    fn get_all(
+    async fn get_all(
         &self,
         transaction: Option<Arc<futures::lock::Mutex<Self::Transaction>>>,
-    ) -> impl Future<Output = Result<Vec<Record>, GetAllError>> {
-        (*self).get_all(transaction)
+    ) -> Result<Vec<Record>, GetAllError> {
+        (*self).get_all(transaction).await
     }
-    fn delete(
+    async fn delete(
         &self,
         transaction: Option<Arc<futures::lock::Mutex<Self::Transaction>>>,
         id: Id,
-    ) -> impl Future<Output = Result<(), DeleteError>> {
-        (*self).delete(transaction, id)
+    ) -> Result<(), DeleteError> {
+        (*self).delete(transaction, id).await
     }
 }
 
@@ -152,7 +154,7 @@ mod tests {
                 transaction.is_none() && actual_record == &eq_record
             })
             .times(1)
-            .returning(|_, _| Box::pin(async { Ok(()) }));
+            .returning(|_, _| Ok(()));
 
         // Call the method
         let result = mock.save(None, record).await;

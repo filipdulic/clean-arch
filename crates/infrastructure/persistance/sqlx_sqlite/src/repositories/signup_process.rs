@@ -9,11 +9,13 @@ use ca_domain::entity::signup_process::Id;
 
 use crate::{
     models::signup_process_state::{from_chain, SignupProcessState},
-    SqlxSqlite, SqlxSqliteTransaction,
+    SqlxSqliteTransaction,
 };
 use sqlx;
 
-impl Repo for &SqlxSqlite {
+use super::SqlxSqliteRepository;
+#[async_trait::async_trait]
+impl Repo for SqlxSqliteRepository {
     type Transaction = SqlxSqliteTransaction;
     async fn save_latest_state(
         &self,
@@ -35,7 +37,7 @@ impl Repo for &SqlxSqlite {
                 .await
                 .map_err(|_| SaveError::Connection),
             None => query
-                .execute(self.pool())
+                .execute(self.pool.as_ref())
                 .await
                 .map_err(|_| SaveError::Connection),
         };
@@ -72,7 +74,7 @@ impl Repo for &SqlxSqlite {
                 .await
                 .map_err(|_| GetError::Connection)?,
             None => query
-                .fetch_all(self.pool())
+                .fetch_all(self.pool.as_ref())
                 .await
                 .map_err(|_| GetError::Connection)?,
         };
@@ -93,7 +95,7 @@ impl Repo for &SqlxSqlite {
                 .await
                 .map_err(|_| DeleteError::Connection)?,
             None => query
-                .execute(self.pool())
+                .execute(self.pool.as_ref())
                 .await
                 .map_err(|_| DeleteError::Connection)?,
         };
@@ -101,9 +103,10 @@ impl Repo for &SqlxSqlite {
     }
 }
 
-impl NewId<Id> for &SqlxSqlite {
+#[async_trait::async_trait]
+impl NewId<Id> for SqlxSqliteRepository {
     async fn new_id(&self) -> Result<Id, NewIdError> {
-        let id = self.new_id_inner()?;
+        let id = uuid::Uuid::new_v4();
         Ok(Id::from(id))
     }
 }

@@ -1,5 +1,3 @@
-use std::future::Future;
-
 use serde::Serialize;
 use thiserror::Error;
 pub struct EmailAddress(String);
@@ -18,21 +16,23 @@ pub enum EmailServiceError {
     #[error("Failed to send email")]
     SendEmailFailed,
 }
+#[async_trait::async_trait]
 pub trait EmailService {
-    fn send_email(
+    async fn send_email(
         &self,
         to: EmailAddress,
         subject: &str,
         body: &str,
-    ) -> impl Future<Output = Result<(), EmailServiceError>>;
+    ) -> Result<(), EmailServiceError>;
 }
 
+#[async_trait::async_trait]
 pub trait EmailVerificationService {
-    fn send_verification_email(
+    async fn send_verification_email(
         &self,
         to: EmailAddress,
         token: &str,
-    ) -> impl Future<Output = Result<(), EmailServiceError>>;
+    ) -> Result<(), EmailServiceError>;
 }
 
 #[cfg(test)]
@@ -41,6 +41,7 @@ pub mod mock {
 
     mock! {
         pub EmailVerificationService {}
+        #[async_trait::async_trait]
         impl super::EmailVerificationService for EmailVerificationService {
             async fn send_verification_email(
                 &self,
@@ -49,6 +50,7 @@ pub mod mock {
             ) -> Result<(), super::EmailServiceError>;
         }
     }
+    #[async_trait::async_trait]
     impl super::EmailVerificationService for &MockEmailVerificationService {
         async fn send_verification_email(
             &self,

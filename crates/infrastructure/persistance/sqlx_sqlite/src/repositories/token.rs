@@ -4,9 +4,12 @@ use std::sync::Arc;
 use ca_application::gateway::database::token::*;
 use chrono::{DateTime, Duration, NaiveDateTime, Utc};
 
-use crate::{SqlxSqlite, SqlxSqliteTransaction};
+use crate::SqlxSqliteTransaction;
 
-impl Repo for &SqlxSqlite {
+use super::SqlxSqliteRepository;
+
+#[async_trait::async_trait]
+impl Repo for SqlxSqliteRepository {
     type Transaction = SqlxSqliteTransaction;
     async fn gen(
         &self,
@@ -27,7 +30,7 @@ impl Repo for &SqlxSqlite {
             }
             None => {
                 query
-                    .execute(self.pool())
+                    .execute(self.pool.as_ref())
                     .await
                     .map_err(|_| GenError::Connection)?;
             }
@@ -52,7 +55,7 @@ impl Repo for &SqlxSqlite {
                 .await
                 .map_err(|_| VerifyError::Connection)?,
             None => query
-                .fetch_optional(self.pool())
+                .fetch_optional(self.pool.as_ref())
                 .await
                 .map_err(|_| VerifyError::Connection)?,
         };
@@ -91,7 +94,7 @@ impl Repo for &SqlxSqlite {
                 .await
                 .map_err(|_| ExtendError::Connection)?,
             None => query
-                .execute(self.pool())
+                .execute(self.pool.as_ref())
                 .await
                 .map_err(|_| ExtendError::Connection)?,
         };

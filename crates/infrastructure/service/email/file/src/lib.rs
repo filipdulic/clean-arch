@@ -18,7 +18,8 @@ impl FileEmailService {
     }
 }
 // TODO:use async file system
-impl EmailService for &FileEmailService {
+#[async_trait::async_trait]
+impl EmailService for FileEmailService {
     async fn send_email(
         &self,
         to: EmailAddress,
@@ -40,8 +41,8 @@ impl EmailService for &FileEmailService {
         Ok(())
     }
 }
-
-impl EmailVerificationService for &FileEmailService {
+#[async_trait::async_trait]
+impl EmailVerificationService for FileEmailService {
     async fn send_verification_email(
         &self,
         to: EmailAddress,

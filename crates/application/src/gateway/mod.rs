@@ -1,26 +1,36 @@
+use std::sync::Arc;
+
 use database::Database;
 
 pub mod database;
 pub mod service;
 
 pub trait DatabaseProvider {
-    fn database(&self) -> impl Database;
+    type Transaction;
+    type Error;
+    fn database(
+        &self,
+    ) -> Arc<dyn Database<Transaction = Self::Transaction, Error = Self::Error> + Send + Sync>;
 }
 
 pub trait EmailVerificationServiceProvider {
-    fn email_verification_service(&self) -> impl service::email::EmailVerificationService;
+    fn email_verification_service(
+        &self,
+    ) -> Arc<dyn service::email::EmailVerificationService + Send + Sync>;
 }
 
 pub trait AuthPackerProvider {
-    fn auth_packer(&self) -> impl service::auth::AuthPacker;
+    fn auth_packer(&self) -> Arc<dyn service::auth::AuthPacker + Send + Sync>;
 }
 
 pub trait AuthExtractorProvider {
-    fn auth_extractor(&self) -> impl service::auth::AuthExtractor;
+    fn auth_extractor(&self) -> Arc<dyn service::auth::AuthExtractor + Send + Sync>;
 }
 
 #[cfg(test)]
 pub mod mock {
+    use std::sync::Arc;
+
     use super::{
         database::{mock::MockDatabase, Database},
         service::{
@@ -30,25 +40,38 @@ pub mod mock {
         AuthPackerProvider, DatabaseProvider, EmailVerificationServiceProvider,
     };
 
-    #[derive(Default)]
     pub struct MockDependencyProvider {
-        pub db: MockDatabase,
-        pub email_verification_service: MockEmailVerificationService,
-        pub auth_packer: MockAuthPacker,
+        pub db: Arc<MockDatabase>,
+        pub email_verification_service: Arc<MockEmailVerificationService>,
+        pub auth_packer: Arc<MockAuthPacker>,
+    }
+    impl MockDependencyProvider {
+        pub fn new(db: Arc<MockDatabase>) -> Self {
+            Self {
+                db,
+                email_verification_service: Arc::new(MockEmailVerificationService::new()),
+                auth_packer: Arc::new(MockAuthPacker::new()),
+            }
+        }
     }
     impl DatabaseProvider for MockDependencyProvider {
-        fn database(&self) -> impl Database {
-            &self.db
+        type Transaction = ();
+        type Error = ();
+        fn database(
+            &self,
+        ) -> Arc<dyn Database<Transaction = Self::Transaction, Error = Self::Error> + Send + Sync>
+        {
+            self.db.clone()
         }
     }
     impl EmailVerificationServiceProvider for MockDependencyProvider {
-        fn email_verification_service(&self) -> impl EmailVerificationService {
-            &self.email_verification_service
+        fn email_verification_service(&self) -> Arc<dyn EmailVerificationService + Send + Sync> {
+            self.email_verification_service.clone()
         }
     }
     impl AuthPackerProvider for MockDependencyProvider {
-        fn auth_packer(&self) -> impl AuthPacker {
-            &self.auth_packer
+        fn auth_packer(&self) -> Arc<dyn AuthPacker + Send + Sync> {
+            self.auth_packer.clone()
         }
     }
 }

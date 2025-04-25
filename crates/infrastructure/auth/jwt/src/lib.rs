@@ -35,7 +35,8 @@ impl Claims {
         }
     }
 }
-impl AuthPacker for &JwtAuth {
+#[async_trait::async_trait]
+impl AuthPacker for JwtAuth {
     async fn pack_auth(&self, auth: AuthContext) -> String {
         let claims = Claims::new(auth);
         let header = jsonwebtoken::Header::default();
@@ -43,8 +44,8 @@ impl AuthPacker for &JwtAuth {
         jsonwebtoken::encode(&header, &claims, &encoding_key).unwrap()
     }
 }
-
-impl AuthExtractor for &JwtAuth {
+#[async_trait::async_trait]
+impl AuthExtractor for JwtAuth {
     async fn extract_auth(&self, input: String) -> Option<AuthContext> {
         let decoding_key = jsonwebtoken::DecodingKey::from_secret(self.secret.as_ref());
         let token_data = jsonwebtoken::decode::<Claims>(

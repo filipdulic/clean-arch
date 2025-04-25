@@ -1,11 +1,8 @@
 use futures::lock::Mutex;
+use repositories::SqlxSqliteRepository;
 use std::sync::Arc;
 
-use ca_application::gateway::database::{
-    self,
-    identifier::{NewId, NewIdError},
-    Database,
-};
+use ca_application::gateway::database::{self, identifier::NewId, Database};
 use ca_domain::{entity::signup_process::SignupProcessValue, value_object::Id};
 use sqlx::{migrate::MigrateDatabase, Pool, Sqlite, SqlitePool};
 
@@ -14,7 +11,8 @@ mod repositories;
 
 #[derive(Debug, Clone)]
 pub struct SqlxSqlite {
-    pool: Pool<Sqlite>,
+    pool: Arc<Pool<Sqlite>>,
+    repositories: Arc<SqlxSqliteRepository>,
 }
 
 pub type SqlxSqliteTransaction = sqlx::Transaction<'static, Sqlite>;
@@ -49,18 +47,19 @@ impl SqlxSqlite {
                 panic!("error: {}", error);
             }
         }
+        let arc_pool = Arc::new(pool);
 
-        Ok(Self { pool })
+        Ok(Self {
+            pool: arc_pool.clone(),
+            repositories: Arc::new(SqlxSqliteRepository::new(arc_pool)),
+        })
     }
     pub fn pool(&self) -> &Pool<Sqlite> {
         &self.pool
     }
-    pub fn new_id_inner(&self) -> Result<uuid::Uuid, NewIdError> {
-        Ok(uuid::Uuid::new_v4())
-    }
 }
-
-impl Database for &SqlxSqlite {
+#[async_trait::async_trait]
+impl Database for SqlxSqlite {
     type Error = ();
     type Transaction = SqlxSqliteTransaction;
 
@@ -103,19 +102,24 @@ impl Database for &SqlxSqlite {
 
     fn signup_process_repo(
         &self,
-    ) -> impl database::signup_process::Repo<Transaction = Self::Transaction> {
-        *self
+    ) -> Arc<dyn database::signup_process::Repo<Transaction = Self::Transaction> + Send + Sync>
+    {
+        self.repositories.clone()
     }
 
-    fn signuo_id_gen(&self) -> impl NewId<Id<SignupProcessValue>> {
-        *self
+    fn signuo_id_gen(&self) -> Arc<dyn NewId<Id<SignupProcessValue>> + Send + Sync> {
+        self.repositories.clone()
     }
 
-    fn user_repo(&self) -> impl database::user::Repo<Transaction = Self::Transaction> {
-        *self
+    fn user_repo(
+        &self,
+    ) -> Arc<dyn database::user::Repo<Transaction = Self::Transaction> + Send + Sync> {
+        self.repositories.clone()
     }
 
-    fn token_repo(&self) -> impl database::token::Repo<Transaction = Self::Transaction> {
-        *self
+    fn token_repo(
+        &self,
+    ) -> Arc<dyn database::token::Repo<Transaction = Self::Transaction> + Send + Sync> {
+        self.repositories.clone()
     }
 }

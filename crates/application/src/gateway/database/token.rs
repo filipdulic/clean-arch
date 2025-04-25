@@ -1,5 +1,5 @@
 use serde::Serialize;
-use std::{future::Future, sync::Arc};
+use std::sync::Arc;
 use thiserror::Error;
 
 #[derive(Debug, Error, Serialize, PartialEq, Clone)]
@@ -33,50 +33,52 @@ pub struct Record {
     pub token: String,
 }
 #[cfg_attr(test, mockall::automock(type Transaction = ();))]
+#[async_trait::async_trait]
 pub trait Repo: Send + Sync {
     type Transaction;
-    fn gen(
+    async fn gen(
         &self,
         transaction: Option<Arc<futures::lock::Mutex<Self::Transaction>>>,
         email: &str,
-    ) -> impl Future<Output = Result<Record, GenError>>;
-    fn verify(
+    ) -> Result<Record, GenError>;
+    async fn verify(
         &self,
         transaction: Option<Arc<futures::lock::Mutex<Self::Transaction>>>,
         email: &str,
         token: &str,
-    ) -> impl Future<Output = Result<(), VerifyError>>;
-    fn extend(
+    ) -> Result<(), VerifyError>;
+    async fn extend(
         &self,
         transaction: Option<Arc<futures::lock::Mutex<Self::Transaction>>>,
         email: &str,
-    ) -> impl Future<Output = Result<(), ExtendError>>;
+    ) -> Result<(), ExtendError>;
 }
 
 #[cfg(test)]
+#[async_trait::async_trait]
 impl Repo for &MockRepo {
     type Transaction = ();
-    fn gen(
+    async fn gen(
         &self,
         transaction: Option<Arc<futures::lock::Mutex<Self::Transaction>>>,
         email: &str,
-    ) -> impl Future<Output = Result<Record, GenError>> {
-        (*self).gen(transaction, email)
+    ) -> Result<Record, GenError> {
+        (*self).gen(transaction, email).await
     }
-    fn verify(
+    async fn verify(
         &self,
         transaction: Option<Arc<futures::lock::Mutex<Self::Transaction>>>,
         email: &str,
         token: &str,
-    ) -> impl Future<Output = Result<(), VerifyError>> {
-        (*self).verify(transaction, email, token)
+    ) -> Result<(), VerifyError> {
+        (*self).verify(transaction, email, token).await
     }
-    fn extend(
+    async fn extend(
         &self,
         transaction: Option<Arc<futures::lock::Mutex<Self::Transaction>>>,
         email: &str,
-    ) -> impl Future<Output = Result<(), ExtendError>> {
-        (*self).extend(transaction, email)
+    ) -> Result<(), ExtendError> {
+        (*self).extend(transaction, email).await
     }
 }
 
@@ -100,10 +102,8 @@ mod tests {
             .withf(move |transaction, actual_email| transaction.is_none() && actual_email == EMAIL)
             .times(1)
             .returning(|_, _| {
-                Box::pin(async {
-                    Ok(Record {
-                        token: RETURN_TOKEN.to_string(),
-                    })
+                Ok(Record {
+                    token: RETURN_TOKEN.to_string(),
                 })
             });
 

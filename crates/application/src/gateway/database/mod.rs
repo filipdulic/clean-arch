@@ -1,4 +1,4 @@
-use std::{future::Future, sync::Arc};
+use std::sync::Arc;
 
 use ca_domain::{entity::signup_process::SignupProcessValue, value_object::Id};
 
@@ -9,24 +9,25 @@ pub mod signup_process;
 pub mod token;
 pub mod user;
 
+#[async_trait::async_trait]
 pub trait Database {
     type Transaction;
     type Error;
-    fn signup_process_repo(&self) -> impl signup_process::Repo<Transaction = Self::Transaction>;
-    fn signuo_id_gen(&self) -> impl NewId<Id<SignupProcessValue>>;
-    fn user_repo(&self) -> impl user::Repo<Transaction = Self::Transaction>;
-    fn token_repo(&self) -> impl token::Repo<Transaction = Self::Transaction>;
-    fn begin_transaction(
+    fn signup_process_repo(
         &self,
-    ) -> impl Future<Output = Arc<futures::lock::Mutex<Self::Transaction>>>;
-    fn commit_transaction(
-        &self,
-        transaction: Arc<futures::lock::Mutex<Self::Transaction>>,
-    ) -> impl Future<Output = Result<(), Self::Error>>;
-    fn rollback_transaction(
+    ) -> Arc<dyn signup_process::Repo<Transaction = Self::Transaction> + Send + Sync>;
+    fn signuo_id_gen(&self) -> Arc<dyn NewId<Id<SignupProcessValue>> + Send + Sync>;
+    fn user_repo(&self) -> Arc<dyn user::Repo<Transaction = Self::Transaction> + Send + Sync>;
+    fn token_repo(&self) -> Arc<dyn token::Repo<Transaction = Self::Transaction> + Send + Sync>;
+    async fn begin_transaction(&self) -> Arc<futures::lock::Mutex<Self::Transaction>>;
+    async fn commit_transaction(
         &self,
         transaction: Arc<futures::lock::Mutex<Self::Transaction>>,
-    ) -> impl Future<Output = Result<(), Self::Error>>;
+    ) -> Result<(), Self::Error>;
+    async fn rollback_transaction(
+        &self,
+        transaction: Arc<futures::lock::Mutex<Self::Transaction>>,
+    ) -> Result<(), Self::Error>;
 }
 
 #[cfg(test)]
@@ -45,47 +46,57 @@ pub mod mock {
 
     mock! {
         pub SignupIdGen {}
+        #[async_trait::async_trait]
         impl NewId<Id<SignupProcessValue>> for SignupIdGen {
-            fn new_id(&self) -> impl Future<Output = Result<Id<SignupProcessValue>, NewIdError>>;
+            async fn new_id(&self) -> Result<Id<SignupProcessValue>, NewIdError>;
         }
     }
+    #[async_trait::async_trait]
     impl NewId<Id<SignupProcessValue>> for &MockSignupIdGen {
-        fn new_id(&self) -> impl Future<Output = Result<Id<SignupProcessValue>, NewIdError>> {
-            (*self).new_id()
+        async fn new_id(&self) -> Result<Id<SignupProcessValue>, NewIdError> {
+            (*self).new_id().await
         }
     }
     pub struct MockDatabase {
-        pub signup_process_repo: MockSignupProcessRepo,
-        pub signup_id_gen: MockSignupIdGen,
-        pub token_repo: MockTokenRepo,
-        pub user_repo: MockUserRepo,
+        pub signup_process_repo: Arc<MockSignupProcessRepo>,
+        pub signup_id_gen: Arc<MockSignupIdGen>,
+        pub token_repo: Arc<MockTokenRepo>,
+        pub user_repo: Arc<MockUserRepo>,
     }
-    impl Default for MockDatabase {
-        fn default() -> Self {
+    impl MockDatabase {
+        pub fn new(
+            signup_process_repo: MockSignupProcessRepo,
+            signup_id_gen: MockSignupIdGen,
+            token_repo: MockTokenRepo,
+            user_repo: MockUserRepo,
+        ) -> Self {
             Self {
-                signup_process_repo: MockSignupProcessRepo::new(),
-                signup_id_gen: MockSignupIdGen::new(),
-                token_repo: MockTokenRepo::new(),
-                user_repo: MockUserRepo::new(),
+                signup_process_repo: Arc::new(signup_process_repo),
+                signup_id_gen: Arc::new(signup_id_gen),
+                token_repo: Arc::new(token_repo),
+                user_repo: Arc::new(user_repo),
             }
         }
     }
-    impl Database for &MockDatabase {
+    #[async_trait::async_trait]
+    impl Database for MockDatabase {
         type Transaction = ();
         type Error = ();
         fn signup_process_repo(
             &self,
-        ) -> impl signup_process::Repo<Transaction = Self::Transaction> {
-            &self.signup_process_repo
+        ) -> Arc<dyn signup_process::Repo<Transaction = Self::Transaction> + Send + Sync> {
+            self.signup_process_repo.clone()
         }
-        fn signuo_id_gen(&self) -> impl NewId<Id<SignupProcessValue>> {
-            &self.signup_id_gen
+        fn signuo_id_gen(&self) -> Arc<dyn NewId<Id<SignupProcessValue>> + Send + Sync> {
+            self.signup_id_gen.clone()
         }
-        fn user_repo(&self) -> impl user::Repo<Transaction = Self::Transaction> {
-            &self.user_repo
+        fn user_repo(&self) -> Arc<dyn user::Repo<Transaction = Self::Transaction> + Send + Sync> {
+            self.user_repo.clone()
         }
-        fn token_repo(&self) -> impl token::Repo<Transaction = Self::Transaction> {
-            &self.token_repo
+        fn token_repo(
+            &self,
+        ) -> Arc<dyn token::Repo<Transaction = Self::Transaction> + Send + Sync> {
+            self.token_repo.clone()
         }
         async fn begin_transaction(&self) -> Arc<futures::lock::Mutex<Self::Transaction>> {
             Arc::new(futures::lock::Mutex::new(()))

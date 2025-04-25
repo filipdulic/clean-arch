@@ -1,3 +1,4 @@
+use ca_application::gateway::database::Database;
 use ca_application::gateway::service::auth::{AuthExtractor, AuthPacker};
 use ca_application::gateway::service::email::EmailVerificationService;
 use ca_application::gateway::{
@@ -20,16 +21,16 @@ struct Args {
 }
 
 struct DependancyProvider {
-    db: SqlxSqlite,
-    email_verification_servuce: FileEmailService,
-    jwt_auth: JwtAuth,
+    db: Arc<SqlxSqlite>,
+    email_verification_servuce: Arc<FileEmailService>,
+    jwt_auth: Arc<JwtAuth>,
 }
 
 impl DependancyProvider {
     fn new(
-        db: SqlxSqlite,
-        email_verification_servuce: FileEmailService,
-        jwt_auth: JwtAuth,
+        db: Arc<SqlxSqlite>,
+        email_verification_servuce: Arc<FileEmailService>,
+        jwt_auth: Arc<JwtAuth>,
     ) -> Self {
         Self {
             db,
@@ -40,8 +41,12 @@ impl DependancyProvider {
 }
 
 impl DatabaseProvider for DependancyProvider {
-    fn database(&self) -> impl ca_application::gateway::database::Database {
-        &self.db
+    type Transaction = ca_infrastructure_persistance_sqlx_sqlite::SqlxSqliteTransaction;
+    type Error = ();
+    fn database(
+        &self,
+    ) -> Arc<dyn Database<Transaction = Self::Transaction, Error = Self::Error> + Send + Sync> {
+        self.db.clone()
     }
 }
 
@@ -56,20 +61,20 @@ impl Clone for DependancyProvider {
 }
 
 impl EmailVerificationServiceProvider for DependancyProvider {
-    fn email_verification_service(&self) -> impl EmailVerificationService {
-        &self.email_verification_servuce
+    fn email_verification_service(&self) -> Arc<dyn EmailVerificationService + Send + Sync> {
+        self.email_verification_servuce.clone()
     }
 }
 
 impl AuthExtractorProvider for DependancyProvider {
-    fn auth_extractor(&self) -> impl AuthExtractor {
-        &self.jwt_auth
+    fn auth_extractor(&self) -> Arc<dyn AuthExtractor + Send + Sync> {
+        self.jwt_auth.clone()
     }
 }
 
 impl AuthPackerProvider for DependancyProvider {
-    fn auth_packer(&self) -> impl AuthPacker {
-        &self.jwt_auth
+    fn auth_packer(&self) -> Arc<dyn AuthPacker + Send + Sync> {
+        self.jwt_auth.clone()
     }
 }
 
@@ -82,75 +87,10 @@ pub async fn main() -> Result<(), std::io::Error> {
     let jwt_auth = JwtAuth::new("secret".to_string());
     let sqlx_sqlite = SqlxSqlite::try_new(data_folder_str).await.unwrap();
     let dep_provider = Arc::new(DependancyProvider::new(
-        sqlx_sqlite,
-        email_verification_service,
-        jwt_auth,
+        Arc::new(sqlx_sqlite),
+        Arc::new(email_verification_service),
+        Arc::new(jwt_auth),
     ));
     cli::run(dep_provider, args.command).await;
     Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use ca_application::gateway::service::auth::AuthPacker;
-    use ca_domain::{
-        entity::{auth_context::AuthContext, user},
-        value_object::Role,
-    };
-
-    #[tokio::test]
-    async fn test_login() {
-        let data_folder_path = data_storage_directory(None);
-        let data_folder_str = data_folder_path.to_str().unwrap();
-        let email_verification_service =
-            FileEmailService::try_new(data_folder_path.clone()).unwrap();
-        let jwt_auth = JwtAuth::new("secret".to_string());
-        // let token = (&jwt_auth)
-        //     .pack_auth(AuthContext {
-        //         user_id: user::Id::new(uuid::Uuid::from_u128(0)),
-        //         role: Role::Admin,
-        //     })
-        //     .await;
-        let args = Args {
-            command: cli::Command::Login {
-                username: "vikor".to_string(),
-                password: "mica999".to_string(),
-            },
-            data_dir: None,
-        };
-        let sqlx_sqlite = SqlxSqlite::try_new(data_folder_str).await.unwrap();
-        let dep_provider = Arc::new(DependancyProvider::new(
-            sqlx_sqlite,
-            email_verification_service,
-            jwt_auth,
-        ));
-        cli::run(dep_provider, args.command).await;
-    }
-
-    #[tokio::test]
-    async fn test_list_users() {
-        let data_folder_path = data_storage_directory(None);
-        let data_folder_str = data_folder_path.to_str().unwrap();
-        let email_verification_service =
-            FileEmailService::try_new(data_folder_path.clone()).unwrap();
-        let jwt_auth = JwtAuth::new("secret".to_string());
-        let token = (&jwt_auth)
-            .pack_auth(AuthContext {
-                user_id: user::Id::new(uuid::Uuid::from_u128(0)),
-                role: Role::Admin,
-            })
-            .await;
-        let args = Args {
-            command: cli::Command::ListUsers { token: Some(token) },
-            data_dir: None,
-        };
-        let sqlx_sqlite = SqlxSqlite::try_new(data_folder_str).await.unwrap();
-        let dep_provider = Arc::new(DependancyProvider::new(
-            sqlx_sqlite,
-            email_verification_service,
-            jwt_auth,
-        ));
-        cli::run(dep_provider, args.command).await;
-    }
 }

@@ -1,5 +1,3 @@
-use std::future::Future;
-
 use serde::Serialize;
 use thiserror::Error;
 
@@ -8,8 +6,9 @@ use thiserror::Error;
 // To do that we delegate the generation of a new ID to a separate
 // service that can be injected e.g. into a specific usecase.
 // See: https://matthiasnoback.nl/2018/05/when-and-where-to-determine-the-id-of-an-entity/
-pub trait NewId<Id> {
-    fn new_id(&self) -> impl Future<Output = Result<Id, NewIdError>>;
+#[async_trait::async_trait]
+pub trait NewId<Id>: Send + Sync {
+    async fn new_id(&self) -> Result<Id, NewIdError>;
 }
 
 #[derive(Debug, Error, Serialize)]
