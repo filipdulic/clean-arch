@@ -176,12 +176,7 @@ mod tests {
             .withf(move |_, actual_email| actual_email == TEST_EMAIL)
             .times(1)
             // returns test_token to simulate token generation success
-            .returning(move |_, _| {
-                Box::pin({
-                    let token_repo_record = token_repo_record.clone();
-                    async { Ok(token_repo_record) }
-                })
-            });
+            .returning(move |_, _| Ok(token_repo_record.clone()));
         dependency_provider
             .email_verification_service
             .expect_send_verification_email()
@@ -309,7 +304,7 @@ mod tests {
             .withf(move |_, actual_email| actual_email == TEST_EMAIL)
             .times(1)
             // returns an error to simulate token generation failure
-            .returning(|_, _| Box::pin(async { Err(TokenRepoError::Connection) }));
+            .returning(|_, _| Err(TokenRepoError::Connection));
         dependency_provider
             .db
             .signup_process_repo
@@ -365,12 +360,7 @@ mod tests {
             .withf(move |_, actual_email| actual_email == TEST_EMAIL)
             .times(1)
             // returns test_token to simulate token generation success
-            .returning(move |_, _| {
-                Box::pin({
-                    let token_repo_record = token_repo_record.clone();
-                    async { Ok(token_repo_record) }
-                })
-            });
+            .returning(move |_, _| Ok(token_repo_record.clone()));
         dependency_provider
             .email_verification_service
             .expect_send_verification_email()

@@ -98,6 +98,7 @@ impl Repo for &SqlxSqlite {
     }
 }
 
+#[async_trait::async_trait]
 impl NewId<Id> for &SqlxSqlite {
     async fn new_id(&self) -> Result<Id, NewIdError> {
         let id = self.new_id_inner()?;

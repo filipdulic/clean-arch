@@ -112,12 +112,7 @@ mod tests {
             .expect_get()
             .withf(move |_, actual_id| actual_id == &user_id)
             .times(1)
-            .returning(move |_, _| {
-                Box::pin({
-                    let record = user_record.clone();
-                    async move { Ok(record) }
-                })
-            });
+            .returning(move |_, _| Ok(user_record.clone()));
         // Usecase Initialization
         let usecase = <GetOne<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
             &dependency_provider,
@@ -150,7 +145,7 @@ mod tests {
             .expect_get()
             .withf(move |_, actual_id| actual_id == &user_id)
             .times(1)
-            .returning(move |_, _| Box::pin(async move { Err(GetError::Connection) }));
+            .returning(move |_, _| Err(GetError::Connection));
         // Usecase Initialization
         let usecase = <GetOne<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
             &dependency_provider,
@@ -178,7 +173,7 @@ mod tests {
             .expect_get()
             .withf(move |_, actual_id| actual_id == &user_id)
             .times(1)
-            .returning(move |_, _| Box::pin(async move { Err(GetError::NotFound) }));
+            .returning(move |_, _| Err(GetError::NotFound));
         // Usecase Initialization
         let usecase = <GetOne<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
             &dependency_provider,

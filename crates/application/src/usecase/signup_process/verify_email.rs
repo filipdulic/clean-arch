@@ -200,7 +200,7 @@ mod tests {
             })
             .times(1)
             // returns Ok
-            .returning(move |_, _, _| Box::pin(async move { Ok(()) }));
+            .returning(move |_, _, _| Ok(()));
         dependency_provider
             .db
             .signup_process_repo
@@ -360,7 +360,7 @@ mod tests {
             })
             .times(1)
             // returns connection error
-            .returning(move |_, _, _| Box::pin(async move { Err(VerifyError::Connection) }));
+            .returning(move |_, _, _| Err(VerifyError::Connection));
         // save latest state should not be called on token verification error
         dependency_provider
             .db
@@ -411,7 +411,7 @@ mod tests {
             })
             .times(1)
             // returns connection error
-            .returning(move |_, _, _| Box::pin(async move { Err(VerifyError::NotFound) }));
+            .returning(move |_, _, _| Err(VerifyError::NotFound));
         // save latest state should not be called on token verification error
         dependency_provider
             .db
@@ -463,7 +463,7 @@ mod tests {
             })
             .times(1)
             // returns connection error
-            .returning(move |_, _, _| Box::pin(async move { Err(VerifyError::Mismatch) }));
+            .returning(move |_, _, _| Err(VerifyError::Mismatch));
         // save latest state should not be called on token verification error
         dependency_provider
             .db
@@ -518,7 +518,7 @@ mod tests {
             })
             .times(1)
             // returns connection error
-            .returning(move |_, _, _| Box::pin(async move { Err(VerifyError::TokenExpired) }));
+            .returning(move |_, _, _| Err(VerifyError::TokenExpired));
         // save latest state should be called for the failed verification
         dependency_provider
             .db
@@ -575,7 +575,7 @@ mod tests {
             })
             .times(1)
             // returns Ok
-            .returning(move |_, _, _| Box::pin(async move { Ok(()) }));
+            .returning(move |_, _, _| Ok(()));
         dependency_provider
             .db
             .signup_process_repo

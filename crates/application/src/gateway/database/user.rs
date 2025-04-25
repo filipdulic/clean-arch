@@ -1,6 +1,7 @@
-use std::future::Future;
-
+use async_trait::async_trait;
 use ca_domain::entity::user::*;
+#[cfg(test)]
+use mockall::automock;
 use serde::Serialize;
 use thiserror::Error;
 
@@ -54,107 +55,76 @@ impl From<Record> for User {
         record.user
     }
 }
+
+#[cfg_attr(test, automock(type Transaction = ();))]
+#[async_trait]
 pub trait Repo: Send + Sync {
     type Transaction;
-    fn save(
+    async fn save<'a>(
         &self,
-        transaction: Option<&mut Self::Transaction>,
+        transaction: Option<&'a mut Self::Transaction>,
         record: Record,
-    ) -> impl Future<Output = Result<(), SaveError>>;
-    fn get(
+    ) -> Result<(), SaveError>;
+    async fn get<'a>(
         &self,
-        transaction: Option<&mut Self::Transaction>,
+        transaction: Option<&'a mut Self::Transaction>,
         id: Id,
-    ) -> impl Future<Output = Result<Record, GetError>>;
-    fn get_by_username(
+    ) -> Result<Record, GetError>;
+    async fn get_by_username<'a>(
         &self,
-        transaction: Option<&mut Self::Transaction>,
+        transaction: Option<&'a mut Self::Transaction>,
         username: UserName,
-    ) -> impl Future<Output = Result<Record, GetError>>;
-    fn get_all(
+    ) -> Result<Record, GetError>;
+    async fn get_all<'a>(
         &self,
-        transaction: Option<&mut Self::Transaction>,
-    ) -> impl Future<Output = Result<Vec<Record>, GetAllError>>;
-    fn delete(
+        transaction: Option<&'a mut Self::Transaction>,
+    ) -> Result<Vec<Record>, GetAllError>;
+    async fn delete<'a>(
         &self,
-        transaction: Option<&mut Self::Transaction>,
+        transaction: Option<&'a mut Self::Transaction>,
         id: Id,
-    ) -> impl Future<Output = Result<(), DeleteError>>;
+    ) -> Result<(), DeleteError>;
 }
 
 #[cfg(test)]
-pub mod mock {
-    use super::*;
-    use mockall::mock;
-    mock! {
-        pub UserRepo {}
-        impl Repo for  UserRepo{
-            type Transaction = ();
-            fn save<'a>(
-                &self,
-                transaction: Option<&'a mut <MockUserRepo as Repo>::Transaction>,
-                record: Record,
-            ) -> impl Future<Output = Result<(), SaveError>>;
-            fn get<'a>(
-                &self,
-                transaction: Option<&'a mut <MockUserRepo as Repo>::Transaction>,
-                id: Id,
-            ) -> impl Future<Output = Result<Record, GetError>>;
-            fn get_by_username<'a>(
-                &self,
-                transaction: Option<&'a mut <MockUserRepo as Repo>::Transaction>,
-                username: UserName,
-            ) -> impl Future<Output = Result<Record, GetError>>;
-            fn get_all<'a>(
-                &self,
-                transaction: Option<&'a mut <MockUserRepo as Repo>::Transaction>,
-            ) -> impl Future<Output = Result<Vec<Record>, GetAllError>>;
-            fn delete<'a>(
-                &self,
-                transaction: Option<&'a mut <MockUserRepo as Repo>::Transaction>,
-                id: Id,
-            ) -> impl Future<Output = Result<(), DeleteError>>;
-        }
+#[async_trait]
+impl Repo for &MockRepo {
+    type Transaction = ();
+    async fn save<'a>(
+        &self,
+        transaction: Option<&'a mut <MockRepo as Repo>::Transaction>,
+        record: Record,
+    ) -> Result<(), SaveError> {
+        (*self).save(transaction, record).await
     }
-    impl Repo for &MockUserRepo {
-        type Transaction = ();
-        fn save(
-            &self,
-            transaction: Option<&mut <MockUserRepo as Repo>::Transaction>,
-            record: Record,
-        ) -> impl Future<Output = Result<(), SaveError>> {
-            (*self).save(transaction, record)
-        }
-        fn get(
-            &self,
-            transaction: Option<&mut <MockUserRepo as Repo>::Transaction>,
-            id: Id,
-        ) -> impl Future<Output = Result<Record, GetError>> {
-            (*self).get(transaction, id)
-        }
-        fn get_by_username(
-            &self,
-            transaction: Option<&mut <MockUserRepo as Repo>::Transaction>,
-            username: UserName,
-        ) -> impl Future<Output = Result<Record, GetError>> {
-            (*self).get_by_username(transaction, username)
-        }
-        fn get_all(
-            &self,
-            transaction: Option<&mut <MockUserRepo as Repo>::Transaction>,
-        ) -> impl Future<Output = Result<Vec<Record>, GetAllError>> {
-            (*self).get_all(transaction)
-        }
-        fn delete(
-            &self,
-            transaction: Option<&mut <MockUserRepo as Repo>::Transaction>,
-            id: Id,
-        ) -> impl Future<Output = Result<(), DeleteError>> {
-            (*self).delete(transaction, id)
-        }
+    async fn get<'a>(
+        &self,
+        transaction: Option<&'a mut <MockRepo as Repo>::Transaction>,
+        id: Id,
+    ) -> Result<Record, GetError> {
+        (*self).get(transaction, id).await
+    }
+    async fn get_by_username<'a>(
+        &self,
+        transaction: Option<&'a mut <MockRepo as Repo>::Transaction>,
+        username: UserName,
+    ) -> Result<Record, GetError> {
+        (*self).get_by_username(transaction, username).await
+    }
+    async fn get_all<'a>(
+        &self,
+        transaction: Option<&'a mut <MockRepo as Repo>::Transaction>,
+    ) -> Result<Vec<Record>, GetAllError> {
+        (*self).get_all(transaction).await
+    }
+    async fn delete<'a>(
+        &self,
+        transaction: Option<&'a mut <MockRepo as Repo>::Transaction>,
+        id: Id,
+    ) -> Result<(), DeleteError> {
+        (*self).delete(transaction, id).await
     }
 }
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -167,7 +137,7 @@ mod tests {
     #[rstest]
     async fn test_mock() {
         // Create a mock instance
-        let mut mock = mock::MockUserRepo::new();
+        let mut mock = MockRepo::new();
 
         // Define a sample record
         let record = Record {
@@ -187,7 +157,7 @@ mod tests {
                 transaction.is_none() && actual_record == &eq_record
             })
             .times(1)
-            .returning(|_, _| Box::pin(async { Ok(()) }));
+            .returning(|_, _| Ok(()));
 
         // Call the method
         let result = mock.save(None, record).await;

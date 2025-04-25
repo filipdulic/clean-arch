@@ -227,7 +227,7 @@ mod tests {
             })
             .times(1)
             // returns Ok
-            .returning(move |_, _| Box::pin(async move { Ok(()) }));
+            .returning(move |_, _| Ok(()));
         dependency_provider
             .db
             .signup_process_repo
@@ -460,7 +460,7 @@ mod tests {
             })
             .times(1)
             // returns Ok
-            .returning(move |_, _| Box::pin(async move { Err(UserSaveError::Connection) }));
+            .returning(move |_, _| Err(UserSaveError::Connection));
         dependency_provider
             .db
             .signup_process_repo
@@ -523,7 +523,7 @@ mod tests {
             })
             .times(1)
             // returns Ok
-            .returning(move |_, _| Box::pin(async move { Ok(()) }));
+            .returning(move |_, _| Ok(()));
         dependency_provider
             .db
             .signup_process_repo

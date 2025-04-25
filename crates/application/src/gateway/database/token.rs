@@ -1,5 +1,3 @@
-use std::future::Future;
-
 use async_trait::async_trait;
 #[cfg(test)]
 use mockall::automock;
@@ -37,53 +35,53 @@ pub struct Record {
     pub token: String,
 }
 
-#[allow(clippy::needless_lifetimes)]
 #[cfg_attr(test, automock(type Transaction = ();))]
 #[async_trait]
 pub trait Repo: Send + Sync {
     type Transaction;
-    fn gen<'a>(
+    async fn gen<'a>(
         &self,
         transaction: Option<&'a mut Self::Transaction>,
         email: &str,
-    ) -> impl Future<Output = Result<Record, GenError>>;
-    fn verify<'a>(
+    ) -> Result<Record, GenError>;
+    async fn verify<'a>(
         &self,
         transaction: Option<&'a mut Self::Transaction>,
         email: &str,
         token: &str,
-    ) -> impl Future<Output = Result<(), VerifyError>>;
-    fn extend<'a>(
+    ) -> Result<(), VerifyError>;
+    async fn extend<'a>(
         &self,
         transaction: Option<&'a mut Self::Transaction>,
         email: &str,
-    ) -> impl Future<Output = Result<(), ExtendError>>;
+    ) -> Result<(), ExtendError>;
 }
 
 #[cfg(test)]
+#[async_trait]
 impl Repo for &MockRepo {
     type Transaction = ();
-    fn gen(
+    async fn gen<'a>(
         &self,
-        transaction: Option<&mut <MockRepo as Repo>::Transaction>,
+        transaction: Option<&'a mut <MockRepo as Repo>::Transaction>,
         email: &str,
-    ) -> impl Future<Output = Result<Record, GenError>> {
-        (**self).gen(transaction, email)
+    ) -> Result<Record, GenError> {
+        (**self).gen(transaction, email).await
     }
-    fn verify(
+    async fn verify<'a>(
         &self,
-        transaction: Option<&mut <MockRepo as Repo>::Transaction>,
+        transaction: Option<&'a mut <MockRepo as Repo>::Transaction>,
         email: &str,
         token: &str,
-    ) -> impl Future<Output = Result<(), VerifyError>> {
-        (**self).verify(transaction, email, token)
+    ) -> Result<(), VerifyError> {
+        (**self).verify(transaction, email, token).await
     }
-    fn extend(
+    async fn extend<'a>(
         &self,
-        transaction: Option<&mut <MockRepo as Repo>::Transaction>,
+        transaction: Option<&'a mut <MockRepo as Repo>::Transaction>,
         email: &str,
-    ) -> impl Future<Output = Result<(), ExtendError>> {
-        (**self).extend(transaction, email)
+    ) -> Result<(), ExtendError> {
+        (**self).extend(transaction, email).await
     }
 }
 
@@ -107,10 +105,8 @@ mod tests {
             .withf(move |transaction, actual_email| transaction.is_none() && actual_email == EMAIL)
             .times(1)
             .returning(|_, _| {
-                Box::pin(async {
-                    Ok(Record {
-                        token: RETURN_TOKEN.to_string(),
-                    })
+                Ok(Record {
+                    token: RETURN_TOKEN.to_string(),
                 })
             });
 

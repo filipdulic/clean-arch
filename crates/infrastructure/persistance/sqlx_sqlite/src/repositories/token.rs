@@ -3,11 +3,12 @@ use chrono::{DateTime, Duration, NaiveDateTime, Utc};
 
 use crate::{SqlxSqlite, SqlxSqliteTransaction};
 
+#[async_trait::async_trait]
 impl Repo for &SqlxSqlite {
     type Transaction = SqlxSqliteTransaction;
-    async fn gen(
+    async fn gen<'a>(
         &self,
-        transaction: Option<&mut Self::Transaction>,
+        transaction: Option<&'a mut Self::Transaction>,
         email: &str,
     ) -> Result<Record, GenError> {
         // log::debug!("Generate token for email: {}", email);
@@ -34,9 +35,9 @@ impl Repo for &SqlxSqlite {
         })
     }
 
-    async fn verify(
+    async fn verify<'a>(
         &self,
-        transaction: Option<&mut Self::Transaction>,
+        transaction: Option<&'a mut Self::Transaction>,
         email: &str,
         token: &str,
     ) -> Result<(), VerifyError> {
@@ -73,9 +74,9 @@ impl Repo for &SqlxSqlite {
         Ok(())
     }
 
-    async fn extend(
+    async fn extend<'a>(
         &self,
-        transaction: Option<&mut Self::Transaction>,
+        transaction: Option<&'a mut Self::Transaction>,
         email: &str,
     ) -> Result<(), ExtendError> {
         let now = Utc::now().format("%Y-%m-%d %H:%M:%S").to_string();

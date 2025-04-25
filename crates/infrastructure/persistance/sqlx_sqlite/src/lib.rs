@@ -56,7 +56,7 @@ impl SqlxSqlite {
         Ok(uuid::Uuid::new_v4())
     }
 }
-
+#[async_trait::async_trait]
 impl Database for &SqlxSqlite {
     type Error = ();
     type Transaction = SqlxSqliteTransaction;

@@ -144,7 +144,7 @@ mod tests {
             .expect_extend()
             .withf(move |_, actual_email| actual_email == TEST_EMAIL)
             .times(1)
-            .returning(move |_, _| Box::pin(async move { Ok(()) }));
+            .returning(move |_, _| Ok(()));
         dependency_provider
             .db
             .signup_process_repo
@@ -269,7 +269,7 @@ mod tests {
             .expect_extend()
             .withf(move |_, actual_email| actual_email == TEST_EMAIL)
             .times(1)
-            .returning(move |_, _| Box::pin(async move { Err(ExtendError::Connection) }));
+            .returning(move |_, _| Err(ExtendError::Connection));
         // Usecase Initialization
         let usecase = <ExtendVerificationTime<MockDependencyProvider> as Usecase<
             MockDependencyProvider,
@@ -313,7 +313,7 @@ mod tests {
             .expect_extend()
             .withf(move |_, actual_email| actual_email == TEST_EMAIL)
             .times(1)
-            .returning(move |_, _| Box::pin(async move { Ok(()) }));
+            .returning(move |_, _| Ok(()));
         dependency_provider
             .db
             .signup_process_repo

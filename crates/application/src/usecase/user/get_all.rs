@@ -94,12 +94,7 @@ mod tests {
             .user_repo
             .expect_get_all()
             .times(1)
-            .returning(move |_| {
-                Box::pin({
-                    let records = user_records.clone();
-                    async move { Ok(records) }
-                })
-            });
+            .returning(move |_| Ok(user_records.clone()));
         // Usecase Initialization
         let usecase = <GetAll<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
             &dependency_provider,
@@ -121,7 +116,7 @@ mod tests {
             .user_repo
             .expect_get_all()
             .times(1)
-            .returning(move |_| Box::pin(async move { Ok(vec![]) }));
+            .returning(move |_| Ok(vec![]));
         // Usecase Initialization
         let usecase = <GetAll<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
             &dependency_provider,
@@ -143,7 +138,7 @@ mod tests {
             .user_repo
             .expect_get_all()
             .times(1)
-            .returning(move |_| Box::pin(async move { Err(GetAllError::Connection) }));
+            .returning(move |_| Err(GetAllError::Connection));
         // Usecase Initialization
         let usecase = <GetAll<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
             &dependency_provider,
