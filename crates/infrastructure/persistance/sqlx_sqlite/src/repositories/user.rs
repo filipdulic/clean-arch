@@ -4,12 +4,12 @@ use ca_application::gateway::database::user::{
 use ca_domain::entity::user::{Id, UserName};
 
 use crate::{models::user::User, SqlxSqlite, SqlxSqliteTransaction};
-
+#[async_trait::async_trait]
 impl Repo for &SqlxSqlite {
     type Transaction = SqlxSqliteTransaction;
-    async fn save(
+    async fn save<'a>(
         &self,
-        transaction: Option<&mut Self::Transaction>,
+        transaction: Option<&'a mut Self::Transaction>,
         record: Record,
     ) -> Result<(), SaveError> {
         let query = sqlx::query(
@@ -37,9 +37,9 @@ impl Repo for &SqlxSqlite {
         Ok(())
     }
 
-    async fn get(
+    async fn get<'a>(
         &self,
-        transaction: Option<&mut Self::Transaction>,
+        transaction: Option<&'a mut Self::Transaction>,
         id: Id,
     ) -> Result<Record, GetError> {
         let query = sqlx::query_as::<_, User>(
@@ -61,9 +61,9 @@ impl Repo for &SqlxSqlite {
         Ok(Record::from(user_result))
     }
 
-    async fn get_by_username(
+    async fn get_by_username<'a>(
         &self,
-        transaction: Option<&mut Self::Transaction>,
+        transaction: Option<&'a mut Self::Transaction>,
         username: UserName,
     ) -> Result<Record, GetError> {
         let query = sqlx::query_as::<_, User>(
@@ -85,9 +85,9 @@ impl Repo for &SqlxSqlite {
         Ok(Record::from(user_result))
     }
 
-    async fn get_all(
+    async fn get_all<'a>(
         &self,
-        transaction: Option<&mut Self::Transaction>,
+        transaction: Option<&'a mut Self::Transaction>,
     ) -> Result<Vec<Record>, GetAllError> {
         let query = sqlx::query_as::<_, User>("SELECT id, name, email, password, role FROM users");
         let user_results = match transaction {
@@ -103,9 +103,9 @@ impl Repo for &SqlxSqlite {
         Ok(user_results.into_iter().map(Record::from).collect())
     }
 
-    async fn delete(
+    async fn delete<'a>(
         &self,
-        transaction: Option<&mut Self::Transaction>,
+        transaction: Option<&'a mut Self::Transaction>,
         id: Id,
     ) -> Result<(), DeleteError> {
         let query = sqlx::query("DELETE FROM users WHERE id = ?").bind(id.to_string());

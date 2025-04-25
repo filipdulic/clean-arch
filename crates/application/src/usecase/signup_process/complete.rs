@@ -215,12 +215,7 @@ mod tests {
             .withf(move |_, actual_id| actual_id == &signup_id)
             .times(1)
             // returns the record with the correct state
-            .returning(move |_, _| {
-                Box::pin({
-                    let record = email_verified_record.clone();
-                    async move { Ok(record) }
-                })
-            });
+            .returning(move |_, _| Ok(email_verified_record.clone()));
         dependency_provider
             .db
             .user_repo
@@ -232,14 +227,14 @@ mod tests {
             })
             .times(1)
             // returns Ok
-            .returning(move |_, _| Box::pin(async move { Ok(()) }));
+            .returning(move |_, _| Ok(()));
         dependency_provider
             .db
             .signup_process_repo
             .expect_save_latest_state()
             .withf(move |_, actual_record| actual_record == &record_to_save)
             .times(1)
-            .returning(move |_, _| Box::pin(async move { Ok(()) }));
+            .returning(move |_, _| Ok(()));
         // Usecase Initialization
         let usecase = <Complete<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
             &dependency_provider,
@@ -301,7 +296,7 @@ mod tests {
             .withf(move |_, actual_id| actual_id == &signup_id)
             .times(1)
             // returns a connection error
-            .returning(move |_, _| Box::pin(async move { Err(GetError::Connection) }));
+            .returning(move |_, _| Err(GetError::Connection));
         // Usecase Initialization
         let usecase = <Complete<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
             &dependency_provider,
@@ -332,7 +327,7 @@ mod tests {
             .withf(move |_, actual_id| actual_id == &signup_id)
             .times(1)
             // returns a not found error
-            .returning(move |_, _| Box::pin(async move { Err(GetError::NotFound) }));
+            .returning(move |_, _| Err(GetError::NotFound));
         // Usecase Initialization
         let usecase = <Complete<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
             &dependency_provider,
@@ -364,10 +359,7 @@ mod tests {
             .withf(move |_, actual_id| actual_id == &signup_id)
             .times(1)
             // returns the record with the incorrect state
-            .returning(move |_, _| {
-                let record = initialized_record.clone();
-                Box::pin(async move { Ok(record) })
-            });
+            .returning(move |_, _| Ok(initialized_record.clone()));
         // Usecase Initialization
         let usecase = <Complete<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
             &dependency_provider,
@@ -404,10 +396,7 @@ mod tests {
             .withf(move |_, actual_id| actual_id == &signup_id)
             .times(1)
             // returns the record with the incorrect state
-            .returning(move |_, _| {
-                let record = email_verified_record.clone();
-                Box::pin(async move { Ok(record) })
-            });
+            .returning(move |_, _| Ok(email_verified_record.clone()));
         dependency_provider
             .db
             .user_repo
@@ -420,7 +409,7 @@ mod tests {
             .expect_save_latest_state()
             .withf(move |_, actual_record| actual_record == &record_to_save)
             .times(1)
-            .returning(move |_, _| Box::pin(async move { Ok(()) }));
+            .returning(move |_, _| Ok(()));
         // Usecase Initialization
         let usecase = <Complete<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
             &dependency_provider,
@@ -459,10 +448,7 @@ mod tests {
             .withf(move |_, actual_id| actual_id == &signup_id)
             .times(1)
             // returns the record with the incorrect state
-            .returning(move |_, _| {
-                let record = email_verified_record.clone();
-                Box::pin(async move { Ok(record) })
-            });
+            .returning(move |_, _| Ok(email_verified_record.clone()));
         dependency_provider
             .db
             .user_repo
@@ -474,7 +460,7 @@ mod tests {
             })
             .times(1)
             // returns Ok
-            .returning(move |_, _| Box::pin(async move { Err(UserSaveError::Connection) }));
+            .returning(move |_, _| Err(UserSaveError::Connection));
         dependency_provider
             .db
             .signup_process_repo
@@ -525,10 +511,7 @@ mod tests {
             .withf(move |_, actual_id| actual_id == &signup_id)
             .times(1)
             // returns the record with the incorrect state
-            .returning(move |_, _| {
-                let record = email_verified_record.clone();
-                Box::pin(async move { Ok(record) })
-            });
+            .returning(move |_, _| Ok(email_verified_record.clone()));
         dependency_provider
             .db
             .user_repo
@@ -540,14 +523,14 @@ mod tests {
             })
             .times(1)
             // returns Ok
-            .returning(move |_, _| Box::pin(async move { Ok(()) }));
+            .returning(move |_, _| Ok(()));
         dependency_provider
             .db
             .signup_process_repo
             .expect_save_latest_state()
             .withf(move |_, actual_record| actual_record == &record_to_save)
             .times(1)
-            .returning(move |_, _| Box::pin(async move { Err(SaveError::Connection) }));
+            .returning(move |_, _| Err(SaveError::Connection));
         // Usecase Initialization
         let usecase = <Complete<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
             &dependency_provider,

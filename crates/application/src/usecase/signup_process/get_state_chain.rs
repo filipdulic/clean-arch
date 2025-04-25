@@ -107,12 +107,7 @@ mod tests {
             .withf(move |_, actual_id| actual_id == &signup_id)
             .times(1)
             // returns the record with the correct state
-            .returning(move |_, _| {
-                Box::pin({
-                    let record = state_chain_record_vector.clone();
-                    async move { Ok(record) }
-                })
-            });
+            .returning(move |_, _| Ok(state_chain_record_vector.clone()));
         // Usecase Initialization
         let usecase =
             <GetStateChain<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
@@ -141,7 +136,7 @@ mod tests {
             .withf(move |_, actual_id| actual_id == &signup_id)
             .times(1)
             // returns the record with the correct state
-            .returning(move |_, _| Box::pin(async move { Err(GetError::Connection) }));
+            .returning(move |_, _| Err(GetError::Connection));
         // Usecase Initialization
         let usecase =
             <GetStateChain<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
@@ -169,7 +164,7 @@ mod tests {
             .withf(move |_, actual_id| actual_id == &signup_id)
             .times(1)
             // returns the record with the correct state
-            .returning(move |_, _| Box::pin(async move { Err(GetError::NotFound) }));
+            .returning(move |_, _| Err(GetError::NotFound));
         // Usecase Initialization
         let usecase =
             <GetStateChain<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(

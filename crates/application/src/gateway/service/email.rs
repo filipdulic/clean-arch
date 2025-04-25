@@ -1,5 +1,7 @@
-use std::future::Future;
+use async_trait::async_trait;
 
+#[cfg(test)]
+use mockall::automock;
 use serde::Serialize;
 use thiserror::Error;
 pub struct EmailAddress(String);
@@ -18,44 +20,36 @@ pub enum EmailServiceError {
     #[error("Failed to send email")]
     SendEmailFailed,
 }
+
+#[cfg_attr(test, automock)]
+#[async_trait]
 pub trait EmailService {
-    fn send_email(
+    async fn send_email(
         &self,
         to: EmailAddress,
         subject: &str,
         body: &str,
-    ) -> impl Future<Output = Result<(), EmailServiceError>>;
+    ) -> Result<(), EmailServiceError>;
 }
 
+#[cfg_attr(test, automock)]
+#[async_trait]
 pub trait EmailVerificationService {
-    fn send_verification_email(
+    async fn send_verification_email(
         &self,
         to: EmailAddress,
         token: &str,
-    ) -> impl Future<Output = Result<(), EmailServiceError>>;
+    ) -> Result<(), EmailServiceError>;
 }
 
 #[cfg(test)]
-pub mod mock {
-    use mockall::mock;
-
-    mock! {
-        pub EmailVerificationService {}
-        impl super::EmailVerificationService for EmailVerificationService {
-            async fn send_verification_email(
-                &self,
-                to: super::EmailAddress,
-                token: &str,
-            ) -> Result<(), super::EmailServiceError>;
-        }
-    }
-    impl super::EmailVerificationService for &MockEmailVerificationService {
-        async fn send_verification_email(
-            &self,
-            to: super::EmailAddress,
-            token: &str,
-        ) -> Result<(), super::EmailServiceError> {
-            (*self).send_verification_email(to, token).await
-        }
+#[async_trait]
+impl EmailVerificationService for &MockEmailVerificationService {
+    async fn send_verification_email(
+        &self,
+        to: EmailAddress,
+        token: &str,
+    ) -> Result<(), EmailServiceError> {
+        (*self).send_verification_email(to, token).await
     }
 }

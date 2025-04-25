@@ -9,12 +9,12 @@ use crate::{
     SqlxSqlite, SqlxSqliteTransaction,
 };
 use sqlx;
-
+#[async_trait::async_trait]
 impl Repo for &SqlxSqlite {
     type Transaction = SqlxSqliteTransaction;
-    async fn save_latest_state(
+    async fn save_latest_state<'a>(
         &self,
-        transaction: Option<&mut Self::Transaction>,
+        transaction: Option<&'a mut Self::Transaction>,
         record: Record,
     ) -> Result<(), SaveError> {
         println!("Save Latest State: {:?}", record);
@@ -45,9 +45,9 @@ impl Repo for &SqlxSqlite {
         }
     }
 
-    async fn get_latest_state(
+    async fn get_latest_state<'a>(
         &self,
-        transaction: Option<&mut Self::Transaction>,
+        transaction: Option<&'a mut Self::Transaction>,
         id: Id,
     ) -> Result<Record, GetError> {
         // TODO: Handle empty state chain/None
@@ -55,9 +55,9 @@ impl Repo for &SqlxSqlite {
         Ok(records.last().unwrap().clone())
     }
 
-    async fn get_state_chain(
+    async fn get_state_chain<'a>(
         &self,
-        transaction: Option<&mut Self::Transaction>,
+        transaction: Option<&'a mut Self::Transaction>,
         id: Id,
     ) -> Result<Vec<Record>, GetError> {
         let query =
@@ -77,9 +77,9 @@ impl Repo for &SqlxSqlite {
         Ok(from_chain(sps_results))
     }
 
-    async fn delete(
+    async fn delete<'a>(
         &self,
-        transaction: Option<&mut Self::Transaction>,
+        transaction: Option<&'a mut Self::Transaction>,
         id: Id,
     ) -> Result<(), DeleteError> {
         let query =
@@ -98,6 +98,7 @@ impl Repo for &SqlxSqlite {
     }
 }
 
+#[async_trait::async_trait]
 impl NewId<Id> for &SqlxSqlite {
     async fn new_id(&self) -> Result<Id, NewIdError> {
         let id = self.new_id_inner()?;

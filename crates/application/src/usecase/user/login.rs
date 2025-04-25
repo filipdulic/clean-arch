@@ -134,12 +134,7 @@ mod tests {
             .expect_get_by_username()
             .withf(move |_, actual_username| actual_username == &UserName::new(TEST_USERNAME))
             .times(1)
-            .returning(move |_, _| {
-                Box::pin({
-                    let record = user_record.clone();
-                    async move { Ok(record) }
-                })
-            });
+            .returning(move |_, _| Ok(user_record.clone()));
         dependency_provider
             .auth_packer
             .expect_pack_auth()
@@ -174,7 +169,7 @@ mod tests {
             .expect_get_by_username()
             .withf(move |_, actual_username| actual_username == &UserName::new(TEST_USERNAME))
             .times(1)
-            .returning(move |_, _| Box::pin(async move { Err(GetError::Connection) }));
+            .returning(move |_, _| Err(GetError::Connection));
         // Usecase Initialization
         let usecase = <Login<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
             &dependency_provider,
@@ -201,7 +196,7 @@ mod tests {
             .expect_get_by_username()
             .withf(move |_, actual_username| actual_username == &UserName::new(TEST_USERNAME))
             .times(1)
-            .returning(move |_, _| Box::pin(async move { Err(GetError::NotFound) }));
+            .returning(move |_, _| Err(GetError::NotFound));
         // Usecase Initialization
         let usecase = <Login<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
             &dependency_provider,
@@ -232,12 +227,7 @@ mod tests {
             .expect_get_by_username()
             .withf(move |_, actual_username| actual_username == &UserName::new(TEST_USERNAME))
             .times(1)
-            .returning(move |_, _| {
-                Box::pin({
-                    let record = user_record.clone();
-                    async move { Ok(record) }
-                })
-            });
+            .returning(move |_, _| Ok(user_record.clone()));
         // Usecase Initialization
         let usecase = <Login<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
             &dependency_provider,

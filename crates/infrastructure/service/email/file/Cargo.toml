@@ -10,7 +10,7 @@ publish = false
 # Workspace dependencies
 ca-application = { version = "=0.1.0", path = "../../../../application" }
 directories = "6.0.0"
-
+async-trait = { version = "0.1.88" }
 # External dependencies
 
 [dev-dependencies]

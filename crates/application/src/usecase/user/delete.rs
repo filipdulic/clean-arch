@@ -92,7 +92,7 @@ mod tests {
             .expect_delete()
             .withf(move |_, actual_id| actual_id == &user_id)
             .times(1)
-            .returning(move |_, _| Box::pin(async move { Ok(()) }));
+            .returning(move |_, _|  Ok(()));
         // Usecase Initialization
         let usecase = <Delete<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
             &dependency_provider,
@@ -113,7 +113,7 @@ mod tests {
             .expect_delete()
             .withf(move |_, actual_id| actual_id == &user_id)
             .times(1)
-            .returning(move |_, _| Box::pin(async move { Err(DeleteError::Connection) }));
+            .returning(move |_, _| Err(DeleteError::Connection));
         // Usecase Initialization
         let usecase = <Delete<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
             &dependency_provider,
@@ -135,7 +135,7 @@ mod tests {
             .expect_delete()
             .withf(move |_, actual_id| actual_id == &user_id)
             .times(1)
-            .returning(move |_, _| Box::pin(async move { Err(DeleteError::NotFound) }));
+            .returning(move |_, _|  Err(DeleteError::NotFound));
         // Usecase Initialization
         let usecase = <Delete<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
             &dependency_provider,

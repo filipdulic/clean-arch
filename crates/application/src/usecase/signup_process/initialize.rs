@@ -121,14 +121,14 @@ mod tests {
             .db
             .signup_id_gen
             .expect_new_id()
-            .returning(move || Box::pin(async move { Ok(id) }));
+            .returning(move || Ok(id));
         dependency_provider
             .db
             .signup_process_repo
             .expect_save_latest_state()
             .withf(move |_, actual_record| actual_record == &record)
             .times(1)
-            .returning(|_, _| Box::pin(async { Ok(()) }));
+            .returning(|_, _| Ok(()));
         // Usecase Initialization
         let usecase = <Initialize<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
             &dependency_provider,
@@ -165,7 +165,7 @@ mod tests {
             .db
             .signup_id_gen
             .expect_new_id()
-            .returning(|| Box::pin(async { Err(NewIdError) }));
+            .returning(|| Err(NewIdError));
         let usecase = <Initialize<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
             &dependency_provider,
         );
@@ -186,12 +186,12 @@ mod tests {
             .db
             .signup_id_gen
             .expect_new_id()
-            .returning(move || Box::pin(async move { Ok(signup_id) }));
+            .returning(move || Ok(signup_id));
         dependency_provider
             .db
             .signup_process_repo
             .expect_save_latest_state()
-            .returning(|_, _| Box::pin(async { Err(signup_process::SaveError::Connection) }));
+            .returning(|_, _| Err(signup_process::SaveError::Connection));
         let usecase = <Initialize<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
             &dependency_provider,
         );
