@@ -1,5 +1,8 @@
 use std::future::Future;
 
+use async_trait::async_trait;
+#[cfg(test)]
+use mockall::automock;
 use serde::Serialize;
 use thiserror::Error;
 
@@ -34,77 +37,53 @@ pub struct Record {
     pub token: String,
 }
 
+#[allow(clippy::needless_lifetimes)]
+#[cfg_attr(test, automock(type Transaction = ();))]
+#[async_trait]
 pub trait Repo: Send + Sync {
     type Transaction;
-    fn gen(
+    fn gen<'a>(
         &self,
-        transaction: Option<&mut Self::Transaction>,
+        transaction: Option<&'a mut Self::Transaction>,
         email: &str,
     ) -> impl Future<Output = Result<Record, GenError>>;
-    fn verify(
+    fn verify<'a>(
         &self,
-        transaction: Option<&mut Self::Transaction>,
+        transaction: Option<&'a mut Self::Transaction>,
         email: &str,
         token: &str,
     ) -> impl Future<Output = Result<(), VerifyError>>;
-    fn extend(
+    fn extend<'a>(
         &self,
-        transaction: Option<&mut Self::Transaction>,
+        transaction: Option<&'a mut Self::Transaction>,
         email: &str,
     ) -> impl Future<Output = Result<(), ExtendError>>;
 }
 
 #[cfg(test)]
-pub mod mock {
-    use super::*;
-    use mockall::mock;
-    mock! {
-        pub TokenRepo {}
-        impl Repo for  TokenRepo{
-            type Transaction = ();
-            fn gen<'a>(
-                &self,
-                transaction: Option<&'a mut <MockTokenRepo as Repo>::Transaction>,
-                email: &str,
-            ) -> impl Future<Output = Result<Record, GenError>>;
-            fn verify<'a>(
-                &self,
-                transaction: Option<&'a mut <MockTokenRepo as Repo>::Transaction>,
-                email: &str,
-                token: &str,
-            ) -> impl Future<Output = Result<(), VerifyError>>;
-            fn extend<'a>(
-                &self,
-                transaction: Option<&'a mut <MockTokenRepo as Repo>::Transaction>,
-                email: &str,
-            ) -> impl Future<Output = Result<(), ExtendError>>;
-        }
+impl Repo for &MockRepo {
+    type Transaction = ();
+    fn gen(
+        &self,
+        transaction: Option<&mut <MockRepo as Repo>::Transaction>,
+        email: &str,
+    ) -> impl Future<Output = Result<Record, GenError>> {
+        (**self).gen(transaction, email)
     }
-
-    impl Repo for &MockTokenRepo {
-        type Transaction = ();
-        fn gen(
-            &self,
-            transaction: Option<&mut <MockTokenRepo as Repo>::Transaction>,
-            email: &str,
-        ) -> impl Future<Output = Result<Record, GenError>> {
-            (*self).gen(transaction, email)
-        }
-        fn verify(
-            &self,
-            transaction: Option<&mut <MockTokenRepo as Repo>::Transaction>,
-            email: &str,
-            token: &str,
-        ) -> impl Future<Output = Result<(), VerifyError>> {
-            (*self).verify(transaction, email, token)
-        }
-        fn extend(
-            &self,
-            transaction: Option<&mut <MockTokenRepo as Repo>::Transaction>,
-            email: &str,
-        ) -> impl Future<Output = Result<(), ExtendError>> {
-            (*self).extend(transaction, email)
-        }
+    fn verify(
+        &self,
+        transaction: Option<&mut <MockRepo as Repo>::Transaction>,
+        email: &str,
+        token: &str,
+    ) -> impl Future<Output = Result<(), VerifyError>> {
+        (**self).verify(transaction, email, token)
+    }
+    fn extend(
+        &self,
+        transaction: Option<&mut <MockRepo as Repo>::Transaction>,
+        email: &str,
+    ) -> impl Future<Output = Result<(), ExtendError>> {
+        (**self).extend(transaction, email)
     }
 }
 
@@ -117,7 +96,7 @@ mod tests {
     #[rstest]
     async fn test_mock() {
         // Create a mock instance
-        let mut mock = mock::MockTokenRepo::new();
+        let mut mock = MockRepo::new();
 
         // email
         const EMAIL: &str = "test@email.com";

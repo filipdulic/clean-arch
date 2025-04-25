@@ -30,7 +30,7 @@ pub trait Database {
 #[cfg(test)]
 pub mod mock {
     use super::{
-        signup_process::MockRepo as MockSignupProcessRepo, token::mock::MockTokenRepo,
+        signup_process::MockRepo as MockSignupProcessRepo, token::MockRepo as MockTokenRepo,
         user::mock::MockUserRepo, *,
     };
     use identifier::NewIdError;
