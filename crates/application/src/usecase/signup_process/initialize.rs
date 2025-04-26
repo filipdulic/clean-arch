@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::{
     gateway::{
         database::{
@@ -28,8 +30,8 @@ pub struct Request {
 pub struct Response {
     pub id: Id,
 }
-pub struct Initialize<'d, D> {
-    dependency_provider: &'d D,
+pub struct Initialize<D> {
+    dependency_provider: Arc<D>,
 }
 
 #[derive(Debug, Error, Serialize, PartialEq)]
@@ -50,7 +52,7 @@ impl From<SaveError> for Error {
     }
 }
 #[async_trait::async_trait]
-impl<'d, D> Usecase<'d, D> for Initialize<'d, D>
+impl<D> Usecase<D> for Initialize<D>
 where
     D: DatabaseProvider,
 {
@@ -81,7 +83,7 @@ where
             .await?;
         Ok(Response { id })
     }
-    fn new(dependency_provider: &'d D) -> Self {
+    fn new(dependency_provider: Arc<D>) -> Self {
         Self {
             dependency_provider,
         }
@@ -131,7 +133,7 @@ mod tests {
             .returning(|_, _| Ok(()));
         // Usecase Initialization
         let usecase = <Initialize<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
-            &dependency_provider,
+            Arc::new(dependency_provider),
         );
         // Usecase Execution -- mock predicates will fail during execution
         let result = usecase.exec(req).await;
@@ -146,7 +148,7 @@ mod tests {
         dependency_provider: MockDependencyProvider,
     ) {
         let usecase = <Initialize<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
-            &dependency_provider,
+            Arc::new(dependency_provider),
         );
         let req = super::Request {
             email: "ttt".to_string(),
@@ -167,7 +169,7 @@ mod tests {
             .expect_new_id()
             .returning(|| Err(NewIdError));
         let usecase = <Initialize<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
-            &dependency_provider,
+            Arc::new(dependency_provider),
         );
         let req = super::Request {
             email: TEST_EMAIL.to_string(),
@@ -193,7 +195,7 @@ mod tests {
             .expect_save_latest_state()
             .returning(|_, _| Err(signup_process::SaveError::Connection));
         let usecase = <Initialize<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
-            &dependency_provider,
+            Arc::new(dependency_provider),
         );
         let req = super::Request {
             email: TEST_EMAIL.to_string(),
@@ -208,7 +210,7 @@ mod tests {
         let req = super::Request {
             email: TEST_EMAIL.to_string(),
         };
-        let result = Initialize::new(&MockDependencyProvider::default())
+        let result = Initialize::new(Arc::new(MockDependencyProvider::default()))
             .authorize(&req, Some(auth_context_admin));
         assert!(result.is_ok());
     }
@@ -218,7 +220,7 @@ mod tests {
         let req = super::Request {
             email: TEST_EMAIL.to_string(),
         };
-        let result = Initialize::new(&MockDependencyProvider::default())
+        let result = Initialize::new(Arc::new(MockDependencyProvider::default()))
             .authorize(&req, Some(auth_context_user));
         assert!(result.is_ok());
     }
@@ -228,8 +230,8 @@ mod tests {
             email: TEST_EMAIL.to_string(),
         };
         let auth_context = None;
-        let result =
-            Initialize::new(&MockDependencyProvider::default()).authorize(&req, auth_context);
+        let result = Initialize::new(Arc::new(MockDependencyProvider::default()))
+            .authorize(&req, auth_context);
         assert!(result.is_ok());
     }
 }

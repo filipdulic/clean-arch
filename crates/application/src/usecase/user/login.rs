@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::{
     gateway::{
         database::{
@@ -29,8 +31,8 @@ pub struct Response {
     pub token: String,
 }
 
-pub struct Login<'d, D> {
-    dependency_provider: &'d D,
+pub struct Login<D> {
+    dependency_provider: Arc<D>,
 }
 
 #[derive(Debug, Error, Serialize, PartialEq)]
@@ -60,7 +62,7 @@ impl From<(GetError, UserName)> for Error {
     }
 }
 #[async_trait::async_trait]
-impl<'d, D> Usecase<'d, D> for Login<'d, D>
+impl<D> Usecase<D> for Login<D>
 where
     D: DatabaseProvider + AuthPackerProvider,
 {
@@ -95,7 +97,7 @@ where
         })
     }
 
-    fn new(dependency_provider: &'d D) -> Self {
+    fn new(dependency_provider: Arc<D>) -> Self {
         Self {
             dependency_provider,
         }
@@ -143,7 +145,7 @@ mod tests {
             .returning(move |_| TEST_TOKEN.to_string());
         // Usecase Initialization
         let usecase = <Login<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
-            &dependency_provider,
+            Arc::new(dependency_provider),
         );
         // Usecase Execution -- mock predicates will fail during execution
         let result = usecase.exec(req).await;
@@ -172,7 +174,7 @@ mod tests {
             .returning(move |_, _| Err(GetError::Connection));
         // Usecase Initialization
         let usecase = <Login<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
-            &dependency_provider,
+            Arc::new(dependency_provider),
         );
         // Usecase Execution -- mock predicates will fail during execution
         let result = usecase.exec(req).await;
@@ -199,7 +201,7 @@ mod tests {
             .returning(move |_, _| Err(GetError::NotFound));
         // Usecase Initialization
         let usecase = <Login<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
-            &dependency_provider,
+            Arc::new(dependency_provider),
         );
         // Usecase Execution -- mock predicates will fail during execution
         let result = usecase.exec(req).await;
@@ -230,7 +232,7 @@ mod tests {
             .returning(move |_, _| Ok(user_record.clone()));
         // Usecase Initialization
         let usecase = <Login<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
-            &dependency_provider,
+            Arc::new(dependency_provider),
         );
         // Usecase Execution -- mock predicates will fail during execution
         let result = usecase.exec(req).await;
@@ -244,7 +246,7 @@ mod tests {
             username: TEST_USERNAME.to_string(),
             password: TEST_PASSWORD.to_string(),
         };
-        let result = Login::new(&MockDependencyProvider::default())
+        let result = Login::new(Arc::new(MockDependencyProvider::default()))
             .authorize(&req, Some(auth_context_admin));
         assert!(result.is_ok());
     }
@@ -255,8 +257,8 @@ mod tests {
             username: TEST_USERNAME.to_string(),
             password: TEST_PASSWORD.to_string(),
         };
-        let result =
-            Login::new(&MockDependencyProvider::default()).authorize(&req, Some(auth_context_user));
+        let result = Login::new(Arc::new(MockDependencyProvider::default()))
+            .authorize(&req, Some(auth_context_user));
         assert!(result.is_ok());
     }
     #[rstest]
@@ -266,7 +268,8 @@ mod tests {
             password: TEST_PASSWORD.to_string(),
         };
         let auth_context = None;
-        let result = Login::new(&MockDependencyProvider::default()).authorize(&req, auth_context);
+        let result =
+            Login::new(Arc::new(MockDependencyProvider::default())).authorize(&req, auth_context);
         assert!(result.is_ok());
     }
 }

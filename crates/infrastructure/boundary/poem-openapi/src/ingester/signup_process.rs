@@ -22,13 +22,13 @@ use crate::Boundary;
 pub struct InitializeRequest {
     pub email: String,
 }
-
-impl<'d, D> Ingester<'d, D, Initialize<'d, D>> for Boundary
+#[async_trait::async_trait]
+impl<D> Ingester<D, Initialize<D>> for Boundary
 where
     D: DatabaseProvider + std::marker::Sync + std::marker::Send,
 {
     type InputModel = InitializeRequest;
-    fn ingest(input: Self::InputModel) -> UsecaseRequestResult<'d, D, Initialize<'d, D>> {
+    async fn ingest(input: Self::InputModel) -> UsecaseRequestResult<D, Initialize<D>> {
         Ok(UsecaseInitializeRequest { email: input.email })
     }
 }
@@ -43,13 +43,13 @@ pub struct CompleteRequest {
     pub username: String,
     pub password: String,
 }
-
-impl<'d, D> Ingester<'d, D, Complete<'d, D>> for Boundary
+#[async_trait::async_trait]
+impl<D> Ingester<D, Complete<D>> for Boundary
 where
     D: DatabaseProvider + std::marker::Sync + std::marker::Send,
 {
     type InputModel = CompleteRequest;
-    fn ingest(input: Self::InputModel) -> UsecaseRequestResult<'d, D, Complete<'d, D>> {
+    async fn ingest(input: Self::InputModel) -> UsecaseRequestResult<D, Complete<D>> {
         input
             .id
             .parse()

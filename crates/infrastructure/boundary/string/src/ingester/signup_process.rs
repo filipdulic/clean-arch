@@ -20,13 +20,13 @@ use ca_application::{
     },
 };
 use ca_domain::entity::signup_process::Id;
-
-impl<'d, D> Ingester<'d, D, Complete<'d, D>> for Boundary
+#[async_trait::async_trait]
+impl<D> Ingester<D, Complete<D>> for Boundary
 where
     D: DatabaseProvider,
 {
     type InputModel = (String, String, String);
-    fn ingest(input: Self::InputModel) -> UsecaseRequestResult<'d, D, Complete<'d, D>> {
+    async fn ingest(input: Self::InputModel) -> UsecaseRequestResult<D, Complete<D>> {
         let (id, username, password) = input;
         id.parse()
             .map_err(|e: <Uuid as FromStr>::Err| Error::ParseInputError(e.to_string()))
@@ -37,79 +37,75 @@ where
             })
     }
 }
-
-impl<'d, D> Ingester<'d, D, ExtendCompletionTime<'d, D>> for Boundary
+#[async_trait::async_trait]
+impl<D> Ingester<D, ExtendCompletionTime<D>> for Boundary
 where
     D: DatabaseProvider,
 {
     type InputModel = String;
-    fn ingest(input: Self::InputModel) -> UsecaseRequestResult<'d, D, ExtendCompletionTime<'d, D>> {
+    async fn ingest(input: Self::InputModel) -> UsecaseRequestResult<D, ExtendCompletionTime<D>> {
         input
             .parse()
             .map_err(|e: <Uuid as FromStr>::Err| Error::ParseInputError(e.to_string()))
             .map(|uuid: Uuid| ExtendCompletionTimeRequest { id: Id::from(uuid) })
     }
 }
-
-impl<'d, D> Ingester<'d, D, ExtendVerificationTime<'d, D>> for Boundary
+#[async_trait::async_trait]
+impl<D> Ingester<D, ExtendVerificationTime<D>> for Boundary
 where
     D: DatabaseProvider,
 {
     type InputModel = String;
-    fn ingest(
-        input: Self::InputModel,
-    ) -> UsecaseRequestResult<'d, D, ExtendVerificationTime<'d, D>> {
+    async fn ingest(input: Self::InputModel) -> UsecaseRequestResult<D, ExtendVerificationTime<D>> {
         input
             .parse()
             .map_err(|e: <Uuid as FromStr>::Err| Error::ParseInputError(e.to_string()))
             .map(|uuid: Uuid| ExtendVerificationTimeRequest { id: Id::from(uuid) })
     }
 }
-
-impl<'d, D> Ingester<'d, D, GetStateChain<'d, D>> for Boundary
+#[async_trait::async_trait]
+impl<D> Ingester<D, GetStateChain<D>> for Boundary
 where
     D: DatabaseProvider,
 {
     type InputModel = String;
-    fn ingest(input: Self::InputModel) -> UsecaseRequestResult<'d, D, GetStateChain<'d, D>> {
+    async fn ingest(input: Self::InputModel) -> UsecaseRequestResult<D, GetStateChain<D>> {
         input
             .parse()
             .map_err(|e: <Uuid as FromStr>::Err| Error::ParseInputError(e.to_string()))
             .map(|uuid: Uuid| GetStateChainRequest { id: Id::from(uuid) })
     }
 }
-
-impl<'d, D> Ingester<'d, D, Initialize<'d, D>> for Boundary
+#[async_trait::async_trait]
+impl<D> Ingester<D, Initialize<D>> for Boundary
 where
     D: DatabaseProvider,
 {
     type InputModel = String;
-    fn ingest(input: Self::InputModel) -> UsecaseRequestResult<'d, D, Initialize<'d, D>> {
+    async fn ingest(input: Self::InputModel) -> UsecaseRequestResult<D, Initialize<D>> {
         Ok(InitializeRequest { email: input })
     }
 }
-
-impl<'d, D> Ingester<'d, D, SendVerificationEmail<'d, D>> for Boundary
+#[async_trait::async_trait]
+impl<D> Ingester<D, SendVerificationEmail<D>> for Boundary
 where
     D: DatabaseProvider + EmailVerificationServiceProvider,
 {
     type InputModel = String;
-    fn ingest(
-        input: Self::InputModel,
-    ) -> UsecaseRequestResult<'d, D, SendVerificationEmail<'d, D>> {
+    async fn ingest(input: Self::InputModel) -> UsecaseRequestResult<D, SendVerificationEmail<D>> {
         input
             .parse()
             .map_err(|e: <Uuid as FromStr>::Err| Error::ParseInputError(e.to_string()))
             .map(|uuid: Uuid| SendVerificationEmailRequest { id: Id::from(uuid) })
     }
 }
-
-impl<'d, D> Ingester<'d, D, VerifyEmail<'d, D>> for Boundary
+#[async_trait::async_trait]
+impl<D> Ingester<D, VerifyEmail<D>> for Boundary
 where
     D: DatabaseProvider,
 {
     type InputModel = (String, String);
-    fn ingest(input: Self::InputModel) -> UsecaseRequestResult<'d, D, VerifyEmail<'d, D>> {
+    async fn ingest(input: Self::InputModel) -> UsecaseRequestResult<D, VerifyEmail<D>> {
         let (id, token) = input;
         id.parse()
             .map_err(|e: <Uuid as FromStr>::Err| Error::ParseInputError(e.to_string()))
@@ -119,13 +115,13 @@ where
             })
     }
 }
-
-impl<'d, D> Ingester<'d, D, Delete<'d, D>> for Boundary
+#[async_trait::async_trait]
+impl<D> Ingester<D, Delete<D>> for Boundary
 where
     D: DatabaseProvider,
 {
     type InputModel = String;
-    fn ingest(input: Self::InputModel) -> UsecaseRequestResult<'d, D, Delete<'d, D>> {
+    async fn ingest(input: Self::InputModel) -> UsecaseRequestResult<D, Delete<D>> {
         input
             .parse()
             .map_err(|e: <Uuid as FromStr>::Err| Error::ParseInputError(e.to_string()))

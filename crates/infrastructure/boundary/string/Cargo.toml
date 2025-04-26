@@ -13,5 +13,6 @@ ca-domain = { version = "=0.1.0", path = "../../../domain" }
 
 # External dependencies
 uuid = { version = "1.16.0", features = ["v4"] }
+async-trait = "0.1.88"
 
 [dev-dependencies]

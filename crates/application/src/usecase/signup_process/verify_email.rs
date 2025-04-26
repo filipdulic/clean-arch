@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::{
     gateway::{
         database::{
@@ -30,8 +32,8 @@ pub struct Request {
 pub struct Response {
     pub id: Id,
 }
-pub struct VerifyEmail<'d, D> {
-    dependency_provider: &'d D,
+pub struct VerifyEmail<D> {
+    dependency_provider: Arc<D>,
 }
 
 #[derive(Debug, Error, Serialize, PartialEq)]
@@ -66,7 +68,7 @@ impl From<(GetError, Id)> for Error {
     }
 }
 #[async_trait::async_trait]
-impl<'d, D> Usecase<'d, D> for VerifyEmail<'d, D>
+impl<D> Usecase<D> for VerifyEmail<D>
 where
     D: DatabaseProvider,
 {
@@ -137,7 +139,7 @@ where
             .map_err(|_| SaveError::Connection)?;
         Ok(Self::Response { id: req.id })
     }
-    fn new(dependency_provider: &'d D) -> Self {
+    fn new(dependency_provider: Arc<D>) -> Self {
         Self {
             dependency_provider,
         }
@@ -210,7 +212,7 @@ mod tests {
             .returning(|_, _| Ok(()));
         // Usecase Initialization
         let usecase = <VerifyEmail<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
-            &dependency_provider,
+            Arc::new(dependency_provider),
         );
         // Usecase Execution -- mock predicates will fail during execution
         let result = usecase.exec(req).await;
@@ -224,7 +226,7 @@ mod tests {
         dependency_provider: MockDependencyProvider,
     ) {
         let usecase = <VerifyEmail<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
-            &dependency_provider,
+            Arc::new(dependency_provider),
         );
         let id = Id::from(uuid::Uuid::new_v4());
         let req = super::Request {
@@ -260,7 +262,7 @@ mod tests {
             .returning(|_, _| Err(GetError::Connection));
         // Usecase Initialization
         let usecase = <VerifyEmail<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
-            &dependency_provider,
+            Arc::new(dependency_provider),
         );
         // Usecase Execution -- mock predicates will fail during execution
         let result = usecase.exec(req).await;
@@ -290,7 +292,7 @@ mod tests {
             .returning(move |_, _| Err(GetError::NotFound));
         // Usecase Initialization
         let usecase = <VerifyEmail<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
-            &dependency_provider,
+            Arc::new(dependency_provider),
         );
         // Usecase Execution -- mock predicates will fail during execution
         let result = usecase.exec(req).await;
@@ -321,7 +323,7 @@ mod tests {
             .returning(move |_, _| Ok(initialized_record.clone()));
         // Usecase Initialization
         let usecase = <VerifyEmail<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
-            &dependency_provider,
+            Arc::new(dependency_provider),
         );
         // Usecase Execution -- mock predicates will fail during execution
         let result = usecase.exec(req).await;
@@ -369,7 +371,7 @@ mod tests {
             .never();
         // Usecase Initialization
         let usecase = <VerifyEmail<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
-            &dependency_provider,
+            Arc::new(dependency_provider),
         );
         // Usecase Execution -- mock predicates will fail during execution
         let result = usecase.exec(req).await;
@@ -420,7 +422,7 @@ mod tests {
             .never();
         // Usecase Initialization
         let usecase = <VerifyEmail<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
-            &dependency_provider,
+            Arc::new(dependency_provider),
         );
         // Usecase Execution -- mock predicates will fail during execution
         let result = usecase.exec(req).await;
@@ -472,7 +474,7 @@ mod tests {
             .never();
         // Usecase Initialization
         let usecase = <VerifyEmail<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
-            &dependency_provider,
+            Arc::new(dependency_provider),
         );
         // Usecase Execution -- mock predicates will fail during execution
         let result = usecase.exec(req).await;
@@ -529,7 +531,7 @@ mod tests {
             .returning(move |_, _| Ok(()));
         // Usecase Initialization
         let usecase = <VerifyEmail<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
-            &dependency_provider,
+            Arc::new(dependency_provider),
         );
         // Usecase Execution -- mock predicates will fail during execution
         let result = usecase.exec(req).await;
@@ -585,7 +587,7 @@ mod tests {
             .returning(move |_, _| Err(SaveError::Connection));
         // Usecase Initialization
         let usecase = <VerifyEmail<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
-            &dependency_provider,
+            Arc::new(dependency_provider),
         );
         // Usecase Execution -- mock predicates will fail during execution
         let result = usecase.exec(req).await;
@@ -599,7 +601,7 @@ mod tests {
             id: signup_id,
             token: TEST_TOKEN.to_string(),
         };
-        let result = VerifyEmail::new(&MockDependencyProvider::default())
+        let result = VerifyEmail::new(Arc::new(MockDependencyProvider::default()))
             .authorize(&req, Some(auth_context_admin));
         assert!(result.is_ok());
     }
@@ -610,7 +612,7 @@ mod tests {
             id: signup_id,
             token: TEST_TOKEN.to_string(),
         };
-        let result = VerifyEmail::new(&MockDependencyProvider::default())
+        let result = VerifyEmail::new(Arc::new(MockDependencyProvider::default()))
             .authorize(&req, Some(auth_context_user));
         assert!(result.is_ok());
     }
@@ -621,8 +623,8 @@ mod tests {
             token: TEST_TOKEN.to_string(),
         };
         let auth_context = None;
-        let result =
-            VerifyEmail::new(&MockDependencyProvider::default()).authorize(&req, auth_context);
+        let result = VerifyEmail::new(Arc::new(MockDependencyProvider::default()))
+            .authorize(&req, auth_context);
         assert!(result.is_ok());
     }
 }

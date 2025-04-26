@@ -6,13 +6,13 @@ use ca_application::{
 use serde_json::{json, Value};
 
 use super::Boundary;
-
-impl<'d, D, U: Usecase<'d, D>> Presenter<'d, D, U> for Boundary
+#[async_trait::async_trait]
+impl<D, U: Usecase<D> + 'static> Presenter<D, U> for Boundary
 where
-    D: DatabaseProvider + EmailVerificationServiceProvider,
+    D: DatabaseProvider + EmailVerificationServiceProvider + 'static,
 {
     type ViewModel = Value;
-    fn present(data: UsecaseResponseResult<'d, D, U>) -> Self::ViewModel {
+    async fn present(data: UsecaseResponseResult<D, U>) -> Self::ViewModel {
         json!(data)
     }
 }

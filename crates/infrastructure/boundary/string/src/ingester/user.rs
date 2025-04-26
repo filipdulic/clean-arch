@@ -16,26 +16,26 @@ use ca_application::{
 use ca_domain::entity::user::Id;
 
 use super::super::Boundary;
-
-impl<'d, D> Ingester<'d, D, Delete<'d, D>> for Boundary
+#[async_trait::async_trait]
+impl<D> Ingester<D, Delete<D>> for Boundary
 where
     D: DatabaseProvider,
 {
     type InputModel = String;
-    fn ingest(input: Self::InputModel) -> UsecaseRequestResult<'d, D, Delete<'d, D>> {
+    async fn ingest(input: Self::InputModel) -> UsecaseRequestResult<D, Delete<D>> {
         input
             .parse()
             .map_err(|e: <Uuid as FromStr>::Err| Error::ParseInputError(e.to_string()))
             .map(|uuid: Uuid| DeleteRequest { id: Id::from(uuid) })
     }
 }
-
-impl<'d, D> Ingester<'d, D, Update<'d, D>> for Boundary
+#[async_trait::async_trait]
+impl<D> Ingester<D, Update<D>> for Boundary
 where
     D: DatabaseProvider,
 {
     type InputModel = (String, String, String, String);
-    fn ingest(input: Self::InputModel) -> UsecaseRequestResult<'d, D, Update<'d, D>> {
+    async fn ingest(input: Self::InputModel) -> UsecaseRequestResult<D, Update<D>> {
         let (id, email, username, password) = input;
         id.parse()
             .map_err(|e: <Uuid as FromStr>::Err| Error::ParseInputError(e.to_string()))
@@ -47,36 +47,36 @@ where
             })
     }
 }
-
-impl<'d, D> Ingester<'d, D, GetOne<'d, D>> for Boundary
+#[async_trait::async_trait]
+impl<D> Ingester<D, GetOne<D>> for Boundary
 where
     D: DatabaseProvider,
 {
     type InputModel = String;
-    fn ingest(input: Self::InputModel) -> UsecaseRequestResult<'d, D, GetOne<'d, D>> {
+    async fn ingest(input: Self::InputModel) -> UsecaseRequestResult<D, GetOne<D>> {
         input
             .parse()
             .map_err(|e: <Uuid as FromStr>::Err| Error::ParseInputError(e.to_string()))
             .map(|uuid: Uuid| GetOneRequest { id: Id::from(uuid) })
     }
 }
-
-impl<'d, D> Ingester<'d, D, GetAll<'d, D>> for Boundary
+#[async_trait::async_trait]
+impl<D> Ingester<D, GetAll<D>> for Boundary
 where
     D: DatabaseProvider,
 {
     type InputModel = ();
-    fn ingest(_: Self::InputModel) -> UsecaseRequestResult<'d, D, GetAll<'d, D>> {
+    async fn ingest(_: Self::InputModel) -> UsecaseRequestResult<D, GetAll<D>> {
         Ok(GetAllRequest {})
     }
 }
-
-impl<'d, D> Ingester<'d, D, Login<'d, D>> for Boundary
+#[async_trait::async_trait]
+impl<D> Ingester<D, Login<D>> for Boundary
 where
     D: DatabaseProvider + AuthPackerProvider,
 {
     type InputModel = (String, String);
-    fn ingest(input: Self::InputModel) -> UsecaseRequestResult<'d, D, Login<'d, D>> {
+    async fn ingest(input: Self::InputModel) -> UsecaseRequestResult<D, Login<D>> {
         let (username, password) = input;
         Ok(LoginRequest { username, password })
     }
