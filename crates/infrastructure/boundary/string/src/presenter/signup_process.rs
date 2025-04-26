@@ -10,42 +10,42 @@ use ca_application::{
 };
 
 use super::super::Boundary;
-
-impl<'d, D> Presenter<'d, D, Complete<'d, D>> for Boundary
+#[async_trait::async_trait]
+impl<D> Presenter<D, Complete<D>> for Boundary
 where
-    D: DatabaseProvider,
+    D: DatabaseProvider + 'static,
 {
     type ViewModel = String;
 
-    fn present(data: UsecaseResponseResult<'d, D, Complete<'d, D>>) -> Self::ViewModel {
+    async fn present(data: UsecaseResponseResult<D, Complete<D>>) -> Self::ViewModel {
         match data {
             Ok(data) => format!("SignupProcess Completed -> User Created: {:?}", data.record),
             Err(err) => format!("Unable find SignupProcess: {err}"),
         }
     }
 }
-
-impl<'d, D> Presenter<'d, D, Delete<'d, D>> for Boundary
+#[async_trait::async_trait]
+impl<D> Presenter<D, Delete<D>> for Boundary
 where
-    D: DatabaseProvider,
+    D: DatabaseProvider + 'static,
 {
     type ViewModel = String;
 
-    fn present(data: UsecaseResponseResult<'d, D, Delete<'d, D>>) -> Self::ViewModel {
+    async fn present(data: UsecaseResponseResult<D, Delete<D>>) -> Self::ViewModel {
         match data {
             Ok(data) => format!("SignupProcess(ID = {}) scheduled for deletion", data.id),
             Err(err) => format!("Unable to delete SignupProcess: {err}"),
         }
     }
 }
-
-impl<'d, D> Presenter<'d, D, ExtendCompletionTime<'d, D>> for Boundary
+#[async_trait::async_trait]
+impl<D> Presenter<D, ExtendCompletionTime<D>> for Boundary
 where
-    D: DatabaseProvider,
+    D: DatabaseProvider + 'static,
 {
     type ViewModel = String;
 
-    fn present(data: UsecaseResponseResult<'d, D, ExtendCompletionTime<'d, D>>) -> Self::ViewModel {
+    async fn present(data: UsecaseResponseResult<D, ExtendCompletionTime<D>>) -> Self::ViewModel {
         match data {
             Ok(data) => format!(
                 "Completion time extended of SignupProcess(ID = {})",
@@ -55,16 +55,14 @@ where
         }
     }
 }
-
-impl<'d, D> Presenter<'d, D, ExtendVerificationTime<'d, D>> for Boundary
+#[async_trait::async_trait]
+impl<D> Presenter<D, ExtendVerificationTime<D>> for Boundary
 where
-    D: DatabaseProvider,
+    D: DatabaseProvider + 'static,
 {
     type ViewModel = String;
 
-    fn present(
-        data: UsecaseResponseResult<'d, D, ExtendVerificationTime<'d, D>>,
-    ) -> Self::ViewModel {
+    async fn present(data: UsecaseResponseResult<D, ExtendVerificationTime<D>>) -> Self::ViewModel {
         match data {
             Ok(data) => format!(
                 "Verification time extended of SignupProcess(ID = {})",
@@ -74,58 +72,56 @@ where
         }
     }
 }
-
-impl<'d, D> Presenter<'d, D, GetStateChain<'d, D>> for Boundary
+#[async_trait::async_trait]
+impl<D> Presenter<D, GetStateChain<D>> for Boundary
 where
-    D: DatabaseProvider,
+    D: DatabaseProvider + 'static,
 {
     type ViewModel = String;
 
-    fn present(data: UsecaseResponseResult<'d, D, GetStateChain<'d, D>>) -> Self::ViewModel {
+    async fn present(data: UsecaseResponseResult<D, GetStateChain<D>>) -> Self::ViewModel {
         match data {
             Ok(data) => format!("{:?}", data.state_chain),
             Err(err) => format!("Unable to get state chain: {err}"),
         }
     }
 }
-
-impl<'d, D> Presenter<'d, D, Initialize<'d, D>> for Boundary
+#[async_trait::async_trait]
+impl<D> Presenter<D, Initialize<D>> for Boundary
 where
-    D: DatabaseProvider,
+    D: DatabaseProvider + 'static,
 {
     type ViewModel = String;
 
-    fn present(data: UsecaseResponseResult<'d, D, Initialize<'d, D>>) -> Self::ViewModel {
+    async fn present(data: UsecaseResponseResult<D, Initialize<D>>) -> Self::ViewModel {
         match data {
             Ok(data) => format!("Created a SignupProcess(ID = {})", data.id),
             Err(err) => format!("Unable to create a SignupProcess: {err}"),
         }
     }
 }
-
-impl<'d, D> Presenter<'d, D, SendVerificationEmail<'d, D>> for Boundary
+#[async_trait::async_trait]
+impl<D> Presenter<D, SendVerificationEmail<D>> for Boundary
 where
-    D: DatabaseProvider + EmailVerificationServiceProvider,
+    D: DatabaseProvider + 'static + EmailVerificationServiceProvider,
 {
     type ViewModel = String;
 
-    fn present(
-        data: UsecaseResponseResult<'d, D, SendVerificationEmail<'d, D>>,
-    ) -> Self::ViewModel {
+    async fn present(data: UsecaseResponseResult<D, SendVerificationEmail<D>>) -> Self::ViewModel {
         match data {
             Ok(data) => format!("Verification email sent(ID = {})", data.id),
             Err(err) => format!("Unable to send verification email: {err}"),
         }
     }
 }
-
-impl<'d, D> Presenter<'d, D, VerifyEmail<'d, D>> for Boundary
+#[async_trait::async_trait]
+impl<D> Presenter<D, VerifyEmail<D>> for Boundary
 where
-    D: DatabaseProvider,
+    D: DatabaseProvider + 'static,
 {
     type ViewModel = String;
 
-    fn present(data: UsecaseResponseResult<'d, D, VerifyEmail<'d, D>>) -> Self::ViewModel {
+    async fn present(data: UsecaseResponseResult<D, VerifyEmail<D>>) -> Self::ViewModel {
         match data {
             Ok(data) => format!("Email Verified of SignupProcess(ID = {})", data.id),
             Err(err) => format!("Unable to Verify Email of SignupProcess: {err}"),

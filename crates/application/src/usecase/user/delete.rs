@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::{
     gateway::{
         database::{
@@ -22,8 +24,8 @@ pub struct Request {
 pub struct Response;
 
 /// Delete area of life by ID usecase interactor
-pub struct Delete<'d, D> {
-    dependency_provider: &'d D,
+pub struct Delete<D> {
+    dependency_provider: Arc<D>,
 }
 
 #[derive(Debug, Error, Serialize, PartialEq)]
@@ -43,7 +45,7 @@ impl From<DeleteError> for Error {
     }
 }
 #[async_trait::async_trait]
-impl<'d, D> Usecase<'d, D> for Delete<'d, D>
+impl<D> Usecase<D> for Delete<D>
 where
     D: DatabaseProvider,
 {
@@ -61,7 +63,7 @@ where
         Ok(Self::Response {})
     }
 
-    fn new(dependency_provider: &'d D) -> Self {
+    fn new(dependency_provider: Arc<D>) -> Self {
         Self {
             dependency_provider,
         }
@@ -92,10 +94,10 @@ mod tests {
             .expect_delete()
             .withf(move |_, actual_id| actual_id == &user_id)
             .times(1)
-            .returning(move |_, _|  Ok(()));
+            .returning(move |_, _| Ok(()));
         // Usecase Initialization
         let usecase = <Delete<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
-            &dependency_provider,
+            Arc::new(dependency_provider),
         );
         // Usecase Execution -- mock predicates will fail during execution
         let result = usecase.exec(req).await;
@@ -116,7 +118,7 @@ mod tests {
             .returning(move |_, _| Err(DeleteError::Connection));
         // Usecase Initialization
         let usecase = <Delete<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
-            &dependency_provider,
+            Arc::new(dependency_provider),
         );
         // Usecase Execution -- mock predicates will fail during execution
         let result = usecase.exec(req).await;
@@ -135,10 +137,10 @@ mod tests {
             .expect_delete()
             .withf(move |_, actual_id| actual_id == &user_id)
             .times(1)
-            .returning(move |_, _|  Err(DeleteError::NotFound));
+            .returning(move |_, _| Err(DeleteError::NotFound));
         // Usecase Initialization
         let usecase = <Delete<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
-            &dependency_provider,
+            Arc::new(dependency_provider),
         );
         // Usecase Execution -- mock predicates will fail during execution
         let result = usecase.exec(req).await;
@@ -152,7 +154,7 @@ mod tests {
         let req = Request {
             id: Id::new(user_record.user.id()),
         };
-        let result = Delete::new(&MockDependencyProvider::default())
+        let result = Delete::new(Arc::new(MockDependencyProvider::default()))
             .authorize(&req, Some(auth_context_admin));
         assert!(result.is_ok());
     }
@@ -162,7 +164,7 @@ mod tests {
         let req = Request {
             id: user_record.user.id(),
         };
-        let result = Delete::new(&MockDependencyProvider::default())
+        let result = Delete::new(Arc::new(MockDependencyProvider::default()))
             .authorize(&req, Some(auth_context_user));
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), AuthError::Unauthorized);
@@ -173,7 +175,8 @@ mod tests {
             id: user_record.user.id(),
         };
         let auth_context = None;
-        let result = Delete::new(&MockDependencyProvider::default()).authorize(&req, auth_context);
+        let result =
+            Delete::new(Arc::new(MockDependencyProvider::default())).authorize(&req, auth_context);
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), AuthError::Unauthorized);
     }

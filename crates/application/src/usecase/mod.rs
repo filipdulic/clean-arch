@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use ca_domain::entity::{
     auth_context::{AuthContext, AuthError},
     auth_strategy::AuthStrategy,
@@ -13,12 +15,12 @@ pub mod user;
 
 /// Usecase trait
 #[async_trait::async_trait]
-pub trait Usecase<'d, D> {
+pub trait Usecase<D>: Send + Sync {
     type Request: DeserializeOwned + Send;
-    type Response: Serialize + Send;
+    type Response: Serialize + Send + 'static;
     type Error: std::fmt::Debug + Serialize + Send;
     async fn exec(&self, req: Self::Request) -> Result<Self::Response, Self::Error>;
-    fn new(db: &'d D) -> Self;
+    fn new(db: Arc<D>) -> Self;
     fn extract_owner(&self, _req: &Self::Request) -> Option<UserId> {
         None
     }

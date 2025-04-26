@@ -7,42 +7,42 @@ use ca_application::{
         delete::Delete, get_all::GetAll, get_one::GetOne, login::Login, update::Update,
     },
 };
-
-impl<'d, D> Presenter<'d, D, Update<'d, D>> for Boundary
+#[async_trait::async_trait]
+impl<D> Presenter<D, Update<D>> for Boundary
 where
-    D: DatabaseProvider,
+    D: DatabaseProvider + 'static,
 {
     type ViewModel = String;
 
-    fn present(data: UsecaseResponseResult<'d, D, Update<'d, D>>) -> Self::ViewModel {
+    async fn present(data: UsecaseResponseResult<D, Update<D>>) -> Self::ViewModel {
         match data {
             Ok(()) => "Updated ".to_string(),
             Err(err) => format!("Unable to update user: {err}"),
         }
     }
 }
-
-impl<'d, D> Presenter<'d, D, GetOne<'d, D>> for Boundary
+#[async_trait::async_trait]
+impl<D> Presenter<D, GetOne<D>> for Boundary
 where
-    D: DatabaseProvider,
+    D: DatabaseProvider + 'static,
 {
     type ViewModel = String;
 
-    fn present(data: UsecaseResponseResult<'d, D, GetOne<'d, D>>) -> Self::ViewModel {
+    async fn present(data: UsecaseResponseResult<D, GetOne<D>>) -> Self::ViewModel {
         match data {
             Ok(data) => format!("{:?}", data.user),
             Err(err) => format!("Unable to find user: {err}"),
         }
     }
 }
-
-impl<'d, D> Presenter<'d, D, GetAll<'d, D>> for Boundary
+#[async_trait::async_trait]
+impl<D> Presenter<D, GetAll<D>> for Boundary
 where
-    D: DatabaseProvider,
+    D: DatabaseProvider + 'static,
 {
     type ViewModel = String;
 
-    fn present(data: UsecaseResponseResult<'d, D, GetAll<'d, D>>) -> Self::ViewModel {
+    async fn present(data: UsecaseResponseResult<D, GetAll<D>>) -> Self::ViewModel {
         match data {
             Ok(resp) => resp
                 .users
@@ -54,28 +54,28 @@ where
         }
     }
 }
-
-impl<'d, D> Presenter<'d, D, Delete<'d, D>> for Boundary
+#[async_trait::async_trait]
+impl<D> Presenter<D, Delete<D>> for Boundary
 where
-    D: DatabaseProvider,
+    D: DatabaseProvider + 'static,
 {
     type ViewModel = String;
 
-    fn present(data: UsecaseResponseResult<'d, D, Delete<'d, D>>) -> Self::ViewModel {
+    async fn present(data: UsecaseResponseResult<D, Delete<D>>) -> Self::ViewModel {
         match data {
             Ok(_) => "Successfully deleted user".to_string(),
             Err(err) => format!("Unable to delete user {err}"),
         }
     }
 }
-
-impl<'d, D> Presenter<'d, D, Login<'d, D>> for Boundary
+#[async_trait::async_trait]
+impl<D> Presenter<D, Login<D>> for Boundary
 where
-    D: DatabaseProvider + AuthPackerProvider,
+    D: DatabaseProvider + 'static + AuthPackerProvider,
 {
     type ViewModel = String;
 
-    fn present(data: UsecaseResponseResult<'d, D, Login<'d, D>>) -> Self::ViewModel {
+    async fn present(data: UsecaseResponseResult<D, Login<D>>) -> Self::ViewModel {
         match data {
             Ok(data) => format!(
                 "TOKEN: {:?}\nUSER_ID: {:?}",

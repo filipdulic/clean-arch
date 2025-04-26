@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::{
     gateway::{
         database::{
@@ -24,8 +26,8 @@ pub struct Response {
     pub state_chain: Vec<Record>,
 }
 
-pub struct GetStateChain<'d, D> {
-    dependency_provider: &'d D,
+pub struct GetStateChain<D> {
+    dependency_provider: Arc<D>,
 }
 
 #[derive(Debug, Error, Serialize, PartialEq)]
@@ -48,7 +50,7 @@ impl From<(GetError, Id)> for Error {
     }
 }
 #[async_trait::async_trait]
-impl<'d, D> Usecase<'d, D> for GetStateChain<'d, D>
+impl<D> Usecase<D> for GetStateChain<D>
 where
     D: DatabaseProvider,
 {
@@ -66,7 +68,7 @@ where
             .map_err(|err| (err, req.id))?;
         Ok(Self::Response { state_chain })
     }
-    fn new(dependency_provider: &'d D) -> Self {
+    fn new(dependency_provider: Arc<D>) -> Self {
         Self {
             dependency_provider,
         }
@@ -111,7 +113,7 @@ mod tests {
         // Usecase Initialization
         let usecase =
             <GetStateChain<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
-                &dependency_provider,
+                Arc::new(dependency_provider),
             );
         // Usecase Execution -- mock predicates will fail during execution
         let result = usecase.exec(req).await;
@@ -140,7 +142,7 @@ mod tests {
         // Usecase Initialization
         let usecase =
             <GetStateChain<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
-                &dependency_provider,
+                Arc::new(dependency_provider),
             );
         // Usecase Execution -- mock predicates will fail during execution
         let result = usecase.exec(req).await;
@@ -168,7 +170,7 @@ mod tests {
         // Usecase Initialization
         let usecase =
             <GetStateChain<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
-                &dependency_provider,
+                Arc::new(dependency_provider),
             );
         // Usecase Execution -- mock predicates will fail during execution
         let result = usecase.exec(req).await;
@@ -179,14 +181,14 @@ mod tests {
     #[rstest]
     fn test_authorize_admin_zero_success(signup_id: SignupId, auth_context_admin: AuthContext) {
         let req = super::Request { id: signup_id };
-        let result = GetStateChain::new(&MockDependencyProvider::default())
+        let result = GetStateChain::new(Arc::new(MockDependencyProvider::default()))
             .authorize(&req, Some(auth_context_admin));
         assert!(result.is_ok());
     }
     #[rstest]
     fn test_authorize_user_fail(signup_id: SignupId, auth_context_user: AuthContext) {
         let req = super::Request { id: signup_id };
-        let result = GetStateChain::new(&MockDependencyProvider::default())
+        let result = GetStateChain::new(Arc::new(MockDependencyProvider::default()))
             .authorize(&req, Some(auth_context_user));
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), AuthError::Unauthorized);
@@ -194,7 +196,8 @@ mod tests {
     #[rstest]
     fn test_authorize_none_fail(signup_id: SignupId) {
         let req = super::Request { id: signup_id };
-        let result = GetStateChain::new(&MockDependencyProvider::default()).authorize(&req, None);
+        let result =
+            GetStateChain::new(Arc::new(MockDependencyProvider::default())).authorize(&req, None);
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), AuthError::Unauthorized);
     }

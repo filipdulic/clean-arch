@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::{
     gateway::{
         database::{
@@ -24,8 +26,8 @@ pub struct Request {
 pub struct Response {
     pub id: Id,
 }
-pub struct ExtendVerificationTime<'d, D> {
-    dependency_provider: &'d D,
+pub struct ExtendVerificationTime<D> {
+    dependency_provider: Arc<D>,
 }
 
 #[derive(Debug, Error, Serialize, PartialEq)]
@@ -58,7 +60,7 @@ impl From<(GetError, Id)> for Error {
     }
 }
 #[async_trait::async_trait]
-impl<'d, D> Usecase<'d, D> for ExtendVerificationTime<'d, D>
+impl<D> Usecase<D> for ExtendVerificationTime<D>
 where
     D: DatabaseProvider,
 {
@@ -91,7 +93,7 @@ where
             .await?;
         Ok(Self::Response { id: req.id })
     }
-    fn new(dependency_provider: &'d D) -> Self {
+    fn new(dependency_provider: Arc<D>) -> Self {
         Self {
             dependency_provider,
         }
@@ -155,7 +157,7 @@ mod tests {
         // Usecase Initialization
         let usecase = <ExtendVerificationTime<MockDependencyProvider> as Usecase<
             MockDependencyProvider,
-        >>::new(&dependency_provider);
+        >>::new(Arc::new(dependency_provider));
         // Usecase Execution -- mock predicates will fail during execution
         let result = usecase.exec(req).await;
         // Assert execution success
@@ -183,7 +185,7 @@ mod tests {
         // Usecase Initialization
         let usecase = <ExtendVerificationTime<MockDependencyProvider> as Usecase<
             MockDependencyProvider,
-        >>::new(&dependency_provider);
+        >>::new(Arc::new(dependency_provider));
         // Usecase Execution -- mock predicates will fail during execution
         let result = usecase.exec(req).await;
         // Assert execution has failed
@@ -210,7 +212,7 @@ mod tests {
         // Usecase Initialization
         let usecase = <ExtendVerificationTime<MockDependencyProvider> as Usecase<
             MockDependencyProvider,
-        >>::new(&dependency_provider);
+        >>::new(Arc::new(dependency_provider));
         // Usecase Execution -- mock predicates will fail during execution
         let result = usecase.exec(req).await;
         // Assert execution has failed
@@ -238,7 +240,7 @@ mod tests {
         // Usecase Initialization
         let usecase = <ExtendVerificationTime<MockDependencyProvider> as Usecase<
             MockDependencyProvider,
-        >>::new(&dependency_provider);
+        >>::new(Arc::new(dependency_provider));
         // Usecase Execution -- mock predicates will fail during execution
         let result = usecase.exec(req).await;
         // Assert execution success
@@ -273,7 +275,7 @@ mod tests {
         // Usecase Initialization
         let usecase = <ExtendVerificationTime<MockDependencyProvider> as Usecase<
             MockDependencyProvider,
-        >>::new(&dependency_provider);
+        >>::new(Arc::new(dependency_provider));
         // Usecase Execution -- mock predicates will fail during execution
         let result = usecase.exec(req).await;
         // Assert execution success
@@ -324,7 +326,7 @@ mod tests {
         // Usecase Initialization
         let usecase = <ExtendVerificationTime<MockDependencyProvider> as Usecase<
             MockDependencyProvider,
-        >>::new(&dependency_provider);
+        >>::new(Arc::new(dependency_provider));
         // Usecase Execution -- mock predicates will fail during execution
         let result = usecase.exec(req).await;
         // Assert execution success
@@ -334,7 +336,7 @@ mod tests {
     #[rstest]
     fn test_authorize_admin_zero_success(signup_id: SignupId, auth_context_admin: AuthContext) {
         let req = super::Request { id: signup_id };
-        let result = ExtendVerificationTime::new(&MockDependencyProvider::default())
+        let result = ExtendVerificationTime::new(Arc::new(MockDependencyProvider::default()))
             .authorize(&req, Some(auth_context_admin));
         assert!(result.is_ok());
     }
@@ -342,7 +344,7 @@ mod tests {
     #[rstest]
     fn test_authorize_user_fail(signup_id: SignupId, auth_context_user: AuthContext) {
         let req = super::Request { id: signup_id };
-        let result = ExtendVerificationTime::new(&MockDependencyProvider::default())
+        let result = ExtendVerificationTime::new(Arc::new(MockDependencyProvider::default()))
             .authorize(&req, Some(auth_context_user));
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), AuthError::Unauthorized);
@@ -350,8 +352,8 @@ mod tests {
     #[rstest]
     fn test_authorize_none_fail(signup_id: SignupId) {
         let req = super::Request { id: signup_id };
-        let result =
-            ExtendVerificationTime::new(&MockDependencyProvider::default()).authorize(&req, None);
+        let result = ExtendVerificationTime::new(Arc::new(MockDependencyProvider::default()))
+            .authorize(&req, None);
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), AuthError::Unauthorized);
     }

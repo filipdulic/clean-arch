@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::{
     gateway::{
         database::{
@@ -21,8 +23,8 @@ pub struct Response {
 }
 
 /// Get all users usecase interactor
-pub struct GetAll<'d, D> {
-    dependency_provider: &'d D,
+pub struct GetAll<D> {
+    dependency_provider: Arc<D>,
 }
 
 #[derive(Debug, Error, Serialize, PartialEq)]
@@ -39,7 +41,7 @@ impl From<GetAllError> for Error {
     }
 }
 #[async_trait::async_trait]
-impl<'d, D> Usecase<'d, D> for GetAll<'d, D>
+impl<D> Usecase<D> for GetAll<D>
 where
     D: DatabaseProvider,
 {
@@ -61,7 +63,7 @@ where
         Ok(Self::Response { users })
     }
 
-    fn new(dependency_provider: &'d D) -> Self {
+    fn new(dependency_provider: Arc<D>) -> Self {
         Self {
             dependency_provider,
         }
@@ -97,7 +99,7 @@ mod tests {
             .returning(move |_| Ok(user_records.clone()));
         // Usecase Initialization
         let usecase = <GetAll<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
-            &dependency_provider,
+            Arc::new(dependency_provider),
         );
         // Usecase Execution -- mock predicates will fail during execution
         let result = usecase.exec(req).await;
@@ -119,7 +121,7 @@ mod tests {
             .returning(move |_| Ok(vec![]));
         // Usecase Initialization
         let usecase = <GetAll<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
-            &dependency_provider,
+            Arc::new(dependency_provider),
         );
         // Usecase Execution -- mock predicates will fail during execution
         let result = usecase.exec(req).await;
@@ -141,7 +143,7 @@ mod tests {
             .returning(move |_| Err(GetAllError::Connection));
         // Usecase Initialization
         let usecase = <GetAll<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
-            &dependency_provider,
+            Arc::new(dependency_provider),
         );
         // Usecase Execution -- mock predicates will fail during execution
         let result = usecase.exec(req).await;
@@ -152,7 +154,7 @@ mod tests {
     #[rstest]
     fn test_authorize_admin_zero(auth_context_admin: AuthContext) {
         let req = Request;
-        let result = GetAll::new(&MockDependencyProvider::default())
+        let result = GetAll::new(Arc::new(MockDependencyProvider::default()))
             .authorize(&req, Some(auth_context_admin));
         assert!(result.is_ok());
     }
@@ -160,7 +162,7 @@ mod tests {
     #[rstest]
     fn test_authorize_user_zero(auth_context_user: AuthContext) {
         let req = Request;
-        let result = GetAll::new(&MockDependencyProvider::default())
+        let result = GetAll::new(Arc::new(MockDependencyProvider::default()))
             .authorize(&req, Some(auth_context_user));
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), AuthError::Unauthorized);
@@ -169,7 +171,8 @@ mod tests {
     fn test_authorize_none() {
         let req = Request;
         let auth_context = None;
-        let result = GetAll::new(&MockDependencyProvider::default()).authorize(&req, auth_context);
+        let result =
+            GetAll::new(Arc::new(MockDependencyProvider::default())).authorize(&req, auth_context);
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), AuthError::Unauthorized);
     }

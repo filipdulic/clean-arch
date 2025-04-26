@@ -25,8 +25,8 @@ pub enum IdApiResponse {
     InternalServerError(Json<String>),
 }
 
-impl<'d, D, U: Usecase<'d, D>> From<Error<'d, D, U>> for IdApiResponse {
-    fn from(err: Error<'d, D, U>) -> Self {
+impl<D, U: Usecase<D>> From<Error<D, U>> for IdApiResponse {
+    fn from(err: Error<D, U>) -> Self {
         match err {
             Error::ParseIdError => IdApiResponse::BadRequest(Json("Invalid id".to_string())),
             Error::ParseInputError(err) => IdApiResponse::BadRequest(Json(err.to_string())),
@@ -43,14 +43,14 @@ impl<'d, D, U: Usecase<'d, D>> From<Error<'d, D, U>> for IdApiResponse {
 // ========================================
 // Initialize Use Case
 // ========================================
-
-impl<'d, D> Presenter<'d, D, Initialize<'d, D>> for Boundary
+#[async_trait::async_trait]
+impl<D> Presenter<D, Initialize<D>> for Boundary
 where
-    D: DatabaseProvider + std::marker::Sync + std::marker::Send,
+    D: DatabaseProvider + std::marker::Sync + std::marker::Send + 'static,
 {
     type ViewModel = IdApiResponse;
 
-    fn present(data: UsecaseResponseResult<'d, D, Initialize<'d, D>>) -> Self::ViewModel {
+    async fn present(data: UsecaseResponseResult<D, Initialize<D>>) -> Self::ViewModel {
         match data {
             Ok(data) => IdApiResponse::Ok(Json(IdResponse {
                 id: data.id.to_string(),

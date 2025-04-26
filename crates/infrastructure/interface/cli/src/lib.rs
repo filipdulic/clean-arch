@@ -15,7 +15,7 @@ use std::sync::Arc;
 
 use clap::Subcommand;
 
-use ca_adapter::controller::Controller;
+use ca_adapter::controller::{Controller, ControllerTrait};
 use ca_application::{
     gateway::{
         AuthExtractorProvider, AuthPackerProvider, DatabaseProvider,
@@ -100,7 +100,8 @@ where
     D: DatabaseProvider
         + EmailVerificationServiceProvider
         + AuthPackerProvider
-        + AuthExtractorProvider,
+        + AuthExtractorProvider
+        + 'static,
 {
     let app_controller = Controller::<D, string::Boundary>::new(db);
 

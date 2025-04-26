@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::{
     gateway::{
         database::{
@@ -26,8 +28,8 @@ pub struct Request {
 pub struct Response {
     pub id: Id,
 }
-pub struct SendVerificationEmail<'d, D> {
-    dependency_provider: &'d D,
+pub struct SendVerificationEmail<D> {
+    dependency_provider: Arc<D>,
 }
 
 #[derive(Debug, Error, Serialize, PartialEq)]
@@ -60,7 +62,7 @@ impl From<SaveError> for Error {
     }
 }
 #[async_trait::async_trait]
-impl<'d, D> Usecase<'d, D> for SendVerificationEmail<'d, D>
+impl<D> Usecase<D> for SendVerificationEmail<D>
 where
     D: DatabaseProvider + EmailVerificationServiceProvider,
 {
@@ -123,7 +125,7 @@ where
             .await?;
         Ok(Response { id: req.id })
     }
-    fn new(dependency_provider: &'d D) -> Self {
+    fn new(dependency_provider: Arc<D>) -> Self {
         Self {
             dependency_provider,
         }
@@ -199,7 +201,7 @@ mod tests {
         // Usecase Initialization
         let usecase = <SendVerificationEmail<MockDependencyProvider> as Usecase<
             MockDependencyProvider,
-        >>::new(&dependency_provider);
+        >>::new(Arc::new(dependency_provider));
         // Usecase Execution -- mock predicates will fail during execution
         let result = usecase.exec(req).await;
         // Assert execution success
@@ -221,7 +223,7 @@ mod tests {
             .returning(|_, _| Err(signup_process::GetError::Connection));
         let usecase = <SendVerificationEmail<MockDependencyProvider> as Usecase<
             MockDependencyProvider,
-        >>::new(&dependency_provider);
+        >>::new(Arc::new(dependency_provider));
         let req = super::Request { id: signup_id };
         let result = usecase.exec(req).await;
         assert!(result.is_err());
@@ -241,7 +243,7 @@ mod tests {
             .returning(|_, _| Err(signup_process::GetError::NotFound));
         let usecase = <SendVerificationEmail<MockDependencyProvider> as Usecase<
             MockDependencyProvider,
-        >>::new(&dependency_provider);
+        >>::new(Arc::new(dependency_provider));
         let req = super::Request { id: signup_id };
         let result = usecase.exec(req).await;
         assert!(result.is_err());
@@ -267,7 +269,7 @@ mod tests {
             });
         let usecase = <SendVerificationEmail<MockDependencyProvider> as Usecase<
             MockDependencyProvider,
-        >>::new(&dependency_provider);
+        >>::new(Arc::new(dependency_provider));
         let req = super::Request { id: signup_id };
         let result = usecase.exec(req).await;
         assert!(result.is_err());
@@ -317,7 +319,7 @@ mod tests {
         // Usecase Initialization
         let usecase = <SendVerificationEmail<MockDependencyProvider> as Usecase<
             MockDependencyProvider,
-        >>::new(&dependency_provider);
+        >>::new(Arc::new(dependency_provider));
         // Usecase Execution -- mock predicates will fail during execution
         let result = usecase.exec(req).await;
         // Assert execution failed with TokenRepoError
@@ -383,7 +385,7 @@ mod tests {
         // Usecase Initialization
         let usecase = <SendVerificationEmail<MockDependencyProvider> as Usecase<
             MockDependencyProvider,
-        >>::new(&dependency_provider);
+        >>::new(Arc::new(dependency_provider));
         // Usecase Execution -- mock predicates will fail during execution
         let result = usecase.exec(req).await;
         // Assert execution failed with TokenRepoError
@@ -396,7 +398,7 @@ mod tests {
     #[rstest]
     fn test_authorize_admin_zero(signup_id: SignupId, auth_context_admin: AuthContext) {
         let req = super::Request { id: signup_id };
-        let result = SendVerificationEmail::new(&MockDependencyProvider::default())
+        let result = SendVerificationEmail::new(Arc::new(MockDependencyProvider::default()))
             .authorize(&req, Some(auth_context_admin));
         assert!(result.is_ok());
     }
@@ -404,7 +406,7 @@ mod tests {
     #[rstest]
     fn test_authorize_user(signup_id: SignupId, auth_context_user: AuthContext) {
         let req = super::Request { id: signup_id };
-        let result = SendVerificationEmail::new(&MockDependencyProvider::default())
+        let result = SendVerificationEmail::new(Arc::new(MockDependencyProvider::default()))
             .authorize(&req, Some(auth_context_user));
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), AuthError::Unauthorized);
@@ -412,8 +414,8 @@ mod tests {
     #[rstest]
     fn test_authorize_none(signup_id: SignupId) {
         let req = super::Request { id: signup_id };
-        let result =
-            SendVerificationEmail::new(&MockDependencyProvider::default()).authorize(&req, None);
+        let result = SendVerificationEmail::new(Arc::new(MockDependencyProvider::default()))
+            .authorize(&req, None);
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), AuthError::Unauthorized);
     }

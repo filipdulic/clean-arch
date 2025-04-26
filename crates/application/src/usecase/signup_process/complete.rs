@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::{
     gateway::{
         database::{
@@ -36,8 +38,8 @@ pub struct Request {
 pub struct Response {
     pub record: user::Record,
 }
-pub struct Complete<'d, D> {
-    dependency_provider: &'d D,
+pub struct Complete<D> {
+    dependency_provider: Arc<D>,
 }
 
 #[derive(Debug, Error, Serialize, PartialEq)]
@@ -80,7 +82,7 @@ impl From<UserSaveError> for Error {
     }
 }
 #[async_trait::async_trait]
-impl<'d, D> Usecase<'d, D> for Complete<'d, D>
+impl<D> Usecase<D> for Complete<D>
 where
     D: DatabaseProvider,
 {
@@ -152,7 +154,7 @@ where
         })
     }
 
-    fn new(db: &'d D) -> Self {
+    fn new(db: Arc<D>) -> Self {
         Self {
             dependency_provider: db,
         }
@@ -237,7 +239,7 @@ mod tests {
             .returning(move |_, _| Ok(()));
         // Usecase Initialization
         let usecase = <Complete<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
-            &dependency_provider,
+            Arc::new(dependency_provider),
         );
         // Usecase Execution -- mock predicates will fail during execution
         let result = usecase.exec(req).await;
@@ -266,7 +268,7 @@ mod tests {
             .never();
         // Usecase Initialization
         let usecase = <Complete<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
-            &dependency_provider,
+            Arc::new(dependency_provider),
         );
         // Usecase Execution -- mock predicates will fail during execution
         let result = usecase.exec(req).await;
@@ -299,7 +301,7 @@ mod tests {
             .returning(move |_, _| Err(GetError::Connection));
         // Usecase Initialization
         let usecase = <Complete<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
-            &dependency_provider,
+            Arc::new(dependency_provider),
         );
         // Usecase Execution -- mock predicates will fail during execution
         let result = usecase.exec(req).await;
@@ -330,7 +332,7 @@ mod tests {
             .returning(move |_, _| Err(GetError::NotFound));
         // Usecase Initialization
         let usecase = <Complete<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
-            &dependency_provider,
+            Arc::new(dependency_provider),
         );
         // Usecase Execution -- mock predicates will fail during execution
         let result = usecase.exec(req).await;
@@ -362,7 +364,7 @@ mod tests {
             .returning(move |_, _| Ok(initialized_record.clone()));
         // Usecase Initialization
         let usecase = <Complete<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
-            &dependency_provider,
+            Arc::new(dependency_provider),
         );
         // Usecase Execution -- mock predicates will fail during execution
         let result = usecase.exec(req).await;
@@ -412,7 +414,7 @@ mod tests {
             .returning(move |_, _| Ok(()));
         // Usecase Initialization
         let usecase = <Complete<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
-            &dependency_provider,
+            Arc::new(dependency_provider),
         );
         // Usecase Execution -- mock predicates will fail during execution
         let result = usecase.exec(req).await;
@@ -468,7 +470,7 @@ mod tests {
             .never();
         // Usecase Initialization
         let usecase = <Complete<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
-            &dependency_provider,
+            Arc::new(dependency_provider),
         );
 
         // Usecase Execution -- mock predicates will fail during execution
@@ -533,7 +535,7 @@ mod tests {
             .returning(move |_, _| Err(SaveError::Connection));
         // Usecase Initialization
         let usecase = <Complete<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
-            &dependency_provider,
+            Arc::new(dependency_provider),
         );
 
         // Usecase Execution -- mock predicates will fail during execution
@@ -549,7 +551,7 @@ mod tests {
             username: TEST_USERNAME.to_string(),
             password: TEST_PASSWORD.to_string(),
         };
-        let result = Complete::new(&MockDependencyProvider::default())
+        let result = Complete::new(Arc::new(MockDependencyProvider::default()))
             .authorize(&req, Some(auth_context_admin));
         assert!(result.is_ok());
     }
@@ -561,7 +563,7 @@ mod tests {
             username: TEST_USERNAME.to_string(),
             password: TEST_PASSWORD.to_string(),
         };
-        let result = Complete::new(&MockDependencyProvider::default())
+        let result = Complete::new(Arc::new(MockDependencyProvider::default()))
             .authorize(&req, Some(auth_context_user));
         assert!(result.is_ok());
     }
@@ -572,7 +574,8 @@ mod tests {
             username: TEST_USERNAME.to_string(),
             password: TEST_PASSWORD.to_string(),
         };
-        let result = Complete::new(&MockDependencyProvider::default()).authorize(&req, None);
+        let result =
+            Complete::new(Arc::new(MockDependencyProvider::default())).authorize(&req, None);
         assert!(result.is_ok());
     }
 }
