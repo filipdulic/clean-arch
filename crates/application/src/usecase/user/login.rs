@@ -59,7 +59,7 @@ impl From<(GetError, UserName)> for Error {
         }
     }
 }
-
+#[async_trait::async_trait]
 impl<'d, D> Usecase<'d, D> for Login<'d, D>
 where
     D: DatabaseProvider + AuthPackerProvider,

@@ -79,7 +79,7 @@ impl From<UserSaveError> for Error {
         }
     }
 }
-
+#[async_trait::async_trait]
 impl<'d, D> Usecase<'d, D> for Complete<'d, D>
 where
     D: DatabaseProvider,

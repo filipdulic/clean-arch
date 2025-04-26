@@ -23,7 +23,7 @@ pub enum EmailServiceError {
 
 #[cfg_attr(test, automock)]
 #[async_trait]
-pub trait EmailService {
+pub trait EmailService: Send + Sync {
     async fn send_email(
         &self,
         to: EmailAddress,
@@ -34,7 +34,7 @@ pub trait EmailService {
 
 #[cfg_attr(test, automock)]
 #[async_trait]
-pub trait EmailVerificationService {
+pub trait EmailVerificationService: Send + Sync {
     async fn send_verification_email(
         &self,
         to: EmailAddress,

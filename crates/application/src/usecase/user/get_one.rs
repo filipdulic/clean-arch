@@ -47,7 +47,7 @@ impl From<GetError> for Error {
         }
     }
 }
-
+#[async_trait::async_trait]
 impl<'d, D> Usecase<'d, D> for GetOne<'d, D>
 where
     D: DatabaseProvider,

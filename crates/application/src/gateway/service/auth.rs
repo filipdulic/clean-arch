@@ -5,13 +5,13 @@ use mockall::automock;
 
 #[cfg_attr(test, automock)]
 #[async_trait]
-pub trait AuthExtractor {
+pub trait AuthExtractor:Send +Sync {
     async fn extract_auth(&self, auth_input: String) -> Option<AuthContext>;
 }
 
 #[cfg_attr(test, automock)]
 #[async_trait]
-pub trait AuthPacker {
+pub trait AuthPacker: Send + Sync {
     async fn pack_auth(&self, auth: AuthContext) -> String;
 }
 

@@ -49,7 +49,7 @@ impl From<SaveError> for Error {
         }
     }
 }
-
+#[async_trait::async_trait]
 impl<'d, D> Usecase<'d, D> for Initialize<'d, D>
 where
     D: DatabaseProvider,

@@ -3,19 +3,19 @@ use database::Database;
 pub mod database;
 pub mod service;
 
-pub trait DatabaseProvider {
+pub trait DatabaseProvider: Send + Sync {
     fn database(&self) -> impl Database;
 }
 
-pub trait EmailVerificationServiceProvider {
+pub trait EmailVerificationServiceProvider: Send {
     fn email_verification_service(&self) -> impl service::email::EmailVerificationService;
 }
 
-pub trait AuthPackerProvider {
+pub trait AuthPackerProvider: Send + Sync {
     fn auth_packer(&self) -> impl service::auth::AuthPacker;
 }
 
-pub trait AuthExtractorProvider {
+pub trait AuthExtractorProvider: Send + Sync {
     fn auth_extractor(&self) -> impl service::auth::AuthExtractor;
 }
 

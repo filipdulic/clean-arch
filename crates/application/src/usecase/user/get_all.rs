@@ -38,7 +38,7 @@ impl From<GetAllError> for Error {
         }
     }
 }
-
+#[async_trait::async_trait]
 impl<'d, D> Usecase<'d, D> for GetAll<'d, D>
 where
     D: DatabaseProvider,
