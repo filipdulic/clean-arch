@@ -56,7 +56,7 @@ impl From<(GetError, Id)> for Error {
         }
     }
 }
-
+#[async_trait::async_trait]
 impl<'d, D> Usecase<'d, D> for Delete<'d, D>
 where
     D: DatabaseProvider,

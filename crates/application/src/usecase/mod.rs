@@ -1,5 +1,3 @@
-use std::future::Future;
-
 use ca_domain::entity::{
     auth_context::{AuthContext, AuthError},
     auth_strategy::AuthStrategy,
@@ -14,12 +12,12 @@ mod tests;
 pub mod user;
 
 /// Usecase trait
+#[async_trait::async_trait]
 pub trait Usecase<'d, D> {
-    type Request: DeserializeOwned;
-    type Response: Serialize;
-    type Error: std::fmt::Debug + Serialize;
-    fn exec(&self, req: Self::Request)
-        -> impl Future<Output = Result<Self::Response, Self::Error>>;
+    type Request: DeserializeOwned + Send;
+    type Response: Serialize + Send;
+    type Error: std::fmt::Debug + Serialize + Send;
+    async fn exec(&self, req: Self::Request) -> Result<Self::Response, Self::Error>;
     fn new(db: &'d D) -> Self;
     fn extract_owner(&self, _req: &Self::Request) -> Option<UserId> {
         None

@@ -14,8 +14,8 @@ pub mod user;
 use mockall::mock;
 
 #[async_trait]
-pub trait Database {
-    type Transaction;
+pub trait Database: Send + Sync {
+    type Transaction: Send + Sync;
     type Error;
     fn signup_process_repo(&self) -> impl signup_process::Repo<Transaction = Self::Transaction>;
     fn signuo_id_gen(&self) -> impl NewId<Id<SignupProcessValue>>;

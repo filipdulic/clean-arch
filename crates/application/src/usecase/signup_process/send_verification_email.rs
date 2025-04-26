@@ -59,7 +59,7 @@ impl From<SaveError> for Error {
         Self::Repo
     }
 }
-
+#[async_trait::async_trait]
 impl<'d, D> Usecase<'d, D> for SendVerificationEmail<'d, D>
 where
     D: DatabaseProvider + EmailVerificationServiceProvider,
