@@ -11,18 +11,19 @@ general Rust development.
 - [x] Typestate state machine
 - [x] Database transactions
 - [ ] Outbox pattern - for publishing messages
-### Middleware
-- [ ] Authentication
-- [ ] Authorization
+### Authentication
+- [x] JWT Token claim pack/extract
+### Authorization
+- [x] Role Based Access
+- [x] Object Owner Access
 ### Interfaces
 - [ ] Terminal
     - [x] CLI (string) server
-    - [x] CLI JSON server
     - [ ] TUI/ncurses client
     - [ ] Desktop client
 - [ ] Web
     - [ ] Actix server
-    - [ ] Poet server
+    - [x] poem-openapi server
     - [ ] Axum server
     - [ ] Yew frontend
     - [ ] Seed frontend

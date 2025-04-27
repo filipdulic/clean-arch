@@ -1,22 +1,18 @@
-use ca_application::gateway::service::auth::AuthExtractor;
-use ca_application::gateway::service::email::EmailVerificationService;
+use std::sync::Arc;
+
 use ca_application::gateway::{
+    service::{
+        auth::{AuthExtractor, AuthPacker},
+        email::EmailVerificationService,
+    },
     AuthExtractorProvider, AuthPackerProvider, DatabaseProvider, EmailVerificationServiceProvider,
 };
 use ca_infrastructure_auth_jwt::JwtAuth;
-use ca_infrastructure_interface_cli_json as cli;
+use ca_infrastructure_interface_poem_openapi::Api;
 use ca_infrastructure_persistance_sqlx_sqlite::SqlxSqlite;
 use ca_infrastructure_service_email_file::{data_storage_directory, FileEmailService};
-use clap::Parser;
-use std::{path::PathBuf, sync::Arc};
-
-#[derive(Parser)]
-struct Args {
-    #[clap(subcommand)]
-    command: cli::Command,
-    #[clap(help = "Directory to store data ", long)]
-    data_dir: Option<PathBuf>,
-}
+use poem::{listener::TcpListener, Route, Server};
+use poem_openapi::OpenApiService;
 
 struct DependancyProvider {
     db: SqlxSqlite,
@@ -67,23 +63,30 @@ impl AuthExtractorProvider for DependancyProvider {
 }
 
 impl AuthPackerProvider for DependancyProvider {
-    fn auth_packer(&self) -> impl ca_application::gateway::service::auth::AuthPacker {
+    fn auth_packer(&self) -> impl AuthPacker {
         &self.jwt_auth
     }
 }
+
 #[tokio::main]
-pub async fn main() -> Result<(), std::io::Error> {
-    let args = Args::parse();
+async fn main() {
     let data_folder_path = data_storage_directory(None);
     let data_folder_str = data_folder_path.to_str().unwrap();
-    let email_verification_servuce = FileEmailService::try_new(data_folder_path.clone())?;
+    let email_verification_service = FileEmailService::try_new(data_folder_path.clone()).unwrap();
     let jwt_auth = JwtAuth::new("secret".to_string());
     let sqlx_sqlite = SqlxSqlite::try_new(data_folder_str).await.unwrap();
     let dep_provider = Arc::new(DependancyProvider::new(
         sqlx_sqlite,
-        email_verification_servuce,
+        email_verification_service,
         jwt_auth,
     ));
-    cli::run(dep_provider, args.command).await;
-    Ok(())
+    let api_service = OpenApiService::new(Api::new(dep_provider), "Hello World", "1.0")
+        .server("http://localhost:3000");
+    let ui = api_service.swagger_ui();
+    let app = Route::new().nest("/", api_service).nest("/docs", ui);
+
+    Server::new(TcpListener::bind("127.0.0.1:3000"))
+        .run(app)
+        .await
+        .unwrap();
 }

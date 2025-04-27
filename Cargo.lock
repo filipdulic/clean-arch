@@ -389,19 +389,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ca-infrastructure-boundary-json"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "ca-adapter",
- "ca-application",
- "ca-domain",
- "serde",
- "serde_json",
- "uuid",
-]
-
-[[package]]
 name = "ca-infrastructure-boundary-poem-openapi"
 version = "0.1.0"
 dependencies = [
@@ -409,6 +396,7 @@ dependencies = [
  "ca-adapter",
  "ca-application",
  "ca-domain",
+ "chrono",
  "http",
  "poem-openapi",
  "serde",
@@ -439,14 +427,14 @@ dependencies = [
 ]
 
 [[package]]
-name = "ca-infrastructure-interface-cli-json"
+name = "ca-infrastructure-interface-poem-openapi"
 version = "0.1.0"
 dependencies = [
  "ca-adapter",
  "ca-application",
  "ca-infrastructure-auth-jwt",
- "ca-infrastructure-boundary-json",
- "clap",
+ "ca-infrastructure-boundary-poem-openapi",
+ "poem-openapi",
  "serde_json",
 ]
 
@@ -557,14 +545,15 @@ dependencies = [
  "ca-application",
  "ca-domain",
  "ca-infrastructure-auth-jwt",
- "ca-infrastructure-boundary-json",
  "ca-infrastructure-boundary-poem-openapi",
  "ca-infrastructure-boundary-string",
  "ca-infrastructure-interface-cli",
- "ca-infrastructure-interface-cli-json",
+ "ca-infrastructure-interface-poem-openapi",
  "ca-infrastructure-persistance-sqlx-sqlite",
  "ca-infrastructure-service-email-file",
  "clap",
+ "poem",
+ "poem-openapi",
  "tokio",
  "uuid",
 ]
@@ -1985,6 +1974,7 @@ checksum = "ece62d80aacd0b9acde4aee4ebfc66761afb72fa9b018ebadd14a83d9ef21f9d"
 dependencies = [
  "base64 0.22.1",
  "bytes",
+ "chrono",
  "derive_more",
  "futures-util",
  "indexmap",
