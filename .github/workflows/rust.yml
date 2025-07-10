@@ -70,7 +70,7 @@ jobs:
           profile: minimal
           toolchain: stable
           override: true
-          components: rustfmt
+          components: rustfmt, clippy
 
       - name: Run cargo fmt
         uses: actions-rs/cargo@v1
@@ -79,10 +79,10 @@ jobs:
           args: --all -- --check
 
       - name: Run cargo clippy
-        uses: actions-rs/clippy-check@v1
+        uses: actions-rs/cargo@v1
         env:
           SCCACHE_REDIS: "redis://redis"
           RUSTC_WRAPPER: "sccache"
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          command: clippy
           args: --all-features
