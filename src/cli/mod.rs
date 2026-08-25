@@ -1,28 +1,58 @@
-//! This module contains the CLI interface for the application.
-//!
-//! Handles command-line interface (CLI) interactions. It defines the commands
-//! that the CLI can execute and maps them to the appropriate actions within
-//! the application. This file typically uses a library like clap to parse and
-//! handle command-line arguments.
-//!
-//! Key Responsibilities:
-//! * Command Definition: Define the various commands that the CLI can handle.
-//! * Command Parsing: Use a library like clap to parse the command-line arguments
-//!     and match them to the defined commands.
-//! * Command Execution: Map the parsed commands to the appropriate functions or
-//!     methods in the application.
+//! Command line interface. Parses commands, builds usecase requests
+//! and dispatches them through the api.
 use std::sync::Arc;
 
 use clap::Subcommand;
+use uuid::Uuid;
 
-use crate::adapter::{api::Api, db::Db, presenter::cli::Presenter};
+use crate::{
+    adapter::{api::Api, db::Db, presenter::cli::Presenter},
+    application::usecase::{
+        signup_process::{
+            complete::{self, Complete},
+            completion_timed_out::{self, CompletionTimedOut},
+            extend_completion_time::{self, ExtendCompletionTime},
+            extend_verification_time::{self, ExtendVerificationTime},
+            initialize::{self, Initialize},
+            verification_timed_out::{self, VerificationTimedOut},
+            verify_email::{self, VerifyEmail},
+        },
+        user::{
+            delete::{self, Delete},
+            get_all::{self, GetAll},
+            get_one::{self, GetOne},
+            update::{self, Update},
+        },
+    },
+    domain::value_object::Id,
+};
 
 #[derive(Subcommand)]
 pub enum Command {
     #[clap(about = "Initialize signup process", alias = "sp-init")]
     InitializeSignupProcess { email: String },
-    #[clap(about = "Verify Email of signup process", alias = "sp-verify")]
+    #[clap(about = "Verify email of signup process", alias = "sp-verify")]
     VerifyEmailOfSignupProcess { id: String },
+    #[clap(
+        about = "Verification of signup process timed out",
+        alias = "sp-verify-timeout"
+    )]
+    VerificationOfSignupProcessTimedOut { id: String },
+    #[clap(
+        about = "Extend verification time of signup process",
+        alias = "sp-extend-verify"
+    )]
+    ExtendVerificationTimeOfSignupProcess { id: String },
+    #[clap(
+        about = "Completion of signup process timed out",
+        alias = "sp-complete-timeout"
+    )]
+    CompletionOfSignupProcessTimedOut { id: String },
+    #[clap(
+        about = "Extend completion time of signup process",
+        alias = "sp-extend-complete"
+    )]
+    ExtendCompletionTimeOfSignupProcess { id: String },
     #[clap(about = "Complete signup process", alias = "sp-complete")]
     CompleteSignupProcess {
         id: String,
@@ -44,49 +74,76 @@ pub enum Command {
     DeleteUser { id: String },
 }
 
-pub fn run<D>(db: Arc<D>, cmd: Command)
-where
-    D: Db,
-{
-    let app_api = Api::new(db, Presenter);
+pub fn run<D: Db>(db: Arc<D>, cmd: Command) {
+    let api = Api::new(db, Presenter);
 
-    match cmd {
+    let output = match cmd {
         Command::InitializeSignupProcess { email } => {
-            let res = app_api.initialize_signup_process(email);
-            println!("{res}");
+            api.handle::<Initialize>(initialize::Request { email })
         }
-        Command::VerifyEmailOfSignupProcess { id } => {
-            let res = app_api.verify_email_to_signup_process(&id);
-            println!("{res}");
-        }
+        Command::VerifyEmailOfSignupProcess { id } => match parse_id(&id) {
+            Ok(id) => api.handle::<VerifyEmail>(verify_email::Request { id }),
+            Err(msg) => msg,
+        },
+        Command::VerificationOfSignupProcessTimedOut { id } => match parse_id(&id) {
+            Ok(id) => api.handle::<VerificationTimedOut>(verification_timed_out::Request { id }),
+            Err(msg) => msg,
+        },
+        Command::ExtendVerificationTimeOfSignupProcess { id } => match parse_id(&id) {
+            Ok(id) => {
+                api.handle::<ExtendVerificationTime>(extend_verification_time::Request { id })
+            }
+            Err(msg) => msg,
+        },
+        Command::CompletionOfSignupProcessTimedOut { id } => match parse_id(&id) {
+            Ok(id) => api.handle::<CompletionTimedOut>(completion_timed_out::Request { id }),
+            Err(msg) => msg,
+        },
+        Command::ExtendCompletionTimeOfSignupProcess { id } => match parse_id(&id) {
+            Ok(id) => api.handle::<ExtendCompletionTime>(extend_completion_time::Request { id }),
+            Err(msg) => msg,
+        },
         Command::CompleteSignupProcess {
             id,
             username,
             password,
-        } => {
-            let res = app_api.complete_signup_process(&id, username, password);
-            println!("{res}");
-        }
-        Command::ListUsers => {
-            let res = app_api.read_all_users();
-            println!("{res}");
-        }
-        Command::DeleteUser { id } => {
-            let res = app_api.delete_user(&id);
-            println!("{res}");
-        }
-        Command::ReadUser { id } => {
-            let res = app_api.get_one_user(&id);
-            println!("{res}");
-        }
+        } => match parse_id(&id) {
+            Ok(id) => api.handle::<Complete>(complete::Request {
+                id,
+                username,
+                password,
+            }),
+            Err(msg) => msg,
+        },
+        Command::ListUsers => api.handle::<GetAll>(get_all::Request),
+        Command::ReadUser { id } => match parse_id(&id) {
+            Ok(id) => api.handle::<GetOne>(get_one::Request { id }),
+            Err(msg) => msg,
+        },
         Command::UpdateUser {
             id,
             email,
             username,
             password,
-        } => {
-            let res = app_api.update_user(&id, email, username, password);
-            println!("{res}");
-        }
-    }
+        } => match parse_id(&id) {
+            Ok(id) => api.handle::<Update>(update::Request {
+                id,
+                email,
+                username,
+                password,
+            }),
+            Err(msg) => msg,
+        },
+        Command::DeleteUser { id } => match parse_id(&id) {
+            Ok(id) => api.handle::<Delete>(delete::Request { id }),
+            Err(msg) => msg,
+        },
+    };
+    println!("{output}");
+}
+
+fn parse_id<T>(raw: &str) -> Result<Id<T>, String> {
+    raw.parse::<Uuid>()
+        .map(Id::new)
+        .map_err(|_| format!("Unable to parse id: {raw}"))
 }

@@ -2,7 +2,6 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::{
-    adapter::model::app::user::ParseIdError as UserParseIdError,
     application::gateway::repository::{
         signup_process::Record as SignupProcessRecord, user::Record as UserRecord,
     },
@@ -139,13 +138,9 @@ impl From<UserRecord> for User {
     }
 }
 impl TryInto<UserRecord> for &User {
-    type Error = UserParseIdError;
+    type Error = uuid::Error;
     fn try_into(self) -> Result<UserRecord, Self::Error> {
-        let id = self
-            .user_id
-            .parse::<Uuid>()
-            .map_err(|_| UserParseIdError)?
-            .into();
+        let id = self.user_id.parse::<Uuid>()?.into();
         let username = user::UserName::new(self.username.clone());
         let email = user::Email::new(self.email.clone());
         let password = Password::new(self.password.clone());
@@ -155,7 +150,7 @@ impl TryInto<UserRecord> for &User {
     }
 }
 impl TryInto<UserRecord> for User {
-    type Error = UserParseIdError;
+    type Error = uuid::Error;
     fn try_into(self) -> Result<UserRecord, Self::Error> {
         let user = &self;
         user.try_into()
