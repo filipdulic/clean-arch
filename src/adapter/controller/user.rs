@@ -71,7 +71,7 @@ where
         log::debug!("Getting all Users");
         let req = app::get_all::Request {};
         let interactor = uc::get_all::GetAll::new(self.db);
-        let res = interactor.exec(req).map_err(app::get_all::Error::from);
+        let res = interactor.exec(req);
         self.presenter.present(res)
     }
 }
