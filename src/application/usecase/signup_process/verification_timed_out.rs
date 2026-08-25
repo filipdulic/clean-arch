@@ -59,9 +59,7 @@ where
             .map_err(|err| (err, req.id))?;
         let process: SignupProcess<Initialized> = record.try_into().map_err(|err| (err, req.id))?;
         let process = process.verification_timed_out();
-        self.repo
-            .save_latest_state(process.into())
-            .map_err(|_| Error::NotFound(req.id))?;
+        self.repo.save_latest_state(process.into())?;
         Ok(Response {})
     }
 }

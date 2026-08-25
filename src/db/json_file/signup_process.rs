@@ -1,9 +1,9 @@
 use super::{
-    models::{self},
     JsonFile,
+    models::{self},
 };
 use crate::application::{
-    gateway::repository::signup_process::{DeleteError, GetError, Record, Repo, SaveError},
+    gateway::repository::signup_process::{GetError, Record, Repo, SaveError},
     identifier::{NewId, NewIdError},
 };
 use crate::domain::entity::signup_process::Id;
@@ -18,15 +18,14 @@ impl NewId<Id> for JsonFile {
 
 impl Repo for JsonFile {
     fn save_latest_state(&self, record: Record) -> Result<(), SaveError> {
-        log::debug!("Save area of life {:?} to JSON file", record);
+        log::debug!("Save signup process {:?} to JSON file", record);
 
         let model: models::SignupProcess = record.into();
         let id = model.signup_process_id.clone();
-        let res = self.signup_processes.get::<Vec<models::SignupProcess>>(&id);
-        let mut models = Vec::new();
-        if res.is_ok() {
-            models = res.unwrap();
-        }
+        let mut models = self
+            .signup_processes
+            .get::<Vec<models::SignupProcess>>(&id)
+            .unwrap_or_default();
         models.push(model);
         self.signup_processes
             .save_with_id::<Vec<models::SignupProcess>>(&models, &id)
@@ -36,37 +35,24 @@ impl Repo for JsonFile {
             })?;
         Ok(())
     }
-    fn get_state_chain(&self, id: Id) -> Result<Vec<Record>, GetError> {
-        log::debug!("Get signup process{:?} from JSON file", id);
-        let models = self
+
+    fn get_latest_state(&self, id: Id) -> Result<Record, GetError> {
+        log::debug!("Get signup process {:?} from JSON file", id);
+        let mut models = self
             .signup_processes
             .get::<Vec<models::SignupProcess>>(&id.to_string())
             .map_err(|err| {
-                log::warn!("Unable to fetch thought: {}", err);
+                log::warn!("Unable to fetch signup process: {}", err);
                 if err.kind() == io::ErrorKind::NotFound {
                     GetError::NotFound
                 } else {
                     GetError::Connection
                 }
             })?;
-        let records = models.into_iter().map(|m| m.into()).collect();
-        Ok(records)
-    }
-    fn delete(&self, id: Id) -> Result<(), DeleteError> {
-        log::debug!("Delete area of life {:?} from JSON file", id);
-        todo!()
-    }
-
-    fn get_latest_state(&self, id: Id) -> Result<Record, GetError> {
-        log::debug!("Get signup process {:?} from JSON file", id);
-        let models = self.get_state_chain(id)?;
-        let model = models
-            .last()
-            .ok_or_else(|| {
-                log::warn!("Signup process not found");
-                GetError::NotFound
-            })?
-            .clone();
-        Ok(model)
+        let model = models.pop().ok_or_else(|| {
+            log::warn!("Signup process not found");
+            GetError::NotFound
+        })?;
+        Ok(model.into())
     }
 }

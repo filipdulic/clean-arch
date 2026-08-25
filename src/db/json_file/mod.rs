@@ -73,7 +73,6 @@ mod tests {
             Email::new("test_email".to_string())
         }
         #[rstest]
-        #[rstest]
         fn save_load_signup_process(
             email: Email,
             id: SignupProcessId,

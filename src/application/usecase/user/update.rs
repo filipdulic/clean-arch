@@ -1,7 +1,7 @@
 use crate::{
     application::{
         gateway::repository::user::{GetError, Repo, SaveError},
-        usecase::user::validate::{self, validate_user_properties, UserInvalidity},
+        usecase::user::validate::{self, UserInvalidity, validate_user_properties},
     },
     domain::{
         entity::user::{Email, Id, User, UserName},

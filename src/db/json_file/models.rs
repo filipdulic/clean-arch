@@ -31,7 +31,6 @@ pub enum SignupStateEnum {
         username: String,
         password: String,
     },
-    ForDeletion,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -76,7 +75,6 @@ impl From<EntitySignupStateEnum> for SignupStateEnum {
                 username: username.to_string(),
                 password: password.to_string(),
             },
-            EntitySignupStateEnum::ForDeletion => SignupStateEnum::ForDeletion,
         }
     }
 }
@@ -117,7 +115,6 @@ impl From<SignupStateEnum> for EntitySignupStateEnum {
                 username: user::UserName::new(username.clone()),
                 password: user::Password::new(password.clone()),
             },
-            SignupStateEnum::ForDeletion => EntitySignupStateEnum::ForDeletion,
         }
     }
 }

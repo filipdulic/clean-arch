@@ -27,24 +27,12 @@ pub enum SignupStateEnum {
         username: UserName,
         password: Password,
     },
-    ForDeletion,
 }
 
 pub trait SignupStateTrait: TryFrom<SignupStateEnum> + Into<SignupStateEnum> + Clone {}
 
 pub trait Idable {
     fn id(&self) -> Id;
-}
-pub trait Delatable: Idable {
-    fn delete(self) -> SignupProcess<ForDeletion>
-    where
-        Self: Sized,
-    {
-        SignupProcess {
-            id: self.id(),
-            state: ForDeletion {},
-        }
-    }
 }
 
 #[derive(Debug, Clone)]
@@ -69,15 +57,12 @@ pub struct Completed {
     pub username: UserName,
     pub password: Password,
 }
-#[derive(Debug, Clone)]
-pub struct ForDeletion {}
 
 impl SignupStateTrait for Initialized {}
 impl SignupStateTrait for EmailVerified {}
 impl SignupStateTrait for VerificationTimedOut {}
 impl SignupStateTrait for CompletionTimedOut {}
 impl SignupStateTrait for Completed {}
-impl SignupStateTrait for ForDeletion {}
 
 #[derive(Debug, Clone)]
 pub struct SignupProcess<S: SignupStateTrait> {
@@ -117,8 +102,6 @@ impl SignupProcess<Initialized> {
     }
 }
 
-impl Delatable for SignupProcess<VerificationTimedOut> {}
-
 impl SignupProcess<VerificationTimedOut> {
     pub fn extend_verification_time(self) -> SignupProcess<Initialized> {
         let state = Initialized {
@@ -144,8 +127,6 @@ impl SignupProcess<EmailVerified> {
         SignupProcess { id: self.id, state }
     }
 }
-
-impl Delatable for SignupProcess<CompletionTimedOut> {}
 
 impl SignupProcess<CompletionTimedOut> {
     pub fn extend_completion_time(self) -> SignupProcess<EmailVerified> {
@@ -222,15 +203,6 @@ impl TryFrom<SignupStateEnum> for Completed {
         }
     }
 }
-impl TryFrom<SignupStateEnum> for ForDeletion {
-    type Error = ();
-    fn try_from(value: SignupStateEnum) -> Result<Self, Self::Error> {
-        match value {
-            SignupStateEnum::ForDeletion => Ok(Self {}),
-            _ => Err(()),
-        }
-    }
-}
 impl<S: SignupStateTrait> TryFrom<(Id, SignupStateEnum)> for SignupProcess<S> {
     type Error = ();
     fn try_from(value: (Id, SignupStateEnum)) -> Result<Self, ()> {
@@ -267,13 +239,6 @@ impl Into<SignupStateEnum> for CompletionTimedOut {
         SignupStateEnum::CompletionTimedOut { email: self.email }
     }
 }
-#[allow(clippy::from_over_into)]
-impl Into<SignupStateEnum> for ForDeletion {
-    fn into(self) -> SignupStateEnum {
-        SignupStateEnum::ForDeletion
-    }
-}
-
 #[allow(clippy::from_over_into)]
 impl Into<SignupStateEnum> for Completed {
     fn into(self) -> SignupStateEnum {
@@ -357,7 +322,6 @@ mod tests {
                 username: username.clone(),
                 password: password.clone(),
             };
-            let for_deletion_state = SignupStateEnum::ForDeletion;
             let res = SignupProcess::<Initialized>::try_from((id, initialized_state.clone()));
             assert!(res.is_ok());
             let res = SignupProcess::<EmailVerified>::try_from((id, email_verified_state.clone()));
@@ -374,8 +338,6 @@ mod tests {
             assert!(res.is_ok());
             let res = SignupProcess::<Completed>::try_from((id, completed_state.clone()));
             assert!(res.is_ok());
-            let res = SignupProcess::<ForDeletion>::try_from((id, for_deletion_state.clone()));
-            assert!(res.is_ok());
 
             let res = SignupProcess::<EmailVerified>::try_from((id, initialized_state.clone()));
             assert!(res.is_err());
@@ -387,8 +349,6 @@ mod tests {
             assert!(res.is_err());
             let res = SignupProcess::<Completed>::try_from((id, initialized_state.clone()));
             assert!(res.is_err());
-            let res = SignupProcess::<ForDeletion>::try_from((id, initialized_state.clone()));
-            assert!(res.is_err());
 
             let res = SignupProcess::<Initialized>::try_from((id, email_verified_state.clone()));
             assert!(res.is_err());
@@ -399,8 +359,6 @@ mod tests {
                 SignupProcess::<CompletionTimedOut>::try_from((id, email_verified_state.clone()));
             assert!(res.is_err());
             let res = SignupProcess::<Completed>::try_from((id, email_verified_state.clone()));
-            assert!(res.is_err());
-            let res = SignupProcess::<ForDeletion>::try_from((id, email_verified_state.clone()));
             assert!(res.is_err());
 
             let res =
@@ -419,9 +377,6 @@ mod tests {
             let res =
                 SignupProcess::<Completed>::try_from((id, verification_timed_out_state.clone()));
             assert!(res.is_err());
-            let res =
-                SignupProcess::<ForDeletion>::try_from((id, verification_timed_out_state.clone()));
-            assert!(res.is_err());
 
             let res =
                 SignupProcess::<Initialized>::try_from((id, completion_timed_out_state.clone()));
@@ -437,9 +392,6 @@ mod tests {
             let res =
                 SignupProcess::<Completed>::try_from((id, completion_timed_out_state.clone()));
             assert!(res.is_err());
-            let res =
-                SignupProcess::<ForDeletion>::try_from((id, completion_timed_out_state.clone()));
-            assert!(res.is_err());
 
             let res = SignupProcess::<Initialized>::try_from((id, completed_state.clone()));
             assert!(res.is_err());
@@ -449,21 +401,6 @@ mod tests {
                 SignupProcess::<VerificationTimedOut>::try_from((id, completed_state.clone()));
             assert!(res.is_err());
             let res = SignupProcess::<CompletionTimedOut>::try_from((id, completed_state.clone()));
-            assert!(res.is_err());
-            let res = SignupProcess::<ForDeletion>::try_from((id, completed_state.clone()));
-            assert!(res.is_err());
-
-            let res = SignupProcess::<Initialized>::try_from((id, for_deletion_state.clone()));
-            assert!(res.is_err());
-            let res = SignupProcess::<EmailVerified>::try_from((id, for_deletion_state.clone()));
-            assert!(res.is_err());
-            let res =
-                SignupProcess::<VerificationTimedOut>::try_from((id, for_deletion_state.clone()));
-            assert!(res.is_err());
-            let res =
-                SignupProcess::<CompletionTimedOut>::try_from((id, for_deletion_state.clone()));
-            assert!(res.is_err());
-            let res = SignupProcess::<Completed>::try_from((id, for_deletion_state.clone()));
             assert!(res.is_err());
         }
     }

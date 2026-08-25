@@ -4,7 +4,7 @@ use crate::{
         user,
     },
     domain::entity::{
-        signup_process::{EmailVerified, Id, SignupProcess, SignupStateEnum},
+        signup_process::{EmailVerified, Id, SignupProcess},
         user::{Password, User, UserName},
     },
 };
@@ -69,25 +69,19 @@ where
         let record = self
             .repo
             .get_latest_state(req.id)
+            .map_err(|err| (err, req.id))?;
+        let process: SignupProcess<EmailVerified> =
+            record.try_into().map_err(|err| (err, req.id))?;
+        let username = UserName::new(req.username);
+        let password = Password::new(req.password);
+        let process = process.complete(username, password);
+        self.repo.save_latest_state(process.clone().into())?;
+        let user: User = process.into();
+        self.user_repo
+            .save(user.clone().into())
             .map_err(|_| Error::Repo)?;
-        if let SignupStateEnum::EmailVerified { .. } = record.state {
-            let process: SignupProcess<EmailVerified> =
-                record.try_into().map_err(|err| (err, req.id))?;
-            let username = UserName::new(req.username);
-            let password = Password::new(req.password);
-            let process = process.complete(username, password);
-            self.repo
-                .save_latest_state(process.clone().into())
-                .map_err(|_| Error::NotFound(req.id))?;
-            let user: User = process.into();
-            self.user_repo
-                .save(user.clone().into())
-                .map_err(|_| Error::Repo)?;
-            Ok(Response {
-                record: user.into(),
-            })
-        } else {
-            Err(Error::Repo)
-        }
+        Ok(Response {
+            record: user.into(),
+        })
     }
 }

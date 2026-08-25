@@ -15,14 +15,6 @@ pub enum SaveError {
     Connection,
 }
 
-#[derive(Debug, Error)]
-pub enum DeleteError {
-    #[error("SignupProcess not found")]
-    NotFound,
-    #[error("SignupProcess repository connection problem")]
-    Connection,
-}
-
 #[derive(Debug, Clone)]
 pub struct Record {
     pub id: Id,
@@ -59,6 +51,4 @@ impl<S: SignupStateTrait + Clone + 'static> TryFrom<Record> for SignupProcess<S>
 pub trait Repo: Send + Sync {
     fn save_latest_state(&self, record: Record) -> Result<(), SaveError>;
     fn get_latest_state(&self, id: Id) -> Result<Record, GetError>;
-    fn get_state_chain(&self, id: Id) -> Result<Vec<Record>, GetError>;
-    fn delete(&self, id: Id) -> Result<(), DeleteError>;
 }

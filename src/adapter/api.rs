@@ -8,12 +8,12 @@
 //!
 //! Key Responsibilities:
 //! * Initialization: The Api struct initializes and holds references to the database
-//!     and presenter components.
+//!   and presenter components.
 //! * Controller Aggregation: It provides methods to access different controllers
-//!     (e.g., user_controller, signup_process_controller).
+//!   (e.g., user_controller, signup_process_controller).
 //! * Unified Interface: The Api struct exposes methods that correspond to various use
-//!     cases, making it easier for external components (e.g., CLI, web server) to
-//!     interact with the application.
+//!   cases, making it easier for external components (e.g., CLI, web server) to
+//!   interact with the application.
 
 use crate::{
     adapter::{
@@ -60,10 +60,10 @@ where
     pub const fn new(db: Arc<D>, presenter: P) -> Self {
         Self { db, presenter }
     }
-    fn user_controller(&self) -> controller::user::Controller<D, P> {
+    fn user_controller(&self) -> controller::user::Controller<'_, '_, D, P> {
         controller::user::Controller::new(&self.db, &self.presenter)
     }
-    fn signup_process_controller(&self) -> controller::signup_process::Controller<D, P> {
+    fn signup_process_controller(&self) -> controller::signup_process::Controller<'_, '_, D, P> {
         controller::signup_process::Controller::new(&self.db, &self.presenter)
     }
     pub fn update_user(
