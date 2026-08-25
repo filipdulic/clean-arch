@@ -1,5 +1,8 @@
 use crate::{
-    application::gateway::repository::user::{DeleteError, Repo},
+    application::{
+        gateway::repository::user::{DeleteError, Repo},
+        usecase::Usecase,
+    },
     domain::entity::user::Id,
 };
 use thiserror::Error;
@@ -12,16 +15,7 @@ pub struct Request {
 #[derive(Debug)]
 pub struct Response;
 
-/// Delete area of life by ID usecase interactor
-pub struct Delete<'r, R> {
-    repo: &'r R,
-}
-
-impl<'r, R> Delete<'r, R> {
-    pub fn new(repo: &'r R) -> Self {
-        Self { repo }
-    }
-}
+pub struct Delete;
 
 #[derive(Debug, Error)]
 pub enum Error {
@@ -40,13 +34,14 @@ impl From<DeleteError> for Error {
     }
 }
 
-impl<'r, R> Delete<'r, R>
-where
-    R: Repo,
-{
-    pub fn exec(&self, req: Request) -> Result<Response, Error> {
+impl<D: Repo> Usecase<D> for Delete {
+    type Request = Request;
+    type Response = Response;
+    type Error = Error;
+
+    fn exec(db: &D, req: Request) -> Result<Response, Error> {
         log::debug!("Delete User by ID: {:?}", req);
-        self.repo.delete(req.id)?;
-        Ok(Response {})
+        db.delete(req.id)?;
+        Ok(Response)
     }
 }

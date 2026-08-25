@@ -1,5 +1,8 @@
 use crate::{
-    application::gateway::repository::signup_process::{GetError, Repo, SaveError},
+    application::{
+        gateway::repository::signup_process::{GetError, Repo, SaveError},
+        usecase::Usecase,
+    },
     domain::entity::signup_process::{CompletionTimedOut, Id, SignupProcess},
 };
 
@@ -11,16 +14,11 @@ pub struct Request {
 }
 
 #[derive(Debug)]
-pub struct Response {}
-pub struct ExtendCompletionTime<'r, R> {
-    repo: &'r R,
+pub struct Response {
+    pub id: Id,
 }
 
-impl<'r, R> ExtendCompletionTime<'r, R> {
-    pub fn new(repo: &'r R) -> Self {
-        Self { repo }
-    }
-}
+pub struct ExtendCompletionTime;
 
 #[derive(Debug, Error)]
 pub enum Error {
@@ -47,20 +45,18 @@ impl From<(GetError, Id)> for Error {
     }
 }
 
-impl<'r, R> ExtendCompletionTime<'r, R>
-where
-    R: Repo,
-{
-    pub fn exec(&self, req: Request) -> Result<Response, Error> {
-        log::debug!("SignupProcess Verification extended: {:?}", req);
-        let record = self
-            .repo
-            .get_latest_state(req.id)
-            .map_err(|err| (err, req.id))?;
+impl<D: Repo> Usecase<D> for ExtendCompletionTime {
+    type Request = Request;
+    type Response = Response;
+    type Error = Error;
+
+    fn exec(db: &D, req: Request) -> Result<Response, Error> {
+        log::debug!("SignupProcess Completion extended: {:?}", req);
+        let record = db.get_latest_state(req.id).map_err(|err| (err, req.id))?;
         let process: SignupProcess<CompletionTimedOut> =
             record.try_into().map_err(|err| (err, req.id))?;
         let process = process.extend_completion_time();
-        self.repo.save_latest_state(process.into())?;
-        Ok(Response {})
+        db.save_latest_state(process.into())?;
+        Ok(Response { id: req.id })
     }
 }

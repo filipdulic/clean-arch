@@ -1,5 +1,8 @@
 use crate::{
-    application::gateway::repository::signup_process::{GetError, Repo, SaveError},
+    application::{
+        gateway::repository::signup_process::{GetError, Repo, SaveError},
+        usecase::Usecase,
+    },
     domain::entity::signup_process::{Id, Initialized, SignupProcess},
 };
 
@@ -14,15 +17,8 @@ pub struct Request {
 pub struct Response {
     pub id: Id,
 }
-pub struct VerifyEmail<'r, R> {
-    repo: &'r R,
-}
 
-impl<'r, R> VerifyEmail<'r, R> {
-    pub fn new(repo: &'r R) -> Self {
-        Self { repo }
-    }
-}
+pub struct VerifyEmail;
 
 #[derive(Debug, Error)]
 pub enum Error {
@@ -49,20 +45,17 @@ impl From<(GetError, Id)> for Error {
     }
 }
 
-impl<'r, R> VerifyEmail<'r, R>
-where
-    R: Repo,
-{
-    /// Create a new user with the given name.
-    pub fn exec(&self, req: Request) -> Result<Response, Error> {
+impl<D: Repo> Usecase<D> for VerifyEmail {
+    type Request = Request;
+    type Response = Response;
+    type Error = Error;
+
+    fn exec(db: &D, req: Request) -> Result<Response, Error> {
         log::debug!("SignupProcess Email Verified: {:?}", req);
-        let record = self
-            .repo
-            .get_latest_state(req.id)
-            .map_err(|err| (err, req.id))?;
+        let record = db.get_latest_state(req.id).map_err(|err| (err, req.id))?;
         let process: SignupProcess<Initialized> = record.try_into().map_err(|err| (err, req.id))?;
         let process = process.verify_email();
-        self.repo.save_latest_state(process.into())?;
+        db.save_latest_state(process.into())?;
         Ok(Response { id: req.id })
     }
 }

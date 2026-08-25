@@ -1,9 +1,11 @@
 use crate::{
-    application::gateway::repository::user::{GetError, Repo},
+    application::{
+        gateway::repository::user::{GetError, Repo},
+        usecase::Usecase,
+    },
     domain::entity::user::{Id, User},
 };
 
-use std::fmt::Debug;
 use thiserror::Error;
 
 #[derive(Debug)]
@@ -16,16 +18,7 @@ pub struct Response {
     pub user: User,
 }
 
-/// Get all users usecase interactor
-pub struct GetOne<'r, R> {
-    repo: &'r R,
-}
-
-impl<'r, R> GetOne<'r, R> {
-    pub fn new(repo: &'r R) -> Self {
-        Self { repo }
-    }
-}
+pub struct GetOne;
 
 #[derive(Debug, Error)]
 pub enum Error {
@@ -44,13 +37,14 @@ impl From<GetError> for Error {
     }
 }
 
-impl<'r, R> GetOne<'r, R>
-where
-    R: Repo,
-{
-    pub fn exec(&self, req: Request) -> Result<Response, Error> {
+impl<D: Repo> Usecase<D> for GetOne {
+    type Request = Request;
+    type Response = Response;
+    type Error = Error;
+
+    fn exec(db: &D, req: Request) -> Result<Response, Error> {
         log::debug!("Get user by ID");
-        let user = self.repo.get(req.id)?.into();
+        let user = db.get(req.id)?.into();
         Ok(Response { user })
     }
 }
