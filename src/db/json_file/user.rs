@@ -1,4 +1,4 @@
-use super::{models, JsonFile};
+use super::{JsonFile, models};
 use crate::application::{
     gateway::repository::user::{DeleteError, GetAllError, GetError, Record, Repo, SaveError},
     identifier::{NewId, NewIdError},
@@ -38,24 +38,27 @@ impl Repo for JsonFile {
                     GetError::Connection
                 }
             })?;
-        let record = models::User::try_into(model).unwrap();
+        let record: Record = model.try_into().map_err(|err| {
+            log::warn!("Invalid user record: {}", err);
+            GetError::Connection
+        })?;
         Ok(record)
     }
     fn get_all(&self) -> Result<Vec<Record>, GetAllError> {
         log::debug!("Get all users from JSON file");
-        let binding = self.users.all::<models::User>().map_err(|err| {
+        let models = self.users.all::<models::User>().map_err(|err| {
             log::warn!("Unable to fetch users: {}", err);
             GetAllError::Connection
         })?;
-        let models: Vec<&models::User> = binding.values().collect();
-        let records = models
-            .into_iter()
+        models
+            .values()
             .map(|model| {
-                let record: Record = model.try_into().unwrap();
-                record
+                model.try_into().map_err(|err| {
+                    log::warn!("Invalid user record: {}", err);
+                    GetAllError::Connection
+                })
             })
-            .collect();
-        Ok(records)
+            .collect()
     }
     fn delete(&self, id: Id) -> Result<(), DeleteError> {
         log::debug!("Delete user {:?} from JSON file", &id);
