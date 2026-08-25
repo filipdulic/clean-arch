@@ -60,9 +60,7 @@ where
         let process: SignupProcess<VerificationTimedOut> =
             record.try_into().map_err(|err| (err, req.id))?;
         let process = process.extend_verification_time();
-        self.repo
-            .save_latest_state(process.into())
-            .map_err(|_| Error::NotFound(req.id))?;
+        self.repo.save_latest_state(process.into())?;
         Ok(Response {})
     }
 }
