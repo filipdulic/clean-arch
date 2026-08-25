@@ -20,7 +20,7 @@ use crate::adapter::{api::Api, db::Db, presenter::cli::Presenter};
 #[derive(Subcommand)]
 pub enum Command {
     #[clap(about = "Initialize signup process", alias = "sp-init")]
-    InitializeSignupProcess { username: String },
+    InitializeSignupProcess { email: String },
     #[clap(about = "Verify Email of signup process", alias = "sp-verify")]
     VerifyEmailOfSignupProcess { id: String },
     #[clap(about = "Complete signup process", alias = "sp-complete")]
@@ -51,8 +51,8 @@ where
     let app_api = Api::new(db, Presenter);
 
     match cmd {
-        Command::InitializeSignupProcess { username } => {
-            let res = app_api.initialize_signup_process(username);
+        Command::InitializeSignupProcess { email } => {
+            let res = app_api.initialize_signup_process(email);
             println!("{res}");
         }
         Command::VerifyEmailOfSignupProcess { id } => {
