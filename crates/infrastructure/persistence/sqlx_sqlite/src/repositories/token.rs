@@ -6,7 +6,7 @@ use crate::{SqlxSqlite, SqlxSqliteTransaction};
 #[async_trait::async_trait]
 impl Repo for &SqlxSqlite {
     type Transaction = SqlxSqliteTransaction;
-    async fn gen<'a>(
+    async fn generate<'a>(
         &self,
         transaction: Option<&'a mut Self::Transaction>,
         email: &str,
@@ -54,11 +54,10 @@ impl Repo for &SqlxSqlite {
                 .await
                 .map_err(|_| VerifyError::Connection)?,
         };
-        if maybe_row.is_none() {
+        let Some((_, db_email, db_created_at)) = maybe_row else {
             log::warn!("Token not found!");
             return Err(VerifyError::NotFound);
-        }
-        let (_, db_email, db_created_at) = maybe_row.unwrap();
+        };
 
         if db_email != email {
             log::warn!("Email mismatch!");
@@ -66,8 +65,8 @@ impl Repo for &SqlxSqlite {
         }
         let created_at = NaiveDateTime::parse_from_str(&db_created_at, "%Y-%m-%d %H:%M:%S")
             .map(|naive| DateTime::<Utc>::from_naive_utc_and_offset(naive, Utc))
-            .unwrap();
-        if Utc::now() - created_at > Duration::days(1) {
+            .map_err(|_| VerifyError::InvalidData)?;
+        if Utc::now().signed_duration_since(created_at) > Duration::days(1) {
             log::warn!("Token expired!");
             return Err(VerifyError::TokenExpired);
         }
@@ -83,7 +82,7 @@ impl Repo for &SqlxSqlite {
         let query = sqlx::query("UPDATE tokens SET created_at = ? WHERE email = ?")
             .bind(now)
             .bind(email.to_string());
-        match transaction {
+        let result = match transaction {
             Some(tx) => query
                 .execute(&mut **tx)
                 .await
@@ -93,6 +92,9 @@ impl Repo for &SqlxSqlite {
                 .await
                 .map_err(|_| ExtendError::Connection)?,
         };
+        if result.rows_affected() == 0 {
+            return Err(ExtendError::NotFound);
+        }
         Ok(())
     }
 }

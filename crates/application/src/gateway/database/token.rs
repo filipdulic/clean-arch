@@ -20,6 +20,8 @@ pub enum VerifyError {
     Mismatch,
     #[error("Token expired")]
     TokenExpired,
+    #[error("Token repository contains invalid data")]
+    InvalidData,
 }
 
 #[derive(Debug, Error, Serialize, PartialEq)]
@@ -39,7 +41,7 @@ pub struct Record {
 #[async_trait]
 pub trait Repo: Send + Sync {
     type Transaction;
-    async fn gen<'a>(
+    async fn generate<'a>(
         &self,
         transaction: Option<&'a mut Self::Transaction>,
         email: &str,
@@ -61,12 +63,12 @@ pub trait Repo: Send + Sync {
 #[async_trait]
 impl Repo for &MockRepo {
     type Transaction = ();
-    async fn gen<'a>(
+    async fn generate<'a>(
         &self,
         transaction: Option<&'a mut <MockRepo as Repo>::Transaction>,
         email: &str,
     ) -> Result<Record, GenError> {
-        (**self).gen(transaction, email).await
+        (**self).generate(transaction, email).await
     }
     async fn verify<'a>(
         &self,
@@ -92,6 +94,7 @@ mod tests {
     use super::*;
 
     #[rstest]
+    #[tokio::test]
     async fn test_mock() {
         // Create a mock instance
         let mut mock = MockRepo::new();
@@ -101,7 +104,7 @@ mod tests {
         const RETURN_TOKEN: &str = "test_token";
 
         // Set up expectations
-        mock.expect_gen()
+        mock.expect_generate()
             .withf(move |transaction, actual_email| transaction.is_none() && actual_email == EMAIL)
             .times(1)
             .returning(|_, _| {
@@ -111,7 +114,7 @@ mod tests {
             });
 
         // Call the method
-        let result = mock.gen(None, EMAIL).await;
+        let result = mock.generate(None, EMAIL).await;
 
         // Verify the result
         assert!(result.is_ok());

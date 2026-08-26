@@ -11,6 +11,6 @@ ca-application = { version = "=0.1.0", path = "../application" }
 ca-domain = { version = "=0.1.0", path = "../domain" }
 
 # External dependencies
-thiserror = "2.0.12"
-serde = { version = "1.0.219", features = ["derive"] }
-async-trait = "0.1.88"
+thiserror.workspace = true
+serde.workspace = true
+async-trait.workspace = true

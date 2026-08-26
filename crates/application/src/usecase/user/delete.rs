@@ -2,11 +2,11 @@ use std::sync::Arc;
 
 use crate::{
     gateway::{
-        database::{
-            user::{DeleteError, Repo},
-            Database,
-        },
         DatabaseProvider,
+        database::{
+            Database,
+            user::{DeleteError, Repo},
+        },
     },
     usecase::Usecase,
 };
@@ -23,7 +23,7 @@ pub struct Request {
 #[derive(Debug, Serialize)]
 pub struct Response;
 
-/// Delete area of life by ID usecase interactor
+/// Delete a user by ID.
 pub struct Delete<D> {
     dependency_provider: Arc<D>,
 }
@@ -84,6 +84,7 @@ mod tests {
     use rstest::*;
 
     #[rstest]
+    #[tokio::test]
     async fn test_delete_success(mut dependency_provider: MockDependencyProvider, user_id: Id) {
         // fixtures
         let req = Request { id: user_id };
@@ -105,6 +106,7 @@ mod tests {
         assert!(result.is_ok());
     }
     #[rstest]
+    #[tokio::test]
     async fn test_delete_connection(mut dependency_provider: MockDependencyProvider, user_id: Id) {
         // fixtures
         let req = Request { id: user_id };
@@ -127,6 +129,7 @@ mod tests {
         assert_eq!(result.unwrap_err(), Error::Repo);
     }
     #[rstest]
+    #[tokio::test]
     async fn test_delete_not_found(mut dependency_provider: MockDependencyProvider, user_id: Id) {
         // fixtures
         let req = Request { id: user_id };

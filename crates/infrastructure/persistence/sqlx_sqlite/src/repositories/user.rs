@@ -3,7 +3,7 @@ use ca_application::gateway::database::user::{
 };
 use ca_domain::entity::user::{Id, UserName};
 
-use crate::{models::user::User, SqlxSqlite, SqlxSqliteTransaction};
+use crate::{SqlxSqlite, SqlxSqliteTransaction, models::user::User};
 #[async_trait::async_trait]
 impl Repo for &SqlxSqlite {
     type Transaction = SqlxSqliteTransaction;
@@ -13,7 +13,10 @@ impl Repo for &SqlxSqlite {
         record: Record,
     ) -> Result<(), SaveError> {
         let query = sqlx::query(
-            "INSERT INTO users (id, name, email, password, role) VALUES (?, ?, ?, ?, ?)",
+            "INSERT INTO users (id, name, email, password, role) VALUES (?, ?, ?, ?, ?) \
+             ON CONFLICT(id) DO UPDATE SET \
+             name = excluded.name, email = excluded.email, \
+             password = excluded.password, role = excluded.role",
         )
         .bind(record.user.id().to_string())
         .bind(record.user.username().to_string())
@@ -58,7 +61,7 @@ impl Repo for &SqlxSqlite {
                 .map_err(|_| GetError::Connection)?
                 .ok_or(GetError::NotFound)?,
         };
-        Ok(Record::from(user_result))
+        Record::try_from(user_result).map_err(|_| GetError::InvalidData)
     }
 
     async fn get_by_username<'a>(
@@ -82,7 +85,7 @@ impl Repo for &SqlxSqlite {
                 .map_err(|_| GetError::Connection)?
                 .ok_or(GetError::NotFound)?,
         };
-        Ok(Record::from(user_result))
+        Record::try_from(user_result).map_err(|_| GetError::InvalidData)
     }
 
     async fn get_all<'a>(
@@ -100,7 +103,11 @@ impl Repo for &SqlxSqlite {
                 .await
                 .map_err(|_| GetAllError::Connection)?,
         };
-        Ok(user_results.into_iter().map(Record::from).collect())
+        user_results
+            .into_iter()
+            .map(Record::try_from)
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|_| GetAllError::InvalidData)
     }
 
     async fn delete<'a>(
@@ -109,7 +116,7 @@ impl Repo for &SqlxSqlite {
         id: Id,
     ) -> Result<(), DeleteError> {
         let query = sqlx::query("DELETE FROM users WHERE id = ?").bind(id.to_string());
-        match transaction {
+        let result = match transaction {
             Some(tx) => query
                 .execute(&mut **tx)
                 .await
@@ -119,6 +126,9 @@ impl Repo for &SqlxSqlite {
                 .await
                 .map_err(|_| DeleteError::Connection)?,
         };
+        if result.rows_affected() == 0 {
+            return Err(DeleteError::NotFound);
+        }
         Ok(())
     }
 }

@@ -18,13 +18,13 @@ pub trait Database: Send + Sync {
     type Transaction: Send + Sync;
     type Error;
     fn signup_process_repo(&self) -> impl signup_process::Repo<Transaction = Self::Transaction>;
-    fn signuo_id_gen(&self) -> impl NewId<Id<SignupProcessValue>>;
+    fn signup_id_gen(&self) -> impl NewId<Id<SignupProcessValue>>;
     fn user_repo(&self) -> impl user::Repo<Transaction = Self::Transaction>;
     fn token_repo(&self) -> impl token::Repo<Transaction = Self::Transaction>;
     async fn begin_transaction(&self) -> Self::Transaction;
     async fn commit_transaction(&self, transaction: Self::Transaction) -> Result<(), Self::Error>;
     async fn rollback_transaction(&self, transaction: Self::Transaction)
-        -> Result<(), Self::Error>;
+    -> Result<(), Self::Error>;
 }
 
 #[cfg(test)]
@@ -68,7 +68,7 @@ impl Database for &MockDatabase {
     fn signup_process_repo(&self) -> impl signup_process::Repo<Transaction = Self::Transaction> {
         &self.signup_process_repo
     }
-    fn signuo_id_gen(&self) -> impl NewId<Id<SignupProcessValue>> {
+    fn signup_id_gen(&self) -> impl NewId<Id<SignupProcessValue>> {
         &self.signup_id_gen
     }
     fn user_repo(&self) -> impl user::Repo<Transaction = Self::Transaction> {

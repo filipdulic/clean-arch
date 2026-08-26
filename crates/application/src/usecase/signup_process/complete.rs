@@ -2,12 +2,12 @@ use std::sync::Arc;
 
 use crate::{
     gateway::{
+        DatabaseProvider,
         database::{
+            Database,
             signup_process::{GetError, Repo, SaveError},
             user::{self, Repo as UserRepo, SaveError as UserSaveError},
-            Database,
         },
-        DatabaseProvider,
     },
     usecase::Usecase,
 };
@@ -28,9 +28,9 @@ use validator::Validate;
 #[derive(Debug, Deserialize, Validate)]
 pub struct Request {
     pub id: Id,
-    #[validate(length(min = 1, max = 30))]
+    #[validate(length(min = 5, max = 30))]
     pub username: String,
-    #[validate(length(min = 5, max = 60))]
+    #[validate(length(min = 5, max = 30))]
     pub password: String,
 }
 
@@ -184,6 +184,7 @@ mod tests {
     use rstest::*;
 
     #[rstest]
+    #[tokio::test]
     async fn test_complete_success(
         mut dependency_provider: MockDependencyProvider,
         signup_id: SignupId,
@@ -249,6 +250,7 @@ mod tests {
         assert_eq!(response.record.user, user);
     }
     #[rstest]
+    #[tokio::test]
     async fn test_complete_fail_request_validation(
         mut dependency_provider: MockDependencyProvider,
         signup_id: SignupId,
@@ -279,6 +281,7 @@ mod tests {
         assert!(error_string.contains("username: Validation error: length"));
     }
     #[rstest]
+    #[tokio::test]
     async fn test_complete_fail_get_latest_state_connection(
         mut dependency_provider: MockDependencyProvider,
         signup_id: SignupId,
@@ -310,6 +313,7 @@ mod tests {
         assert_eq!(result.unwrap_err(), Error::Repo);
     }
     #[rstest]
+    #[tokio::test]
     async fn test_complete_fail_get_latest_state_not_found(
         mut dependency_provider: MockDependencyProvider,
         signup_id: SignupId,
@@ -341,6 +345,7 @@ mod tests {
         assert_eq!(result.unwrap_err(), Error::NotFound(signup_id));
     }
     #[rstest]
+    #[tokio::test]
     async fn test_complete_fail_get_latest_state_incorrect_state(
         mut dependency_provider: MockDependencyProvider,
         signup_id: SignupId,
@@ -373,6 +378,7 @@ mod tests {
         assert_eq!(result.unwrap_err(), Error::IncorrectState(signup_id));
     }
     #[rstest]
+    #[tokio::test]
     async fn test_complete_fail_completion_time_expired(
         mut dependency_provider: MockDependencyProvider,
         signup_id: SignupId,
@@ -423,6 +429,7 @@ mod tests {
         assert_eq!(result.unwrap_err(), Error::CompletionTimedOut);
     }
     #[rstest]
+    #[tokio::test]
     async fn test_complete_fail_user_repo_connection(
         mut dependency_provider: MockDependencyProvider,
         signup_id: SignupId,
@@ -480,6 +487,7 @@ mod tests {
         assert_eq!(result.unwrap_err(), Error::Repo);
     }
     #[rstest]
+    #[tokio::test]
     async fn test_complete_fail_save_latest_state_connection(
         mut dependency_provider: MockDependencyProvider,
         signup_id: SignupId,

@@ -2,11 +2,11 @@ use std::sync::Arc;
 
 use crate::{
     gateway::{
-        database::{
-            user::{GetError, Repo, SaveError},
-            Database,
-        },
         DatabaseProvider,
+        database::{
+            Database,
+            user::{GetError, Repo, SaveError},
+        },
     },
     usecase::Usecase,
 };
@@ -24,11 +24,11 @@ use validator::Validate;
 #[derive(Debug, Deserialize, Validate)]
 pub struct Request {
     pub id: Id,
-    #[validate(email)]
+    #[validate(email, length(min = 5, max = 30))]
     pub email: String,
-    #[validate(length(min = 1, max = 30))]
+    #[validate(length(min = 5, max = 30))]
     pub username: String,
-    #[validate(length(min = 5, max = 60))]
+    #[validate(length(min = 5, max = 30))]
     pub password: String,
 }
 
@@ -60,7 +60,7 @@ impl From<(GetError, Id)> for Error {
     fn from((err, id): (GetError, Id)) -> Self {
         match err {
             GetError::NotFound => Self::NotFound(id),
-            GetError::Connection => Self::Repo,
+            GetError::Connection | GetError::InvalidData => Self::Repo,
         }
     }
 }
@@ -120,6 +120,7 @@ mod tests {
     use rstest::*;
 
     #[rstest]
+    #[tokio::test]
     async fn test_update_success(
         mut dependency_provider: MockDependencyProvider,
         user_id: Id,
@@ -165,6 +166,7 @@ mod tests {
         assert!(result.is_ok());
     }
     #[rstest]
+    #[tokio::test]
     async fn test_update_fail_req_validation(
         dependency_provider: MockDependencyProvider,
         user_id: Id,
@@ -185,15 +187,18 @@ mod tests {
         // Assert execution error
         assert!(result.is_err());
         let err = result.unwrap_err();
-        assert!(err.to_string().contains("email: Validation error: email"));
-        assert!(err
-            .to_string()
-            .contains("password: Validation error: length"));
-        assert!(err
-            .to_string()
-            .contains("username: Validation error: length"));
+        assert!(err.to_string().contains("Validation error: email"));
+        assert!(
+            err.to_string()
+                .contains("password: Validation error: length")
+        );
+        assert!(
+            err.to_string()
+                .contains("username: Validation error: length")
+        );
     }
     #[rstest]
+    #[tokio::test]
     async fn test_update_fail_get_connection(
         mut dependency_provider: MockDependencyProvider,
         user_id: Id,
@@ -224,6 +229,7 @@ mod tests {
         assert_eq!(result.unwrap_err(), Error::Repo);
     }
     #[rstest]
+    #[tokio::test]
     async fn test_update_fail_get_not_found(
         mut dependency_provider: MockDependencyProvider,
         user_id: Id,
@@ -254,6 +260,7 @@ mod tests {
         assert_eq!(result.unwrap_err(), Error::NotFound(user_id));
     }
     #[rstest]
+    #[tokio::test]
     async fn test_update_fail_save_connection(
         mut dependency_provider: MockDependencyProvider,
         user_id: Id,

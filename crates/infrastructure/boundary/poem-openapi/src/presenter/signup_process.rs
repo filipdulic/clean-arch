@@ -1,23 +1,23 @@
 use ca_adapter::boundary::{Error, Presenter, UsecaseResponseResult};
 use ca_application::{
     gateway::{
-        database::signup_process::Record as SignupProcessRecord, DatabaseProvider,
-        EmailVerificationServiceProvider,
+        DatabaseProvider, EmailVerificationServiceProvider,
+        database::signup_process::Record as SignupProcessRecord,
     },
     usecase::{
+        Usecase,
         signup_process::{
             complete::Complete, delete::Delete, extend_completion_time::ExtendCompletionTime,
             extend_verification_time::ExtendVerificationTime, get_state_chain::GetStateChain,
             initialize::Initialize, send_verification_email::SendVerificationEmail,
             verify_email::VerifyEmail,
         },
-        Usecase,
     },
 };
 
 use ca_domain::entity::signup_process::SignupStateEnum;
 use chrono::{DateTime, Utc};
-use poem_openapi::{payload::Json, types::ToJSON, ApiResponse, Enum, Object};
+use poem_openapi::{ApiResponse, Enum, Object, payload::Json, types::ToJSON};
 
 use crate::Boundary;
 
@@ -114,12 +114,15 @@ pub struct Empty;
 
 #[derive(ApiResponse)]
 pub enum TheApiResponse<T: ToJSON> {
-    /// Returns when the pet is successfully created.
+    /// Returns a successful response.
     #[oai(status = 200)]
     Ok(Json<T>),
     /// Returns a bad request.
     #[oai(status = 400)]
     BadRequest(Json<String>),
+    /// Returns an authorization error.
+    #[oai(status = 401)]
+    Unauthorized(Json<String>),
     /// Returns an internal server error.
     #[oai(status = 500)]
     InternalServerError(Json<String>),
@@ -128,14 +131,11 @@ pub enum TheApiResponse<T: ToJSON> {
 impl<D, U: Usecase<D>, T: ToJSON> From<Error<D, U>> for TheApiResponse<T> {
     fn from(err: Error<D, U>) -> Self {
         match err {
-            Error::ParseIdError => TheApiResponse::BadRequest(Json("Invalid id".to_string())),
             Error::ParseInputError(err) => TheApiResponse::BadRequest(Json(err.to_string())),
             Error::UsecaseError(err) => {
                 TheApiResponse::InternalServerError(Json(format!("Usecase error: {err:?}")))
             }
-            Error::AuthError(err) => {
-                TheApiResponse::InternalServerError(Json(format!("Authorization error: {err:?}")))
-            }
+            Error::AuthError(err) => TheApiResponse::Unauthorized(Json(err.to_string())),
         }
     }
 }

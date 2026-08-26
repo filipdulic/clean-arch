@@ -26,16 +26,18 @@ impl From<Record> for User {
     }
 }
 
-impl From<User> for Record {
-    fn from(user: User) -> Self {
-        let id = Uuid::parse_str(&user.id).unwrap();
-        let role = user.role.parse().unwrap();
+impl TryFrom<User> for Record {
+    type Error = ();
+
+    fn try_from(user: User) -> Result<Self, Self::Error> {
+        let id = Uuid::parse_str(&user.id).map_err(|_| ())?;
+        let role = user.role.parse().map_err(|_| ())?;
         let email = Email::new(user.email);
         let username = UserName::new(user.username);
         let password_hash = Password::new(user.password_hash);
 
-        Record {
+        Ok(Record {
             user: DomainUser::new(id.into(), role, email, username, password_hash),
-        }
+        })
     }
 }

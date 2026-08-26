@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use uuid::Uuid;
 
-use ca_application::gateway::service::auth::{AuthExtractor, AuthPacker};
+use ca_application::gateway::service::auth::{AuthExtractor, AuthPacker, AuthServiceError};
 use ca_domain::{entity::auth_context::AuthContext, value_object::Role};
 
 #[derive(Clone)]
@@ -19,17 +19,14 @@ impl JwtAuth {
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Claims {
-    exp: usize,
+    exp: i64,
     user_id: String,
     role: String,
 }
 impl Claims {
     fn new(auth_context: AuthContext) -> Self {
         Self {
-            exp: (Utc::now() + chrono::Duration::minutes(10))
-                .timestamp()
-                .try_into()
-                .unwrap(),
+            exp: (Utc::now() + chrono::Duration::minutes(10)).timestamp(),
             user_id: auth_context.user_id.to_string(),
             role: auth_context.role.to_string(),
         }
@@ -37,11 +34,11 @@ impl Claims {
 }
 #[async_trait::async_trait]
 impl AuthPacker for &JwtAuth {
-    async fn pack_auth(&self, auth: AuthContext) -> String {
+    async fn pack_auth(&self, auth: AuthContext) -> Result<String, AuthServiceError> {
         let claims = Claims::new(auth);
         let header = jsonwebtoken::Header::default();
         let encoding_key = jsonwebtoken::EncodingKey::from_secret(self.secret.as_ref());
-        jsonwebtoken::encode(&header, &claims, &encoding_key).unwrap()
+        jsonwebtoken::encode(&header, &claims, &encoding_key).map_err(|_| AuthServiceError::Pack)
     }
 }
 #[async_trait::async_trait]
@@ -77,7 +74,7 @@ mod tests {
             role: Role::Admin,
         };
         let token = (&jwt_auth).pack_auth(auth_context).await;
-        println!("token: {}", token);
+        println!("token: {}", token.unwrap());
     }
     #[tokio::test]
     async fn test_exp() {
@@ -86,8 +83,8 @@ mod tests {
             user_id: ca_domain::entity::user::Id::new(uuid::Uuid::from_u128(0)),
             role: Role::Admin,
         };
-        let token = (&jwt_auth).pack_auth(auth_context).await;
-        let decoded = (&jwt_auth).extract_auth(token.clone()).await;
+        let token = (&jwt_auth).pack_auth(auth_context).await.unwrap();
+        let decoded = (&jwt_auth).extract_auth(token).await;
         assert!(decoded.is_some());
     }
 }

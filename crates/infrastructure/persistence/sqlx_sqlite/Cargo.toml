@@ -1,21 +1,24 @@
 [package]
-name = "ca-infrastructure-auth-jwt"
+name = "ca-infrastructure-persistence-sqlx-sqlite"
 edition.workspace = true
 rust-version.workspace = true
 version.workspace = true
 publish = false
 
 [dependencies]
+
 # Workspace dependencies
 ca-domain = { version = "=0.1.0", path = "../../../domain" }
 ca-application = { version = "=0.1.0", path = "../../../application" }
 
 # External dependencies
 uuid.workspace = true
-jsonwebtoken.workspace = true
-serde.workspace = true
+log.workspace = true
 chrono.workspace = true
+sqlx.workspace = true
 async-trait.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
 
 [dev-dependencies]
-tokio.workspace = true
+tempfile.workspace = true

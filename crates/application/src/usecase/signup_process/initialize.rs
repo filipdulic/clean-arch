@@ -2,12 +2,12 @@ use std::sync::Arc;
 
 use crate::{
     gateway::{
+        DatabaseProvider,
         database::{
+            Database,
             identifier::{NewId, NewIdError},
             signup_process::{Repo, SaveError},
-            Database,
         },
-        DatabaseProvider,
     },
     usecase::Usecase,
 };
@@ -22,7 +22,7 @@ use validator::Validate;
 
 #[derive(Debug, Deserialize, Validate)]
 pub struct Request {
-    #[validate(email)]
+    #[validate(email, length(min = 5, max = 30))]
     pub email: String,
 }
 
@@ -70,7 +70,7 @@ where
         let id = self
             .dependency_provider
             .database()
-            .signuo_id_gen()
+            .signup_id_gen()
             .new_id()
             .await
             .map_err(|_| Error::NewId)?;
@@ -104,6 +104,7 @@ mod tests {
     use rstest::rstest;
 
     #[rstest]
+    #[tokio::test]
     async fn test_initialize_success(mut dependency_provider: MockDependencyProvider) {
         // Fixtures
         let id = Id::new(uuid::Uuid::new_v4());
@@ -144,9 +145,8 @@ mod tests {
     }
 
     #[rstest]
-    async fn test_initialize_fails_verify_email_min_lenght(
-        dependency_provider: MockDependencyProvider,
-    ) {
+    #[tokio::test]
+    async fn test_initialize_rejects_invalid_email(dependency_provider: MockDependencyProvider) {
         let usecase = <Initialize<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
             Arc::new(dependency_provider),
         );
@@ -155,13 +155,13 @@ mod tests {
         };
         let result = usecase.exec(req).await;
         assert!(result.is_err());
-        assert_eq!(
-            result.unwrap_err().to_string(),
-            "email: Validation error: email [{\"value\": String(\"ttt\")}]"
-        );
+        let error = result.unwrap_err().to_string();
+        assert!(error.contains("Validation error: email"));
+        assert!(error.contains("Validation error: length"));
     }
 
     #[rstest]
+    #[tokio::test]
     async fn test_initialize_fails_signup_id_gen(mut dependency_provider: MockDependencyProvider) {
         dependency_provider
             .db
@@ -180,6 +180,7 @@ mod tests {
     }
 
     #[rstest]
+    #[tokio::test]
     async fn test_initialize_fails_save_latest_state(
         mut dependency_provider: MockDependencyProvider,
         signup_id: Id,

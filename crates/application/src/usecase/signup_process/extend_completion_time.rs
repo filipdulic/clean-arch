@@ -2,11 +2,11 @@ use std::sync::Arc;
 
 use crate::{
     gateway::{
-        database::{
-            signup_process::{GetError, Repo, SaveError},
-            Database,
-        },
         DatabaseProvider,
+        database::{
+            Database,
+            signup_process::{GetError, Repo, SaveError},
+        },
     },
     usecase::Usecase,
 };
@@ -108,6 +108,7 @@ mod tests {
     use rstest::*;
 
     #[rstest]
+    #[tokio::test]
     async fn test_extend_completion_time_success(
         mut dependency_provider: MockDependencyProvider,
         signup_id: SignupId,
@@ -151,6 +152,7 @@ mod tests {
         assert_eq!(response.id, signup_id);
     }
     #[rstest]
+    #[tokio::test]
     async fn test_extend_completion_time_fail_get_latest_state_connection(
         mut dependency_provider: MockDependencyProvider,
         signup_id: SignupId,
@@ -179,6 +181,7 @@ mod tests {
         assert_eq!(result.unwrap_err(), Error::Repo);
     }
     #[rstest]
+    #[tokio::test]
     async fn test_extend_completion_time_fail_get_latest_state_not_found(
         mut dependency_provider: MockDependencyProvider,
         signup_id: SignupId,
@@ -208,6 +211,7 @@ mod tests {
         assert_eq!(result.unwrap_err(), Error::NotFound(signup_id));
     }
     #[rstest]
+    #[tokio::test]
     async fn test_extend_completion_time_fail_incorrect_state(
         mut dependency_provider: MockDependencyProvider,
         signup_id: SignupId,
@@ -237,6 +241,7 @@ mod tests {
         assert_eq!(result.unwrap_err(), Error::IncorrectState(signup_id));
     }
     #[rstest]
+    #[tokio::test]
     async fn test_extend_completion_time_fail_save_latest_state_connection(
         mut dependency_provider: MockDependencyProvider,
         signup_id: SignupId,

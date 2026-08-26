@@ -40,50 +40,50 @@ use ca_infrastructure_boundary_string as string;
 //use crate::boundary::string::
 #[derive(Subcommand)]
 pub enum Command {
-    #[clap(about = "Initialize signup process", alias = "sp-init")]
+    #[command(about = "Initialize signup process", alias = "sp-init")]
     InitializeSignupProcess {
         email: String,
         token: Option<String>,
     },
-    #[clap(
+    #[command(
         about = "Send verification email for signup process",
         alias = "sp-send-verify"
     )]
     SendVerificationEmail { id: String, token: Option<String> },
-    #[clap(
+    #[command(
         about = "Extend verification time of signup process",
         alias = "sp-extend-verify"
     )]
     ExtendVerificationTimeOfSignupProcess { id: String, token: Option<String> },
-    #[clap(
+    #[command(
         about = "Extend completion time of signup process",
         alias = "sp-extend-complete"
     )]
     ExtendCompletionTimeOfSignupProcess { id: String, token: Option<String> },
-    #[clap(about = "Delete signup process", alias = "sp-delete")]
+    #[command(about = "Delete signup process", alias = "sp-delete")]
     DeleteSignupProcess { id: String, token: Option<String> },
-    #[clap(about = "Verify Email of signup process", alias = "sp-verify")]
+    #[command(about = "Verify email for signup process", alias = "sp-verify")]
     VerifyEmailOfSignupProcess {
         id: String,
         signup_token: String,
         token: Option<String>,
     },
-    #[clap(about = "Complete signup process", alias = "sp-complete")]
+    #[command(about = "Complete signup process", alias = "sp-complete")]
     CompleteSignupProcess {
         id: String,
         username: String,
         password: String,
         token: Option<String>,
     },
-    #[clap(about = "Get state chain for signup process", alias = "sp-chain")]
+    #[command(about = "Get state chain for signup process", alias = "sp-chain")]
     GetStateChain { id: String, token: Option<String> },
-    #[clap(about = "Login user")]
+    #[command(about = "Login user")]
     Login { username: String, password: String },
-    #[clap(about = "List all users")]
+    #[command(about = "List all users")]
     ListUsers { token: Option<String> },
-    #[clap(about = "Read user")]
+    #[command(about = "Read user")]
     ReadUser { id: String, token: Option<String> },
-    #[clap(about = "Update user")]
+    #[command(about = "Update user")]
     UpdateUser {
         id: String,
         email: String,
@@ -91,7 +91,7 @@ pub enum Command {
         password: String,
         token: Option<String>,
     },
-    #[clap(about = "Delete user")]
+    #[command(about = "Delete user")]
     DeleteUser { id: String, token: Option<String> },
 }
 

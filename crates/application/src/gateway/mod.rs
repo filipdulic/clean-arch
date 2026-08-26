@@ -22,12 +22,12 @@ pub trait AuthExtractorProvider: Send + Sync {
 #[cfg(test)]
 pub mod mock {
     use super::{
+        AuthPackerProvider, DatabaseProvider, EmailVerificationServiceProvider,
         database::{Database, MockDatabase},
         service::{
             auth::{AuthPacker, MockAuthPacker},
             email::{EmailVerificationService, MockEmailVerificationService},
         },
-        AuthPackerProvider, DatabaseProvider, EmailVerificationServiceProvider,
     };
 
     #[derive(Default)]

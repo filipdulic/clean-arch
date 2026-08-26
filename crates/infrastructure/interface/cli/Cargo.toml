@@ -11,9 +11,6 @@ publish = false
 ca-adapter = { version = "=0.1.0", path = "../../../adapter" }
 ca-application = { version = "=0.1.0", path = "../../../application" }
 ca-infrastructure-boundary-string = { version = "=0.1.0", path = "../../boundary/string" }
-ca-infrastructure-auth-jwt = { version = "=0.1.0", path = "../../auth/jwt" }
 
 # External dependencies
-clap = { version = "4.5.35", features = ["derive"] }
-
-[dev-dependencies]
+clap.workspace = true

@@ -1,16 +1,6 @@
-//! This module contains the CLI interface for the application.
+//! Poem OpenAPI interface for the application.
 //!
-//! Handles command-line interface (CLI) interactions. It defines the commands
-//! that the CLI can execute and maps them to the appropriate actions within
-//! the application. This file typically uses a library like clap to parse and
-//! handle command-line arguments.
-//!
-//! Key Responsibilities:
-//! * Command Definition: Define the various commands that the CLI can handle.
-//! * Command Parsing: Use a library like clap to parse the command-line arguments
-//!   and match them to the defined commands.
-//! * Command Execution: Map the parsed commands to the appropriate functions or
-//!   methods in the application.
+//! Defines HTTP endpoints and maps them to application controllers.
 use std::sync::Arc;
 
 use ca_adapter::controller::{Controller, ControllerTrait};
@@ -44,13 +34,13 @@ use ca_infrastructure_boundary_poem_openapi::{
         user::{LoginResponse, UserResponse},
     },
 };
-use poem_openapi::{auth::Bearer, param::Path, payload::Json, OpenApi, SecurityScheme, Tags};
+use poem_openapi::{OpenApi, SecurityScheme, Tags, auth::Bearer, param::Path, payload::Json};
 
 #[derive(Tags)]
 enum ApiTags {
     /// Operations about user
     User,
-    /// Operations about pet
+    /// Operations about signup processes
     SignupProcess,
 }
 
@@ -71,9 +61,9 @@ where
         + AuthExtractorProvider
         + 'static,
 {
-    pub fn new(dependancy_provider: Arc<D>) -> Self {
+    pub fn new(dependency_provider: Arc<D>) -> Self {
         Self {
-            controller: Controller::<D, boundary::Boundary>::new(dependancy_provider),
+            controller: Controller::<D, boundary::Boundary>::new(dependency_provider),
         }
     }
     #[oai(

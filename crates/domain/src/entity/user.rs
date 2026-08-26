@@ -18,7 +18,7 @@ pub struct User {
 
 impl User {
     pub fn new(id: Id, role: Role, email: Email, username: UserName, password: Password) -> Self {
-        // Never construct an area of life with invalid name
+        // Keep validated values within the domain limits.
         debug_assert!(username.as_ref().len() <= UserName::max_len());
         debug_assert!(username.as_ref().len() >= UserName::min_len());
 
@@ -37,7 +37,7 @@ impl User {
         }
     }
     pub fn update(&mut self, email: Email, username: UserName, password: Password) {
-        // Never construct an area of life with invalid name
+        // Keep validated values within the domain limits.
         debug_assert!(username.as_ref().len() <= UserName::max_len());
         debug_assert!(username.as_ref().len() >= UserName::min_len());
 
