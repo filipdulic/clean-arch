@@ -6,7 +6,7 @@ use ca_application::{
     },
 };
 use ca_domain::entity::user::User;
-use poem_openapi::{payload::Json, Object};
+use poem_openapi::{Object, payload::Json};
 
 use crate::Boundary;
 

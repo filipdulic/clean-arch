@@ -1,43 +1,79 @@
 # Clean Architecture Rust Demo
-## Overview
-This is a demo project exploring Clean Architecture, Domain-Driven Design, and
-general Rust development.
 
-## Todo:
+This project explores Clean Architecture, Domain-Driven Design, and Rust. It
+models a user signup flow with typestate, authorization, and persisted state
+history. The same use cases are exposed through CLI and Poem OpenAPI interfaces.
+
+## Structure
+
+- `domain` contains entities, value objects, and signup state transitions.
+- `application` contains use cases and gateway traits.
+- `adapter` coordinates input, authorization, execution, and presentation.
+- `infrastructure` provides CLI, HTTP, JWT, file email, and SQLite adapters.
+- `src/bin` assembles complete applications from those components.
+
+## Requirements
+
+Rust 1.94 or newer is required.
+
+## Run
+
+Start the HTTP API and Swagger UI:
+
+```console
+cargo run
+```
+
+Run the CLI with an isolated data directory:
+
+```console
+cargo run --bin clean-arch-cli-sqlx-sqlite -- --data-dir ./data --help
+```
+
+## Roadmap
+
 ### Documentation
+
 - [ ] Code
 - [ ] Wiki
+
 ### Design
+
 - [x] Typestate state machine
 - [x] Database transactions
-- [ ] Outbox pattern - for publishing messages
-### Authentication
-- [x] JWT Token claim pack/extract
-### Authorization
-- [x] Role Based Access
-- [x] Object Owner Access
+- [ ] Outbox pattern
+
+### Authentication and authorization
+
+- [x] JWT claim packing and extraction
+- [x] Role-based access
+- [x] Object-owner access
+
 ### Interfaces
-- [ ] Terminal
-    - [x] CLI (string) server
-    - [ ] TUI/ncurses client
-    - [ ] Desktop client
-- [ ] Web
-    - [ ] Actix server
-    - [x] poem-openapi server
-    - [ ] Axum server
-    - [ ] Yew frontend
-    - [ ] Seed frontend
+
+- [x] CLI with string boundaries
+- [x] Poem OpenAPI server
+- [ ] TUI client
+- [ ] Desktop client
+- [ ] Actix server
+- [ ] Axum server
+- [ ] Web frontend
 - [ ] WebSocket
 - [ ] gRPC
+
 ### Databases
-- [x] SQLite/SQLX
-- [ ] InMemory (HashMap)
-- [ ] PostgreSQL/Diesel
-- [ ] LMDB/Heed
-- [ ] Wide-column DB/DynamoDB
-### Message Brokers/Queues
-- [ ] RabbitMQ (RMQ)
+
+- [x] SQLite with SQLx
+- [ ] In-memory HashMap
+- [ ] PostgreSQL with Diesel
+- [ ] LMDB with Heed
+- [ ] DynamoDB
+
+### Message brokers
+
+- [ ] RabbitMQ
 - [ ] Kafka
-- [ ] ZeroMQ (ZMQ)
-## Note
-Heavily influenced by [clean-architecture-with-rust](https://github.com/flosse/clean-architecture-with-rust) project.
+- [ ] ZeroMQ
+
+The project was influenced by
+[clean-architecture-with-rust](https://github.com/flosse/clean-architecture-with-rust).

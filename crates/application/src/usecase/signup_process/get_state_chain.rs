@@ -2,11 +2,11 @@ use std::sync::Arc;
 
 use crate::{
     gateway::{
-        database::{
-            signup_process::{GetError, Record, Repo},
-            Database,
-        },
         DatabaseProvider,
+        database::{
+            Database,
+            signup_process::{GetError, Record, Repo},
+        },
     },
     usecase::Usecase,
 };
@@ -92,6 +92,7 @@ mod tests {
     use rstest::*;
 
     #[rstest]
+    #[tokio::test]
     async fn test_get_state_chain_success(
         mut dependency_provider: MockDependencyProvider,
         signup_id: SignupId,
@@ -123,6 +124,7 @@ mod tests {
         assert_eq!(expected, state_chain);
     }
     #[rstest]
+    #[tokio::test]
     async fn test_get_state_chain_fail_connection(
         mut dependency_provider: MockDependencyProvider,
         signup_id: SignupId,
@@ -151,6 +153,7 @@ mod tests {
         assert_eq!(result.unwrap_err(), Error::Repo,);
     }
     #[rstest]
+    #[tokio::test]
     async fn test_get_state_chain_fail_not_found(
         mut dependency_provider: MockDependencyProvider,
         signup_id: SignupId,

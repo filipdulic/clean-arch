@@ -12,8 +12,6 @@ use ca_domain::{
     value_object::UserName,
 };
 
-// NOTE:
-
 #[derive(Debug, Clone, FromRow)]
 pub struct SignupProcessState {
     #[sqlx(rename = "id")]
@@ -95,46 +93,56 @@ impl From<Record> for SignupProcessState {
     }
 }
 
-fn from_proces_and_prev(
+fn from_process_and_previous(
     (value, prev_state): (&SignupProcessState, &Option<SignupStateEnum>),
-) -> SignupStateEnum {
+) -> Result<SignupStateEnum, ca_application::gateway::database::signup_process::GetError> {
+    use ca_application::gateway::database::signup_process::GetError;
+
     match value.state.as_str() {
-        "Initialized" => SignupStateEnum::Initialized {
-            email: Email::new(value.email.as_ref().unwrap()),
-        },
-        "VerificationEmailSent" => SignupStateEnum::VerificationEmailSent {
-            email: Email::new(value.email.as_ref().unwrap()),
-        },
-        "EmailVerified" => SignupStateEnum::EmailVerified {
-            email: Email::new(value.email.as_ref().unwrap()),
-        },
-        "Completed" => SignupStateEnum::Completed {
-            email: Email::new(value.email.as_ref().unwrap()),
-            username: UserName::new(value.username.as_ref().unwrap()),
-            password: Password::new(value.password.as_ref().unwrap()),
-        },
-        "ForDeletion" => SignupStateEnum::ForDeletion,
-        "Failed" => SignupStateEnum::Failed {
-            // temp previous state
-            previous_state: Arc::new(prev_state.clone().unwrap()),
-            error: SignupError::from_str(value.error.as_ref().unwrap()).unwrap(),
-        },
-        _ => panic!("Invalid state"),
+        "Initialized" => Ok(SignupStateEnum::Initialized {
+            email: Email::new(value.email.as_ref().ok_or(GetError::IncorrectState)?),
+        }),
+        "VerificationEmailSent" => Ok(SignupStateEnum::VerificationEmailSent {
+            email: Email::new(value.email.as_ref().ok_or(GetError::IncorrectState)?),
+        }),
+        "EmailVerified" => Ok(SignupStateEnum::EmailVerified {
+            email: Email::new(value.email.as_ref().ok_or(GetError::IncorrectState)?),
+        }),
+        "Completed" => Ok(SignupStateEnum::Completed {
+            email: Email::new(value.email.as_ref().ok_or(GetError::IncorrectState)?),
+            username: UserName::new(value.username.as_ref().ok_or(GetError::IncorrectState)?),
+            password: Password::new(value.password.as_ref().ok_or(GetError::IncorrectState)?),
+        }),
+        "ForDeletion" => Ok(SignupStateEnum::ForDeletion),
+        "Failed" => Ok(SignupStateEnum::Failed {
+            previous_state: Arc::new(prev_state.clone().ok_or(GetError::IncorrectState)?),
+            error: value
+                .error
+                .as_ref()
+                .ok_or(GetError::IncorrectState)?
+                .parse::<SignupError>()
+                .map_err(|_| GetError::IncorrectState)?,
+        }),
+        _ => Err(GetError::IncorrectState),
     }
 }
 
-pub fn from_chain(chain: Vec<SignupProcessState>) -> Vec<Record> {
+pub fn from_chain(
+    chain: Vec<SignupProcessState>,
+) -> Result<Vec<Record>, ca_application::gateway::database::signup_process::GetError> {
+    use ca_application::gateway::database::signup_process::GetError;
+
     let mut previous: Option<SignupStateEnum> = None;
-    chain
-        .into_iter()
-        .map(|process| {
-            let state = from_proces_and_prev((&process, &previous));
-            previous = Some(state.clone());
-            Record {
-                id: Id::from(uuid::Uuid::from_str(&process.signup_id).unwrap()),
-                state: state.clone(),
-                entered_at: process.entered_at,
-            }
-        })
-        .collect::<Vec<_>>()
+    let mut records = Vec::with_capacity(chain.len());
+    for process in chain {
+        let state = from_process_and_previous((&process, &previous))?;
+        let id = uuid::Uuid::from_str(&process.signup_id).map_err(|_| GetError::IncorrectState)?;
+        previous = Some(state.clone());
+        records.push(Record {
+            id: Id::from(id),
+            state,
+            entered_at: process.entered_at,
+        });
+    }
+    Ok(records)
 }

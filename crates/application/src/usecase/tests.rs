@@ -121,7 +121,7 @@ pub mod fixtures {
             id: signup_id,
             state: SignupStateEnum::Failed {
                 previous_state: Arc::new(SignupStateEnum::Initialized { email }),
-                error: SignupError::TokenGenrationFailed,
+                error: SignupError::TokenGenerationFailed,
             },
             entered_at: chrono::Utc::now(),
         }

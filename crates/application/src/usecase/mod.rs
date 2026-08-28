@@ -6,7 +6,7 @@ use ca_domain::entity::{
     user::Id as UserId,
 };
 
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{Serialize, de::DeserializeOwned};
 
 pub mod signup_process;
 #[cfg(test)]
@@ -47,21 +47,12 @@ pub trait Usecase<D>: Send + Sync {
             }
             AuthStrategy::AdminAndOwnerOnly => {
                 if let Some(auth_context) = auth_context {
-                    // check if user is admin
-                    if auth_context.is_admin() {
+                    if auth_context.is_admin()
+                        || self.extract_owner(req) == Some(auth_context.user_id)
+                    {
                         Ok(())
-                    // check if user is owner
-                    } else if let Some(owner) = self.extract_owner(req) {
-                        if owner == auth_context.user_id {
-                            Ok(())
-                        } else {
-                            Err(AuthError::Unauthorized)
-                        }
                     } else {
-                        // extract owner returned None
-                        // for strategy AdminAndOwnerOnly
-                        // this should not happen
-                        unimplemented!("extract_owner returned None")
+                        Err(AuthError::Unauthorized)
                     }
                 // if no auth context is provided
                 } else {

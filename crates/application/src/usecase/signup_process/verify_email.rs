@@ -2,12 +2,12 @@ use std::sync::Arc;
 
 use crate::{
     gateway::{
+        DatabaseProvider,
         database::{
+            Database,
             signup_process::{GetError, Repo, SaveError},
             token::{Repo as TokenRepo, VerifyError as TokenRepoError},
-            Database,
         },
-        DatabaseProvider,
     },
     usecase::Usecase,
 };
@@ -168,6 +168,7 @@ mod tests {
     use super::*;
 
     #[rstest]
+    #[tokio::test]
     async fn test_verify_email_success(
         mut dependency_provider: MockDependencyProvider,
         signup_id: SignupId,
@@ -222,9 +223,8 @@ mod tests {
         assert_eq!(response.id, signup_id);
     }
     #[rstest]
-    async fn test_verify_email_fails_verify_token_min_lenght(
-        dependency_provider: MockDependencyProvider,
-    ) {
+    #[tokio::test]
+    async fn test_verify_email_rejects_short_token(dependency_provider: MockDependencyProvider) {
         let usecase = <VerifyEmail<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
             Arc::new(dependency_provider),
         );
@@ -235,12 +235,15 @@ mod tests {
         };
         let result = usecase.exec(req).await;
         assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .to_string()
-            .contains("token: Validation error: length"));
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("token: Validation error: length")
+        );
     }
     #[rstest]
+    #[tokio::test]
     async fn test_verify_email_fail_get_latest_state_connection(
         mut dependency_provider: MockDependencyProvider,
         signup_id: SignupId,
@@ -271,6 +274,7 @@ mod tests {
         assert_eq!(result.unwrap_err(), Error::Repo);
     }
     #[rstest]
+    #[tokio::test]
     async fn test_verify_email_fail_get_latest_state_not_found(
         mut dependency_provider: MockDependencyProvider,
         signup_id: SignupId,
@@ -301,6 +305,7 @@ mod tests {
         assert_eq!(result.unwrap_err(), Error::NotFound(signup_id));
     }
     #[rstest]
+    #[tokio::test]
     async fn test_verify_email_fail_get_latest_state_incorrect_state(
         mut dependency_provider: MockDependencyProvider,
         signup_id: SignupId,
@@ -332,6 +337,7 @@ mod tests {
         assert_eq!(result.unwrap_err(), Error::IncorrectState(signup_id));
     }
     #[rstest]
+    #[tokio::test]
     async fn test_verify_fail_token_verification_connection(
         mut dependency_provider: MockDependencyProvider,
         signup_id: SignupId,
@@ -383,6 +389,7 @@ mod tests {
         );
     }
     #[rstest]
+    #[tokio::test]
     async fn test_verify_fail_token_verification_not_found(
         mut dependency_provider: MockDependencyProvider,
         signup_id: SignupId,
@@ -434,7 +441,8 @@ mod tests {
         );
     }
     #[rstest]
-    async fn test_verify_fail_token_verification_token_missmatch(
+    #[tokio::test]
+    async fn test_verify_fail_token_verification_token_mismatch(
         mut dependency_provider: MockDependencyProvider,
         signup_id: SignupId,
         verification_email_sent_record: SignupProcessRepoRecord,
@@ -486,6 +494,7 @@ mod tests {
         );
     }
     #[rstest]
+    #[tokio::test]
     async fn test_verify_fail_token_verification_token_expired(
         mut dependency_provider: MockDependencyProvider,
         signup_id: SignupId,
@@ -543,6 +552,7 @@ mod tests {
         );
     }
     #[rstest]
+    #[tokio::test]
     async fn test_verify_email_fail_save_latest_state_connection(
         mut dependency_provider: MockDependencyProvider,
         signup_id: SignupId,

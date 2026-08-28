@@ -11,6 +11,8 @@ pub enum GetError {
     NotFound,
     #[error("User repository connection problem")]
     Connection,
+    #[error("User repository contains invalid data")]
+    InvalidData,
 }
 
 #[derive(Debug, Error)]
@@ -23,6 +25,8 @@ pub enum SaveError {
 pub enum GetAllError {
     #[error("User repository connection problem")]
     Connection,
+    #[error("User repository contains invalid data")]
+    InvalidData,
 }
 
 #[derive(Debug, Error)]
@@ -135,6 +139,7 @@ mod tests {
     use rstest::rstest;
 
     #[rstest]
+    #[tokio::test]
     async fn test_mock() {
         // Create a mock instance
         let mut mock = MockRepo::new();

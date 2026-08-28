@@ -1,7 +1,7 @@
 use std::{marker::PhantomData, sync::Arc};
 
 use ca_application::{
-    gateway::{service::auth::AuthExtractor, AuthExtractorProvider},
+    gateway::{AuthExtractorProvider, service::auth::AuthExtractor},
     usecase::Usecase,
 };
 use ca_domain::entity::auth_context::AuthError;

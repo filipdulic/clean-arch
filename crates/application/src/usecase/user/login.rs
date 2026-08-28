@@ -2,12 +2,12 @@ use std::sync::Arc;
 
 use crate::{
     gateway::{
-        database::{
-            user::{GetError, Repo, SaveError},
-            Database,
-        },
-        service::auth::AuthPacker,
         AuthPackerProvider, DatabaseProvider,
+        database::{
+            Database,
+            user::{GetError, Repo, SaveError},
+        },
+        service::auth::{AuthPacker, AuthServiceError},
     },
     usecase::Usecase,
 };
@@ -43,6 +43,8 @@ pub enum Error {
     InvalidLogin,
     #[error("{}", SaveError::Connection)]
     Repo,
+    #[error(transparent)]
+    Auth(#[from] AuthServiceError),
 }
 
 impl From<SaveError> for Error {
@@ -57,7 +59,7 @@ impl From<(GetError, UserName)> for Error {
     fn from((err, user_name): (GetError, UserName)) -> Self {
         match err {
             GetError::NotFound => Self::NotFound(user_name),
-            GetError::Connection => Self::Repo,
+            GetError::Connection | GetError::InvalidData => Self::Repo,
         }
     }
 }
@@ -90,7 +92,7 @@ where
             .dependency_provider
             .auth_packer()
             .pack_auth(auth_context)
-            .await;
+            .await?;
         Ok(Response {
             user_id: record.user.id(),
             token,
@@ -118,6 +120,7 @@ mod tests {
     use rstest::*;
 
     #[rstest]
+    #[tokio::test]
     async fn test_login_success(
         mut dependency_provider: MockDependencyProvider,
         user_record: UserRecord,
@@ -142,7 +145,7 @@ mod tests {
             .expect_pack_auth()
             .withf(move |actual_auth_context| actual_auth_context == &auth_context)
             .times(1)
-            .returning(move |_| TEST_TOKEN.to_string());
+            .returning(move |_| Ok(TEST_TOKEN.to_string()));
         // Usecase Initialization
         let usecase = <Login<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
             Arc::new(dependency_provider),
@@ -155,7 +158,37 @@ mod tests {
         assert_eq!(result.user_id, user_id);
         assert_eq!(result.token, TEST_TOKEN);
     }
+
     #[rstest]
+    #[tokio::test]
+    async fn test_login_fails_when_token_packing_fails(
+        mut dependency_provider: MockDependencyProvider,
+        user_record: UserRecord,
+    ) {
+        let req = Request {
+            username: TEST_USERNAME.to_string(),
+            password: TEST_PASSWORD.to_string(),
+        };
+        dependency_provider
+            .db
+            .user_repo
+            .expect_get_by_username()
+            .returning(move |_, _| Ok(user_record.clone()));
+        dependency_provider
+            .auth_packer
+            .expect_pack_auth()
+            .returning(|_| Err(AuthServiceError::Pack));
+        let usecase = <Login<MockDependencyProvider> as Usecase<MockDependencyProvider>>::new(
+            Arc::new(dependency_provider),
+        );
+
+        assert_eq!(
+            usecase.exec(req).await.unwrap_err(),
+            Error::Auth(AuthServiceError::Pack)
+        );
+    }
+    #[rstest]
+    #[tokio::test]
     async fn test_login_fail_get_by_username_connection(
         mut dependency_provider: MockDependencyProvider,
     ) {
@@ -183,6 +216,7 @@ mod tests {
         assert_eq!(result.unwrap_err(), Error::Repo);
     }
     #[rstest]
+    #[tokio::test]
     async fn test_login_fail_get_by_username_not_found(
         mut dependency_provider: MockDependencyProvider,
     ) {
@@ -213,6 +247,7 @@ mod tests {
         );
     }
     #[rstest]
+    #[tokio::test]
     async fn test_login_fail_get_by_username_invalid_password(
         mut dependency_provider: MockDependencyProvider,
         user_record: UserRecord,

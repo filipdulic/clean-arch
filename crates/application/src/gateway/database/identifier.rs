@@ -13,5 +13,5 @@ pub trait NewId<Id>: Send + Sync {
 }
 
 #[derive(Debug, Error, Serialize)]
-#[error("Unable to generade a new entity ID")]
+#[error("Unable to generate a new entity ID")]
 pub struct NewIdError;

@@ -62,22 +62,20 @@ pub struct ForDeletion {}
 #[derive(Debug, Clone, Serialize, Error)]
 pub enum Error {
     #[error("Token generation failed")]
-    TokenGenrationFailed,
+    TokenGenerationFailed,
     #[error("Verification Email send failed")]
     VerificationEmailSendError,
     #[error("Token expired")]
     VerificationTimedOut,
     #[error("Completion timed out")]
     CompletionTimedOut,
-    #[error("Token Expired")]
-    TokenExpired,
 }
 
 impl FromStr for Error {
     type Err = ();
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "Token generation failed" => Ok(Error::TokenGenrationFailed),
+            "Token generation failed" => Ok(Error::TokenGenerationFailed),
             "Verification Email send failed" => Ok(Error::VerificationEmailSendError),
             "Token expired" => Ok(Error::VerificationTimedOut),
             "Completion timed out" => Ok(Error::CompletionTimedOut),
@@ -294,49 +292,43 @@ impl<S: SignupStateTrait> TryFrom<(Id, SignupStateEnum, DateTime<Utc>)> for Sign
     }
 }
 
-#[allow(clippy::from_over_into)]
-impl Into<SignupStateEnum> for Initialized {
-    fn into(self) -> SignupStateEnum {
-        SignupStateEnum::Initialized { email: self.email }
+impl From<Initialized> for SignupStateEnum {
+    fn from(value: Initialized) -> Self {
+        Self::Initialized { email: value.email }
     }
 }
-#[allow(clippy::from_over_into)]
-impl Into<SignupStateEnum> for VerificationEmailSent {
-    fn into(self) -> SignupStateEnum {
-        SignupStateEnum::VerificationEmailSent { email: self.email }
+impl From<VerificationEmailSent> for SignupStateEnum {
+    fn from(value: VerificationEmailSent) -> Self {
+        Self::VerificationEmailSent { email: value.email }
     }
 }
-#[allow(clippy::from_over_into)]
-impl Into<SignupStateEnum> for EmailVerified {
-    fn into(self) -> SignupStateEnum {
-        SignupStateEnum::EmailVerified { email: self.email }
+impl From<EmailVerified> for SignupStateEnum {
+    fn from(value: EmailVerified) -> Self {
+        Self::EmailVerified { email: value.email }
     }
 }
-#[allow(clippy::from_over_into)]
-impl Into<SignupStateEnum> for ForDeletion {
-    fn into(self) -> SignupStateEnum {
-        SignupStateEnum::ForDeletion
+impl From<ForDeletion> for SignupStateEnum {
+    fn from(_: ForDeletion) -> Self {
+        Self::ForDeletion
     }
 }
 
-#[allow(clippy::from_over_into)]
-impl Into<SignupStateEnum> for Completed {
-    fn into(self) -> SignupStateEnum {
-        SignupStateEnum::Completed {
-            email: self.email,
-            username: self.username,
-            password: self.password,
+impl From<Completed> for SignupStateEnum {
+    fn from(value: Completed) -> Self {
+        Self::Completed {
+            email: value.email,
+            username: value.username,
+            password: value.password,
         }
     }
 }
 
-#[allow(clippy::from_over_into)]
-impl<S: SignupStateTrait> Into<SignupStateEnum> for Failed<S> {
-    fn into(self) -> SignupStateEnum {
-        let previous_state: SignupStateEnum = self.previous_state.into();
-        SignupStateEnum::Failed {
+impl<S: SignupStateTrait> From<Failed<S>> for SignupStateEnum {
+    fn from(value: Failed<S>) -> Self {
+        let previous_state: SignupStateEnum = value.previous_state.into();
+        Self::Failed {
             previous_state: Arc::new(previous_state),
-            error: self.error,
+            error: value.error,
         }
     }
 }

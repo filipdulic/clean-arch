@@ -130,6 +130,7 @@ mod tests {
     use rstest::rstest;
 
     #[rstest]
+    #[tokio::test]
     async fn test_mock() {
         // Create a mock instance
         let mut mock = MockRepo::new();

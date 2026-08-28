@@ -2,13 +2,13 @@ use std::sync::Arc;
 
 use crate::{
     gateway::{
+        DatabaseProvider, EmailVerificationServiceProvider,
         database::{
+            Database,
             signup_process::{GetError, Repo, SaveError},
             token::{GenError as TokenRepoError, Repo as TokenRepo},
-            Database,
         },
         service::email::{EmailAddress, EmailServiceError, EmailVerificationService},
-        DatabaseProvider, EmailVerificationServiceProvider,
     },
     usecase::Usecase,
 };
@@ -84,13 +84,13 @@ where
             .dependency_provider
             .database()
             .token_repo()
-            .gen(None, process.state().email.as_ref())
+            .generate(None, process.state().email.as_ref())
             .await
         {
             Ok(record) => record.token,
             Err(err) => {
                 log::error!("Token Repo error: {:?}", err);
-                let process = process.fail(SignupProcessError::TokenGenrationFailed);
+                let process = process.fail(SignupProcessError::TokenGenerationFailed);
                 self.dependency_provider
                     .database()
                     .signup_process_repo()
@@ -146,6 +146,7 @@ mod tests {
     use rstest::*;
 
     #[rstest]
+    #[tokio::test]
     async fn test_send_verification_email_success(
         mut dependency_provider: MockDependencyProvider,
         initialized_record: SignupProcessRepoRecord,
@@ -173,7 +174,7 @@ mod tests {
         dependency_provider
             .db
             .token_repo
-            .expect_gen()
+            .expect_generate()
             // makes sure the correct email is used
             .withf(move |_, actual_email| actual_email == TEST_EMAIL)
             .times(1)
@@ -210,6 +211,7 @@ mod tests {
         assert_eq!(response.id, id);
     }
     #[rstest]
+    #[tokio::test]
     async fn test_send_verification_email_fails_get_latest_state_connection(
         signup_id: SignupId,
         mut dependency_provider: MockDependencyProvider,
@@ -230,6 +232,7 @@ mod tests {
         assert_eq!(result.unwrap_err(), super::Error::Repo,);
     }
     #[rstest]
+    #[tokio::test]
     async fn test_send_verification_email_fails_get_latest_state_not_found(
         signup_id: SignupId,
         mut dependency_provider: MockDependencyProvider,
@@ -250,6 +253,7 @@ mod tests {
         assert_eq!(result.unwrap_err(), super::Error::NotFound(signup_id),);
     }
     #[rstest]
+    #[tokio::test]
     async fn test_send_verification_email_fails_incorrect_state(
         signup_id: SignupId,
         mut dependency_provider: MockDependencyProvider,
@@ -276,6 +280,7 @@ mod tests {
         assert_eq!(result.unwrap_err(), super::Error::IncorrectState(signup_id),);
     }
     #[rstest]
+    #[tokio::test]
     async fn test_send_verification_email_fails_token_gen(
         mut dependency_provider: MockDependencyProvider,
         initialized_record: SignupProcessRepoRecord,
@@ -283,7 +288,7 @@ mod tests {
         // fixtures
         let process = SignupProcess::<Initialized>::try_from(initialized_record.clone())
             .unwrap()
-            .fail(SignupProcessError::TokenGenrationFailed);
+            .fail(SignupProcessError::TokenGenerationFailed);
         let record_to_save: SignupProcessRepoRecord = process.clone().into();
         let req = super::Request {
             id: initialized_record.id,
@@ -301,7 +306,7 @@ mod tests {
         dependency_provider
             .db
             .token_repo
-            .expect_gen()
+            .expect_generate()
             // makes sure the correct email is used
             .withf(move |_, actual_email| actual_email == TEST_EMAIL)
             .times(1)
@@ -330,6 +335,7 @@ mod tests {
         );
     }
     #[rstest]
+    #[tokio::test]
     async fn test_send_verification_email_fails_email_send(
         mut dependency_provider: MockDependencyProvider,
         initialized_record: SignupProcessRepoRecord,
@@ -357,7 +363,7 @@ mod tests {
         dependency_provider
             .db
             .token_repo
-            .expect_gen()
+            .expect_generate()
             // makes sure the correct email is used
             .withf(move |_, actual_email| actual_email == TEST_EMAIL)
             .times(1)

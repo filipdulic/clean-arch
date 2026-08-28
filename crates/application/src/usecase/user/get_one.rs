@@ -2,11 +2,11 @@ use std::sync::Arc;
 
 use crate::{
     gateway::{
-        database::{
-            user::{GetError, Repo},
-            Database,
-        },
         DatabaseProvider,
+        database::{
+            Database,
+            user::{GetError, Repo},
+        },
     },
     usecase::Usecase,
 };
@@ -44,7 +44,7 @@ pub enum Error {
 impl From<GetError> for Error {
     fn from(e: GetError) -> Self {
         match e {
-            GetError::Connection => Self::Repo,
+            GetError::Connection | GetError::InvalidData => Self::Repo,
             GetError::NotFound => Self::NotFound,
         }
     }
@@ -98,6 +98,7 @@ mod tests {
     use rstest::*;
 
     #[rstest]
+    #[tokio::test]
     async fn test_get_one_success(
         mut dependency_provider: MockDependencyProvider,
         user_record: UserRecord,
@@ -131,6 +132,7 @@ mod tests {
         assert_eq!(result.user.password().to_string(), TEST_PASSWORD);
     }
     #[rstest]
+    #[tokio::test]
     async fn test_get_one_fail_get_connection(
         mut dependency_provider: MockDependencyProvider,
         user_record: UserRecord,
@@ -159,6 +161,7 @@ mod tests {
         assert_eq!(result.unwrap_err(), Error::Repo);
     }
     #[rstest]
+    #[tokio::test]
     async fn test_get_one_fail_get_not_found(
         mut dependency_provider: MockDependencyProvider,
         user_record: UserRecord,

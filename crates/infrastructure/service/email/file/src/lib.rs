@@ -2,8 +2,8 @@ use ca_application::gateway::service::email::{
     EmailAddress, EmailService, EmailServiceError, EmailVerificationService,
 };
 use directories::UserDirs;
-use std::io::Write;
 use std::path::{Path, PathBuf};
+use tokio::io::AsyncWriteExt;
 
 #[derive(Debug, Clone)]
 pub struct FileEmailService {
@@ -17,7 +17,6 @@ impl FileEmailService {
         Ok(Self { folder_path })
     }
 }
-// TODO:use async file system
 #[async_trait::async_trait]
 impl EmailService for &FileEmailService {
     async fn send_email(
@@ -29,14 +28,17 @@ impl EmailService for &FileEmailService {
         let file_name = format!("{}.txt", to.as_str());
         let file_path = self.folder_path.join(file_name);
 
-        let mut file = std::fs::OpenOptions::new()
+        let mut file = tokio::fs::OpenOptions::new()
             .create(true)
             .append(true)
             .open(file_path)
+            .await
             .map_err(|_| EmailServiceError::SendEmailFailed)?;
 
-        writeln!(file, "Subject: {}", subject).map_err(|_| EmailServiceError::SendEmailFailed)?;
-        writeln!(file, "Body: {}", body).map_err(|_| EmailServiceError::SendEmailFailed)?;
+        let message = format!("Subject: {subject}\nBody: {body}\n");
+        file.write_all(message.as_bytes())
+            .await
+            .map_err(|_| EmailServiceError::SendEmailFailed)?;
 
         Ok(())
     }
@@ -76,5 +78,26 @@ pub fn data_storage_directory(data_dir: Option<PathBuf>) -> PathBuf {
             Path::new(".").to_path_buf()
         };
         base_path.join(DEFAULT_STORAGE_DIR_NAME)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn writes_email_to_file() {
+        let directory = tempfile::tempdir().unwrap();
+        let service = FileEmailService::try_new(directory.path().to_path_buf()).unwrap();
+
+        (&service)
+            .send_email(EmailAddress::new("user@example.com"), "Subject", "Body")
+            .await
+            .unwrap();
+
+        let message = tokio::fs::read_to_string(directory.path().join("user@example.com.txt"))
+            .await
+            .unwrap();
+        assert_eq!(message, "Subject: Subject\nBody: Body\n");
     }
 }
