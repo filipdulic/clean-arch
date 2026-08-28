@@ -54,7 +54,7 @@ impl Repo for &SqlxSqlite {
         id: Id,
     ) -> Result<Vec<Record>, GetError> {
         let query =
-            sqlx::query_as::<_, SignupProcessState>("SELECT id, username, email, password, error, state, entered_at FROM signup_process_states WHERE id = ? ORDER BY rowid ASC")
+            sqlx::query_as::<_, SignupProcessState>("SELECT id, username, email, password, error, state, entered_at FROM signup_process_states WHERE id = ? ORDER BY history_id ASC")
                 .bind(id.to_string());
         let sps_results = match transaction {
             Some(tx) => query
