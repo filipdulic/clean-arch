@@ -63,7 +63,10 @@ where
     type Error = Error;
     type Auth = AdminOrOwner;
 
-    async fn exec(&self, req: Authorized<Self::Request>) -> Result<Self::Response, Self::Error> {
+    async fn exec(
+        &self,
+        req: Authorized<Self::Request, Self::Auth>,
+    ) -> Result<Self::Response, Self::Error> {
         let req = req.into_request();
         log::debug!("Get user by ID");
         let user = self

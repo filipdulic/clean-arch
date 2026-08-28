@@ -51,7 +51,10 @@ where
     type Error = Error;
     type Auth = AdminOnly;
 
-    async fn exec(&self, _req: Authorized<Self::Request>) -> Result<Self::Response, Self::Error> {
+    async fn exec(
+        &self,
+        _req: Authorized<Self::Request, Self::Auth>,
+    ) -> Result<Self::Response, Self::Error> {
         log::debug!("Get all users");
         let users = self
             .dependency_provider

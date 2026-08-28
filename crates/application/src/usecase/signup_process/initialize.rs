@@ -64,7 +64,7 @@ where
     /// TODO: add transaction, outbox pattern to send email.
     /// when the user is created, send an email to the user.
     /// with generated token.
-    async fn exec(&self, req: Authorized<Self::Request>) -> Result<Response, Error> {
+    async fn exec(&self, req: Authorized<Self::Request, Self::Auth>) -> Result<Response, Error> {
         let req = req.into_request();
         log::debug!("SignupProcess Initialized: {:?}", req);
         // validate email

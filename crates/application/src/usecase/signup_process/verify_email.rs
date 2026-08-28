@@ -75,7 +75,7 @@ where
     type Error = Error;
     type Auth = Public;
     /// Create a new user with the given name.
-    async fn exec(&self, req: Authorized<Self::Request>) -> Result<Response, Error> {
+    async fn exec(&self, req: Authorized<Self::Request, Self::Auth>) -> Result<Response, Error> {
         let req = req.into_request();
         log::debug!("SignupProcess Email Verification: {:?}", req);
         // Validate the request

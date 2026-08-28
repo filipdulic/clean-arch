@@ -91,7 +91,10 @@ where
     type Error = Error;
     type Auth = Public;
 
-    async fn exec(&self, req: Authorized<Self::Request>) -> Result<Self::Response, Self::Error> {
+    async fn exec(
+        &self,
+        req: Authorized<Self::Request, Self::Auth>,
+    ) -> Result<Self::Response, Self::Error> {
         let req = req.into_request();
         log::debug!("SignupProcess Completed: {:?}", req);
         // Validate the request

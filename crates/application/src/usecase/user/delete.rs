@@ -55,7 +55,10 @@ where
     type Error = Error;
     type Auth = AdminOnly;
 
-    async fn exec(&self, req: Authorized<Self::Request>) -> Result<Self::Response, Self::Error> {
+    async fn exec(
+        &self,
+        req: Authorized<Self::Request, Self::Auth>,
+    ) -> Result<Self::Response, Self::Error> {
         let req = req.into_request();
         log::debug!("Delete User by ID: {:?}", req);
         self.dependency_provider

@@ -18,6 +18,9 @@ pub trait Usecase<D>: Send + Sync {
     /// The authorization policy guarding this usecase. `exec` takes an
     /// [`Authorized`] request, which only the policy can produce.
     type Auth: Policy<Self::Request>;
-    async fn exec(&self, req: Authorized<Self::Request>) -> Result<Self::Response, Self::Error>;
+    async fn exec(
+        &self,
+        req: Authorized<Self::Request, Self::Auth>,
+    ) -> Result<Self::Response, Self::Error>;
     fn new(db: Arc<D>) -> Self;
 }

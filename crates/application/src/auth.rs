@@ -1,19 +1,31 @@
+use std::marker::PhantomData;
+
 use ca_domain::entity::{
     auth_context::{AuthContext, AuthError},
     user::Id as UserId,
 };
 
-/// Proof that a request passed its usecase's authorization policy.
+/// Proof that a request passed the authorization policy `P`.
 ///
-/// Only a [`Policy`] can construct this, so a `Usecase::exec` taking
-/// `Authorized<Request>` cannot be reached without authorization.
+/// Only [`Policy::check`] can construct this, and the proof carries the
+/// policy that issued it, so a `Usecase::exec` taking
+/// `Authorized<Request, Self::Auth>` cannot be reached without running
+/// that exact policy. A proof minted by a different policy is a type
+/// error:
+///
+/// ```compile_fail,E0308
+/// use ca_application::auth::{AdminOnly, Authorized, Policy, Public};
+/// struct Req;
+/// let proof: Authorized<Req, AdminOnly> = Public::check(Req, None).unwrap();
+/// ```
 #[derive(Debug)]
-pub struct Authorized<R> {
+pub struct Authorized<R, P> {
     request: R,
     context: Option<AuthContext>,
+    _policy: PhantomData<fn() -> P>,
 }
 
-impl<R> Authorized<R> {
+impl<R, P> Authorized<R, P> {
     pub fn request(&self) -> &R {
         &self.request
     }
@@ -29,13 +41,14 @@ impl<R> Authorized<R> {
         Self {
             request,
             context: None,
+            _policy: PhantomData,
         }
     }
 }
 
 /// An authorization policy over a usecase request.
-pub trait Policy<R>: Send + Sync {
-    fn check(request: R, context: Option<AuthContext>) -> Result<Authorized<R>, AuthError>;
+pub trait Policy<R>: Send + Sync + Sized {
+    fn check(request: R, context: Option<AuthContext>) -> Result<Authorized<R, Self>, AuthError>;
 }
 
 /// Ownership of a request, for [`AdminOrOwner`].
@@ -44,26 +57,34 @@ pub trait HasOwner {
 }
 
 /// No authentication required.
+#[derive(Debug)]
 pub struct Public;
 
 /// Only admins may execute.
+#[derive(Debug)]
 pub struct AdminOnly;
 
 /// Admins and the owner named by the request may execute.
+#[derive(Debug)]
 pub struct AdminOrOwner;
 
 impl<R> Policy<R> for Public {
-    fn check(request: R, context: Option<AuthContext>) -> Result<Authorized<R>, AuthError> {
-        Ok(Authorized { request, context })
+    fn check(request: R, context: Option<AuthContext>) -> Result<Authorized<R, Self>, AuthError> {
+        Ok(Authorized {
+            request,
+            context,
+            _policy: PhantomData,
+        })
     }
 }
 
 impl<R> Policy<R> for AdminOnly {
-    fn check(request: R, context: Option<AuthContext>) -> Result<Authorized<R>, AuthError> {
+    fn check(request: R, context: Option<AuthContext>) -> Result<Authorized<R, Self>, AuthError> {
         match context {
             Some(context) if context.is_admin() => Ok(Authorized {
                 request,
                 context: Some(context),
+                _policy: PhantomData,
             }),
             _ => Err(AuthError::Unauthorized),
         }
@@ -71,12 +92,13 @@ impl<R> Policy<R> for AdminOnly {
 }
 
 impl<R: HasOwner> Policy<R> for AdminOrOwner {
-    fn check(request: R, context: Option<AuthContext>) -> Result<Authorized<R>, AuthError> {
+    fn check(request: R, context: Option<AuthContext>) -> Result<Authorized<R, Self>, AuthError> {
         match context {
             Some(context) if context.is_admin() || request.owner() == context.user_id => {
                 Ok(Authorized {
                     request,
                     context: Some(context),
+                    _policy: PhantomData,
                 })
             }
             _ => Err(AuthError::Unauthorized),

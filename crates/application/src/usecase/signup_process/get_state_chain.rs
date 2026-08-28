@@ -59,7 +59,7 @@ where
     type Response = Response;
     type Error = Error;
     type Auth = AdminOnly;
-    async fn exec(&self, req: Authorized<Self::Request>) -> Result<Response, Error> {
+    async fn exec(&self, req: Authorized<Self::Request, Self::Auth>) -> Result<Response, Error> {
         let req = req.into_request();
         log::debug!("Get signup process state chain");
         let state_chain = self
