@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use crate::auth::{AdminOnly, Authorized};
 use crate::{
     gateway::{
         DatabaseProvider,
@@ -11,7 +12,7 @@ use crate::{
     usecase::Usecase,
 };
 
-use ca_domain::entity::{auth_strategy::AuthStrategy, user::Id};
+use ca_domain::entity::user::Id;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -52,8 +53,13 @@ where
     type Request = Request;
     type Response = Response;
     type Error = Error;
+    type Auth = AdminOnly;
 
-    async fn exec(&self, req: Self::Request) -> Result<Self::Response, Self::Error> {
+    async fn exec(
+        &self,
+        req: Authorized<Self::Request, Self::Auth>,
+    ) -> Result<Self::Response, Self::Error> {
+        let req = req.into_request();
         log::debug!("Delete User by ID: {:?}", req);
         self.dependency_provider
             .database()
@@ -68,14 +74,12 @@ where
             dependency_provider,
         }
     }
-    fn auth_strategy(&self) -> AuthStrategy {
-        AuthStrategy::AdminOnly
-    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::auth::Policy;
     use crate::{
         gateway::{database::user::Record as UserRecord, mock::MockDependencyProvider},
         usecase::tests::fixtures::*,
@@ -101,7 +105,7 @@ mod tests {
             Arc::new(dependency_provider),
         );
         // Usecase Execution -- mock predicates will fail during execution
-        let result = usecase.exec(req).await;
+        let result = usecase.exec(Authorized::for_test(req)).await;
         // Assert execution success
         assert!(result.is_ok());
     }
@@ -123,7 +127,7 @@ mod tests {
             Arc::new(dependency_provider),
         );
         // Usecase Execution -- mock predicates will fail during execution
-        let result = usecase.exec(req).await;
+        let result = usecase.exec(Authorized::for_test(req)).await;
         // Assert execution success
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), Error::Repo);
@@ -146,7 +150,7 @@ mod tests {
             Arc::new(dependency_provider),
         );
         // Usecase Execution -- mock predicates will fail during execution
-        let result = usecase.exec(req).await;
+        let result = usecase.exec(Authorized::for_test(req)).await;
         // Assert execution success
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), Error::NotFound);
@@ -157,8 +161,11 @@ mod tests {
         let req = Request {
             id: Id::new(user_record.user.id()),
         };
-        let result = Delete::new(Arc::new(MockDependencyProvider::default()))
-            .authorize(&req, Some(auth_context_admin));
+        let result =
+            <Delete<MockDependencyProvider> as Usecase<MockDependencyProvider>>::Auth::check(
+                req,
+                Some(auth_context_admin),
+            );
         assert!(result.is_ok());
     }
 
@@ -167,8 +174,11 @@ mod tests {
         let req = Request {
             id: user_record.user.id(),
         };
-        let result = Delete::new(Arc::new(MockDependencyProvider::default()))
-            .authorize(&req, Some(auth_context_user));
+        let result =
+            <Delete<MockDependencyProvider> as Usecase<MockDependencyProvider>>::Auth::check(
+                req,
+                Some(auth_context_user),
+            );
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), AuthError::Unauthorized);
     }
@@ -179,7 +189,10 @@ mod tests {
         };
         let auth_context = None;
         let result =
-            Delete::new(Arc::new(MockDependencyProvider::default())).authorize(&req, auth_context);
+            <Delete<MockDependencyProvider> as Usecase<MockDependencyProvider>>::Auth::check(
+                req,
+                auth_context,
+            );
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), AuthError::Unauthorized);
     }

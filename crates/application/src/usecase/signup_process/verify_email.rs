@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use crate::auth::{Authorized, Public};
 use crate::{
     gateway::{
         DatabaseProvider,
@@ -12,10 +13,7 @@ use crate::{
     usecase::Usecase,
 };
 
-use ca_domain::entity::{
-    auth_strategy::AuthStrategy,
-    signup_process::{Id, SignupProcess, VerificationEmailSent},
-};
+use ca_domain::entity::signup_process::{Id, SignupProcess, VerificationEmailSent};
 
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -75,8 +73,10 @@ where
     type Request = Request;
     type Response = Response;
     type Error = Error;
+    type Auth = Public;
     /// Create a new user with the given name.
-    async fn exec(&self, req: Request) -> Result<Response, Error> {
+    async fn exec(&self, req: Authorized<Self::Request, Self::Auth>) -> Result<Response, Error> {
+        let req = req.into_request();
         log::debug!("SignupProcess Email Verification: {:?}", req);
         // Validate the request
         req.validate()?;
@@ -144,13 +144,11 @@ where
             dependency_provider,
         }
     }
-    fn auth_strategy(&self) -> AuthStrategy {
-        AuthStrategy::Public
-    }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::auth::Policy;
     use rstest::rstest;
 
     use crate::{
@@ -216,7 +214,7 @@ mod tests {
             Arc::new(dependency_provider),
         );
         // Usecase Execution -- mock predicates will fail during execution
-        let result = usecase.exec(req).await;
+        let result = usecase.exec(Authorized::for_test(req)).await;
         // Assert execution success
         assert!(result.is_ok());
         let response = result.unwrap();
@@ -233,7 +231,7 @@ mod tests {
             id,
             token: "".to_string(),
         };
-        let result = usecase.exec(req).await;
+        let result = usecase.exec(Authorized::for_test(req)).await;
         assert!(result.is_err());
         assert!(
             result
@@ -268,7 +266,7 @@ mod tests {
             Arc::new(dependency_provider),
         );
         // Usecase Execution -- mock predicates will fail during execution
-        let result = usecase.exec(req).await;
+        let result = usecase.exec(Authorized::for_test(req)).await;
         // Assert execution error
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), Error::Repo);
@@ -299,7 +297,7 @@ mod tests {
             Arc::new(dependency_provider),
         );
         // Usecase Execution -- mock predicates will fail during execution
-        let result = usecase.exec(req).await;
+        let result = usecase.exec(Authorized::for_test(req)).await;
         // Assert execution error
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), Error::NotFound(signup_id));
@@ -331,7 +329,7 @@ mod tests {
             Arc::new(dependency_provider),
         );
         // Usecase Execution -- mock predicates will fail during execution
-        let result = usecase.exec(req).await;
+        let result = usecase.exec(Authorized::for_test(req)).await;
         // Assert execution error
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), Error::IncorrectState(signup_id));
@@ -380,7 +378,7 @@ mod tests {
             Arc::new(dependency_provider),
         );
         // Usecase Execution -- mock predicates will fail during execution
-        let result = usecase.exec(req).await;
+        let result = usecase.exec(Authorized::for_test(req)).await;
         // Assert execution error
         assert!(result.is_err());
         assert_eq!(
@@ -432,7 +430,7 @@ mod tests {
             Arc::new(dependency_provider),
         );
         // Usecase Execution -- mock predicates will fail during execution
-        let result = usecase.exec(req).await;
+        let result = usecase.exec(Authorized::for_test(req)).await;
         // Assert execution error
         assert!(result.is_err());
         assert_eq!(
@@ -485,7 +483,7 @@ mod tests {
             Arc::new(dependency_provider),
         );
         // Usecase Execution -- mock predicates will fail during execution
-        let result = usecase.exec(req).await;
+        let result = usecase.exec(Authorized::for_test(req)).await;
         // Assert execution error
         assert!(result.is_err());
         assert_eq!(
@@ -543,7 +541,7 @@ mod tests {
             Arc::new(dependency_provider),
         );
         // Usecase Execution -- mock predicates will fail during execution
-        let result = usecase.exec(req).await;
+        let result = usecase.exec(Authorized::for_test(req)).await;
         // Assert execution error
         assert!(result.is_err());
         assert_eq!(
@@ -600,7 +598,7 @@ mod tests {
             Arc::new(dependency_provider),
         );
         // Usecase Execution -- mock predicates will fail during execution
-        let result = usecase.exec(req).await;
+        let result = usecase.exec(Authorized::for_test(req)).await;
         // Assert execution success
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), Error::Repo);
@@ -611,8 +609,11 @@ mod tests {
             id: signup_id,
             token: TEST_TOKEN.to_string(),
         };
-        let result = VerifyEmail::new(Arc::new(MockDependencyProvider::default()))
-            .authorize(&req, Some(auth_context_admin));
+        let result =
+            <VerifyEmail<MockDependencyProvider> as Usecase<MockDependencyProvider>>::Auth::check(
+                req,
+                Some(auth_context_admin),
+            );
         assert!(result.is_ok());
     }
 
@@ -622,8 +623,11 @@ mod tests {
             id: signup_id,
             token: TEST_TOKEN.to_string(),
         };
-        let result = VerifyEmail::new(Arc::new(MockDependencyProvider::default()))
-            .authorize(&req, Some(auth_context_user));
+        let result =
+            <VerifyEmail<MockDependencyProvider> as Usecase<MockDependencyProvider>>::Auth::check(
+                req,
+                Some(auth_context_user),
+            );
         assert!(result.is_ok());
     }
     #[rstest]
@@ -633,8 +637,11 @@ mod tests {
             token: TEST_TOKEN.to_string(),
         };
         let auth_context = None;
-        let result = VerifyEmail::new(Arc::new(MockDependencyProvider::default()))
-            .authorize(&req, auth_context);
+        let result =
+            <VerifyEmail<MockDependencyProvider> as Usecase<MockDependencyProvider>>::Auth::check(
+                req,
+                auth_context,
+            );
         assert!(result.is_ok());
     }
 }

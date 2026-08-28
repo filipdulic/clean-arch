@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use crate::auth::{Authorized, Public};
 use crate::{
     gateway::{
         DatabaseProvider,
@@ -12,7 +13,6 @@ use crate::{
     usecase::Usecase,
 };
 use ca_domain::entity::{
-    auth_strategy::AuthStrategy,
     signup_process::{Id, SignupProcess},
     user::Email,
 };
@@ -59,11 +59,13 @@ where
     type Request = Request;
     type Response = Response;
     type Error = Error;
+    type Auth = Public;
     /// Create a new user with the given name.
     /// TODO: add transaction, outbox pattern to send email.
     /// when the user is created, send an email to the user.
     /// with generated token.
-    async fn exec(&self, req: Request) -> Result<Response, Error> {
+    async fn exec(&self, req: Authorized<Self::Request, Self::Auth>) -> Result<Response, Error> {
+        let req = req.into_request();
         log::debug!("SignupProcess Initialized: {:?}", req);
         // validate email
         req.validate()?;
@@ -88,14 +90,12 @@ where
             dependency_provider,
         }
     }
-    fn auth_strategy(&self) -> AuthStrategy {
-        AuthStrategy::Public
-    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::auth::Policy;
     use crate::gateway::database::signup_process::{self, Record as SignupProcessRepoRecord};
     use crate::gateway::mock::MockDependencyProvider;
     use crate::usecase::tests::fixtures::*;
@@ -137,7 +137,7 @@ mod tests {
             Arc::new(dependency_provider),
         );
         // Usecase Execution -- mock predicates will fail during execution
-        let result = usecase.exec(req).await;
+        let result = usecase.exec(Authorized::for_test(req)).await;
         // Assert execution is successful
         assert!(result.is_ok());
         // Assert return id equals the mock returned id.
@@ -153,7 +153,7 @@ mod tests {
         let req = super::Request {
             email: "ttt".to_string(),
         };
-        let result = usecase.exec(req).await;
+        let result = usecase.exec(Authorized::for_test(req)).await;
         assert!(result.is_err());
         let error = result.unwrap_err().to_string();
         assert!(error.contains("Validation error: email"));
@@ -174,7 +174,7 @@ mod tests {
         let req = super::Request {
             email: TEST_EMAIL.to_string(),
         };
-        let result = usecase.exec(req).await;
+        let result = usecase.exec(Authorized::for_test(req)).await;
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), super::Error::NewId);
     }
@@ -201,7 +201,7 @@ mod tests {
         let req = super::Request {
             email: TEST_EMAIL.to_string(),
         };
-        let result = usecase.exec(req).await;
+        let result = usecase.exec(Authorized::for_test(req)).await;
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), super::Error::Repo,);
     }
@@ -211,8 +211,11 @@ mod tests {
         let req = super::Request {
             email: TEST_EMAIL.to_string(),
         };
-        let result = Initialize::new(Arc::new(MockDependencyProvider::default()))
-            .authorize(&req, Some(auth_context_admin));
+        let result =
+            <Initialize<MockDependencyProvider> as Usecase<MockDependencyProvider>>::Auth::check(
+                req,
+                Some(auth_context_admin),
+            );
         assert!(result.is_ok());
     }
 
@@ -221,8 +224,11 @@ mod tests {
         let req = super::Request {
             email: TEST_EMAIL.to_string(),
         };
-        let result = Initialize::new(Arc::new(MockDependencyProvider::default()))
-            .authorize(&req, Some(auth_context_user));
+        let result =
+            <Initialize<MockDependencyProvider> as Usecase<MockDependencyProvider>>::Auth::check(
+                req,
+                Some(auth_context_user),
+            );
         assert!(result.is_ok());
     }
     #[rstest]
@@ -231,8 +237,11 @@ mod tests {
             email: TEST_EMAIL.to_string(),
         };
         let auth_context = None;
-        let result = Initialize::new(Arc::new(MockDependencyProvider::default()))
-            .authorize(&req, auth_context);
+        let result =
+            <Initialize<MockDependencyProvider> as Usecase<MockDependencyProvider>>::Auth::check(
+                req,
+                auth_context,
+            );
         assert!(result.is_ok());
     }
 }

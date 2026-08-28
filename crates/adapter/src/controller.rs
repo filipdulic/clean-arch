@@ -1,10 +1,10 @@
 use std::{marker::PhantomData, sync::Arc};
 
 use ca_application::{
+    auth::Policy,
     gateway::{AuthExtractorProvider, service::auth::AuthExtractor},
     usecase::Usecase,
 };
-use ca_domain::entity::auth_context::AuthError;
 
 use super::boundary::{Error, Ingester, Presenter};
 
@@ -45,16 +45,17 @@ where
         } else {
             None
         };
-        // Instantiate the usecase
+        // Authorize the request; only the policy can mint an Authorized<Request>
+        let authorized = match U::Auth::check(processed_req, auth_context) {
+            Ok(authorized) => authorized,
+            Err(err) => {
+                return <B as Presenter<D, U>>::present(Err(Error::AuthError(err))).await;
+            }
+        };
+        // Instantiate and execute the usecase
         let usecase = U::new(self.dependency_provider());
-        // Authorize request
-        if usecase.authorize(&processed_req, auth_context).is_err() {
-            return <B as Presenter<D, U>>::present(Err(Error::AuthError(AuthError::Unauthorized)))
-                .await;
-        }
-        // Execute use case in transaction if it is transactional
         let req = usecase
-            .exec(processed_req)
+            .exec(authorized)
             .await
             .map_err(|err| Error::UsecaseError(err));
         <B as Presenter<D, U>>::present(req).await
