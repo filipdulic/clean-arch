@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use crate::auth::{AdminOnly, Authorized};
 use crate::{
     gateway::{
         DatabaseProvider,
@@ -66,7 +67,9 @@ where
     type Request = Request;
     type Response = Response;
     type Error = Error;
-    async fn exec(&self, req: Self::Request) -> Result<Self::Response, Self::Error> {
+    type Auth = AdminOnly;
+    async fn exec(&self, req: Authorized<Self::Request>) -> Result<Self::Response, Self::Error> {
+        let req = req.into_request();
         log::debug!("SignupProcess scheduled for deletion: {:?}", req);
         let record = self
             .dependency_provider
@@ -112,6 +115,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::auth::Policy;
     use crate::{
         gateway::{
             database::signup_process::Record as SignupProcessRepoRecord,
@@ -163,7 +167,7 @@ mod tests {
             Arc::new(dependency_provider),
         );
         // Usecase Execution -- mock predicates will fail during execution
-        let result = usecase.exec(req).await;
+        let result = usecase.exec(Authorized::for_test(req)).await;
         // Assert execution success
         assert!(result.is_ok());
         let response = result.unwrap();
@@ -192,7 +196,7 @@ mod tests {
             Arc::new(dependency_provider),
         );
         // Usecase Execution -- mock predicates will fail during execution
-        let result = usecase.exec(req).await;
+        let result = usecase.exec(Authorized::for_test(req)).await;
         // Assert execution error
         assert!(result.is_err());
         // Assert GetError::Connection is converted to Error::Repo
@@ -221,7 +225,7 @@ mod tests {
             Arc::new(dependency_provider),
         );
         // Usecase Execution -- mock predicates will fail during execution
-        let result = usecase.exec(req).await;
+        let result = usecase.exec(Authorized::for_test(req)).await;
         // Assert execution error
         assert!(result.is_err());
         // Assert GetError::NotFound is converted to Error::NotFound wiht the correct id
@@ -251,7 +255,7 @@ mod tests {
             Arc::new(dependency_provider),
         );
         // Usecase Execution -- mock predicates will fail during execution
-        let result = usecase.exec(req).await;
+        let result = usecase.exec(Authorized::for_test(req)).await;
         // Assert execution success
         assert!(result.is_err());
         // Assert GetError::IncorrectState is converted to Error::IncorrectState with the correct id
@@ -281,7 +285,7 @@ mod tests {
             Arc::new(dependency_provider),
         );
         // Usecase Execution -- mock predicates will fail during execution
-        let result = usecase.exec(req).await;
+        let result = usecase.exec(Authorized::for_test(req)).await;
         // Assert execution success
         assert!(result.is_err());
         // Assert GetError::IncorrectState is converted to Error::IncorrectState with the correct id
@@ -325,7 +329,7 @@ mod tests {
             Arc::new(dependency_provider),
         );
         // Usecase Execution -- mock predicates will fail during execution
-        let result = usecase.exec(req).await;
+        let result = usecase.exec(Authorized::for_test(req)).await;
         // Assert execution error
         assert!(result.is_err());
         // Assert SaveError::Connection is converted to Error::Repo
@@ -334,23 +338,32 @@ mod tests {
     #[rstest]
     fn test_authorize_admin_zero_success(signup_id: SignupId, auth_context_admin: AuthContext) {
         let req = super::Request { id: signup_id };
-        let result = Delete::new(Arc::new(MockDependencyProvider::default()))
-            .authorize(&req, Some(auth_context_admin));
+        let result =
+            <Delete<MockDependencyProvider> as Usecase<MockDependencyProvider>>::Auth::check(
+                req,
+                Some(auth_context_admin),
+            );
         assert!(result.is_ok());
     }
 
     #[rstest]
     fn test_authorize_user_fail(signup_id: SignupId, auth_context_user: AuthContext) {
         let req = super::Request { id: signup_id };
-        let result = Delete::new(Arc::new(MockDependencyProvider::default()))
-            .authorize(&req, Some(auth_context_user));
+        let result =
+            <Delete<MockDependencyProvider> as Usecase<MockDependencyProvider>>::Auth::check(
+                req,
+                Some(auth_context_user),
+            );
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), AuthError::Unauthorized);
     }
     #[rstest]
     fn test_authorize_none_fail(signup_id: SignupId) {
         let req = super::Request { id: signup_id };
-        let result = Delete::new(Arc::new(MockDependencyProvider::default())).authorize(&req, None);
+        let result =
+            <Delete<MockDependencyProvider> as Usecase<MockDependencyProvider>>::Auth::check(
+                req, None,
+            );
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), AuthError::Unauthorized);
     }
