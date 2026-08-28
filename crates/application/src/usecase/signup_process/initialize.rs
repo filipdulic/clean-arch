@@ -22,7 +22,7 @@ use validator::Validate;
 
 #[derive(Debug, Deserialize, Validate)]
 pub struct Request {
-    #[validate(email, length(min = 5, max = 30))]
+    #[validate(email, length(min = 5, max = 254))]
     pub email: String,
 }
 

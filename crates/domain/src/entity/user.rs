@@ -80,7 +80,8 @@ impl UserName {
     }
 }
 
-const MAX_EMAIL_LEN: usize = 30;
+// RFC 5321 limits the full address to 254 octets.
+const MAX_EMAIL_LEN: usize = 254;
 const MIN_EMAIL_LEN: usize = 5;
 
 impl Email {
